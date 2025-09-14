@@ -30,7 +30,7 @@ const NavbarClient = ({ navItems, shopCategories, cartItems = 0, wishlistItems =
           {/* Logo */}
           <motion.div whileHover={{ scale: 1.05 }} className="flex items-center space-x-3">
             <div className="w-16 h-14 rounded-xl flex items-center justify-center">
-              <Image src="/logo1.png" alt="Logo" width={100} height={100} className="w-full h-full" />
+              <Image src="/logo1.png" alt="Logo" width={100} height={100} className="w-[95%] h-[90%]" />
             </div>
             <div className='flex flex-col'>
               <h1 className="text-2xl font-bold">NabaAli</h1>
