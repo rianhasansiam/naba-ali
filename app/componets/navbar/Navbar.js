@@ -10,24 +10,24 @@ const navItems = [
     icon: '🛍️'
   },
   { 
-    label: 'On Sale', 
+    label: 'Contacts', 
     hasDropdown: false,
-    href: '/sale',
+    href: '/contacts',
     badge: 'HOT',
-    icon: '🔥'
+    icon: ''
   },
   { 
     label: 'New Arrivals', 
     hasDropdown: false,
     href: '/new-arrivals',
     badge: 'NEW',
-    icon: '✨'
+    icon: ''
   },
   { 
-    label: 'Brands', 
+    label: 'About Us', 
     hasDropdown: false,
-    href: '/brands',
-    icon: '🏷️'
+    href: '/about',
+    icon: ''
   },
 ];
 

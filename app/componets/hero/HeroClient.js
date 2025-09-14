@@ -4,25 +4,6 @@ import { motion, animate } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
-// Button component (you can replace this with your actual Button component if you have one)
-const Button = ({ children, size, variant, className, ...props }) => {
-  const baseClasses = "inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background";
-  const sizeClasses = {
-    lg: "h-11 px-8 py-2 text-base"
-  };
-  const variantClasses = {
-    default: "bg-primary text-primary-foreground hover:bg-primary/90",
-    outline: "border border-input hover:bg-accent hover:text-accent-foreground"
-  };
-
-  const combinedClasses = `${baseClasses} ${sizeClasses[size] || ""} ${variantClasses[variant] || variantClasses.default} ${className || ""}`;
-
-  return (
-    <button className={combinedClasses} {...props}>
-      {children}
-    </button>
-  );
-};
 
 // Counter component for animated numbers
 const Counter = ({ from = 0, to, duration = 2, suffix = "" }) => {
@@ -98,21 +79,18 @@ const HeroClient = ({
               transition={{ delay: 0.6 }}
               className="flex flex-col sm:flex-row gap-4"
             >
-              <Button 
-                size="lg" 
-                className="bg-white text-black hover:bg-gray-100 group"
+              <button 
+                className="inline-flex items-center justify-center h-11 px-8 py-2 text-base bg-white text-black hover:bg-gray-100 group rounded-md font-medium transition-colors"
               >
                 Shop Collection
                 <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </Button>
+              </button>
               
-              <Button 
-                variant="outline" 
-                size="lg" 
-                className="border-white text-white hover:bg-white hover:text-black"
+              <button 
+                className="inline-flex items-center justify-center h-11 px-8 py-2 text-base border border-white text-white hover:bg-white hover:text-black rounded-md font-medium transition-colors"
               >
                 View All Products
-              </Button>
+              </button>
             </motion.div>
 
             {/* Stats */}
