@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { Heart, Leaf, Users, Award, Globe, Sparkles, Linkedin, Instagram, Twitter, ArrowRight, ExternalLink, Calendar, Trophy } from 'lucide-react';
 import { useRef } from 'react';
@@ -8,7 +7,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 
 const AboutPageClient = ({ aboutData }) => {
-  const [activeTeamMember, setActiveTeamMember] = useState(null);
   
   // Icon mapping function
   const getIcon = (iconName) => {
@@ -276,8 +274,6 @@ const AboutPageClient = ({ aboutData }) => {
                 key={index}
                 className="group cursor-pointer"
                 variants={itemVariants}
-                onMouseEnter={() => setActiveTeamMember(index)}
-                onMouseLeave={() => setActiveTeamMember(null)}
                 whileHover={{ y: -10 }}
               >
                 <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300">
