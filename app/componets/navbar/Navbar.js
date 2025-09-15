@@ -6,21 +6,22 @@ const navItems = [
   { 
     label: 'Shop', 
     hasDropdown: true,
-    href: '/shop',
+    href: '/allProducts',
     icon: '🛍️'
   },
+  
   { 
-    label: 'Contacts', 
+    label: 'Products', 
     hasDropdown: false,
-    href: '/contacts',
-    badge: 'HOT',
+    href: '/allProducts',
+    badge: '',
     icon: ''
   },
   { 
-    label: 'New Arrivals', 
+    label: 'Contact', 
     hasDropdown: false,
-    href: '/new-arrivals',
-    badge: 'NEW',
+    href: '/contact',
+    badge: '',
     icon: ''
   },
   { 
@@ -33,46 +34,46 @@ const navItems = [
 
 const shopCategories = [
   {
+    title: 'All Products',
+    description: 'Browse our complete collection',
+    icon: '🛍️',
+    featured: true,
+    href: '/allProducts'
+  },
+  {
+    title: 'Product Details',
+    description: 'View detailed product information',
+    icon: '🔍',
+    featured: true,
+    href: '/productDetails'
+  },
+  {
     title: 'Men\'s Fashion',
     description: 'Shirts, pants, jackets and more',
     icon: '👔',
-    featured: true,
-    href: '/men'
+    featured: false,
+    href: '/allProducts?category=men'
   },
   {
     title: 'Women\'s Fashion',
     description: 'Dresses, tops, accessories',
     icon: '👗',
     featured: true,
-    href: '/women'
-  },
-  {
-    title: 'Kids & Baby',
-    description: 'Clothes for little ones',
-    icon: '👶',
-    featured: false,
-    href: '/kids'
+    href: '/allProducts?category=women'
   },
   {
     title: 'Footwear',
     description: 'Sneakers, boots, sandals',
     icon: '👟',
     featured: true,
-    href: '/shoes'
+    href: '/allProducts?category=shoes'
   },
   {
     title: 'Accessories',
     description: 'Bags, watches, jewelry',
     icon: '💼',
     featured: false,
-    href: '/accessories'
-  },
-  {
-    title: 'Sports & Outdoors',
-    description: 'Athletic wear and gear',
-    icon: '⚽',
-    featured: true,
-    href: '/sports'
+    href: '/allProducts?category=accessories'
   }
 ];
 
