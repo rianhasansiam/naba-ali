@@ -6,6 +6,7 @@ import { Search, X, ShoppingCart, User, Menu, ChevronDown, Heart } from 'lucide-
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { signOutAction } from './actions';
 
 const NavbarClient = ({ navItems, shopCategories, cartItems = 0, wishlistItems = 0 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -193,9 +194,11 @@ const NavbarClient = ({ navItems, shopCategories, cartItems = 0, wishlistItems =
                     Sign Up
                   </Link>
                   <hr className="my-2" />
-                  <button className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                    Sign Out
-                  </button>
+                  <form action={signOutAction}>
+                    <button type="submit" className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                      Sign Out
+                    </button>
+                  </form>
                 </div>
               </div>
             </div>

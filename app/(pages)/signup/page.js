@@ -1,7 +1,14 @@
+import { auth } from '@/auth';
 import SignupPageClient from './SignupPageClient';
 
 // Server-side data and configuration
-const getSignupData = () => {
+const getSignupData = async () => {
+
+   const session = await auth()
+    console.log(session)
+
+
+
   return {
     seoData: {
       title: "Sign Up - NABA ALI | Join Premium Fashion Community",
@@ -72,7 +79,7 @@ const getSignupData = () => {
 
 // Metadata for SEO (Server-side)
 export async function generateMetadata() {
-  const signupData = getSignupData();
+  const signupData = await getSignupData();
   
   return {
     title: signupData.seoData.title,
@@ -100,9 +107,9 @@ export async function generateMetadata() {
   };
 }
 
-export default function SignupPage() {
+export default async function SignupPage() {
   // Server-side data fetching
-  const signupData = getSignupData();
+  const signupData = await getSignupData();
 
   return (
     <main className="min-h-screen">
