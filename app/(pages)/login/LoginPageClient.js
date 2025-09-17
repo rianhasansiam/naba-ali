@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { Eye, EyeOff, Mail, Lock, ShoppingBag, Heart, Truck, Star } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import GoogleSignButton from '@/lib/GoogleSignButton';
+import GoogleSignButton from '../../../lib/GoogleSignButton';
 
 const LoginPageClient = ({ loginData }) => {
   const [formData, setFormData] = useState({

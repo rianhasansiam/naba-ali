@@ -2,8 +2,17 @@ import ContactPageClient from './ContactPageClient';
 
 // Metadata for SEO
 export const metadata = {
-  title: "Contact Us - NABA ALI | Premium Fashion",
-  description: "Get in touch with NABA ALI for any questions about our premium fashion collection.",
+  title: "Contact Us - NABA ALI | Customer Support & Help",
+  description: "Get in touch with NABA ALI for questions about our premium fashion collections. Email, phone, and visit us in New York.",
+  keywords: "contact NABA ALI, customer support, fashion help, customer service, contact information",
+  openGraph: {
+    title: "Contact Us - NABA ALI | Customer Support",
+    description: "Get in touch with NABA ALI for any questions about our premium fashion collections.",
+    type: "website",
+  },
+  alternates: {
+    canonical: '/contact',
+  },
 };
 
 // Simple contact page

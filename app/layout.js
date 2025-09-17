@@ -17,6 +17,33 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "NABA ALI - Premium Fashion Store",
   description: "Discover premium fashion and accessories at NABA ALI. Quality clothing and style for everyone.",
+  keywords: "fashion, clothing, premium fashion, accessories, online shopping, NABA ALI",
+  authors: [{ name: "NABA ALI" }],
+  creator: "NABA ALI",
+  publisher: "NABA ALI",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  metadataBase: new URL('https://nabaali.com'),
+  alternates: {
+    canonical: '/',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  verification: {
+    google: 'your-google-verification-code',
+  },
 };
 
 export default function RootLayout({ children }) {

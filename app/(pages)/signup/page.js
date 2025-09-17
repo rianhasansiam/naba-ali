@@ -63,7 +63,8 @@ export default function SignupPage() {
         title: "Style Alerts",
         description: "Get notified when your favorite items go on sale"
       }
-    ]
+    ],
+    backgroundImage: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
   };
 
   return (
