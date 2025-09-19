@@ -76,21 +76,27 @@ const LoginPageClient = ({ loginData }) => {
     setLoginStatus(null);
 
     try {
-      // Simulate login API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Simulate success/failure
-      if (formData.email === 'demo@nabaali.com' && formData.password === 'demo123') {
+      const res = await fetch('/api/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
         setLoginStatus('success');
-        // Redirect to dashboard or home page
         setTimeout(() => {
           window.location.href = '/';
         }, 1500);
       } else {
         setLoginStatus('error');
+        setErrors(prev => ({ ...prev, api: data.message || 'Login failed.' }));
       }
     } catch (error) {
       setLoginStatus('error');
+      setErrors(prev => ({ ...prev, api: 'Network error. Please try again.' }));
     } finally {
       setIsLoading(false);
     }

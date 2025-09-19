@@ -91,11 +91,15 @@ const SignupPageClient = ({ signupData }) => {
   // Handle form input changes
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+
+
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
     
+
+
     // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
@@ -105,48 +109,120 @@ const SignupPageClient = ({ signupData }) => {
     }
   };
 
+
+
+
+
+
+
+
   // Handle manual signup
-  const handleSignup = async (e) => {
-    e.preventDefault();
-    
-    if (!validateForm()) return;
-    
-    setIsLoading(true);
-    setSignupStatus(null);
-
-    try {
-      // Simulate signup API call
-      await new Promise(resolve => setTimeout(resolve, 2500));
-      
-      setSignupStatus('success');
-      // Redirect to login or dashboard
-      setTimeout(() => {
-        window.location.href = '/login';
-      }, 2000);
-    } catch (error) {
-      setSignupStatus('error');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Handle Google signup
-  // const handleGoogleSignup = async () => {
+  // const handleSignup = async (e) => {
+  //   e.preventDefault();
+  //   if (!validateForm()) return;
   //   setIsLoading(true);
-    
+  //   setSignupStatus(null);
   //   try {
-  //     // Simulate Google OAuth
-  //     await new Promise(resolve => setTimeout(resolve, 1500));
-  //     setSignupStatus('success');
-  //     setTimeout(() => {
-  //       window.location.href = '/';
-  //     }, 2000);
+  //     const res = await fetch('/api/users', {
+  //       method: 'POST',
+  //       headers: { 'Content-Type': 'application/json' },
+  //       body: JSON.stringify({
+  //         firstName: formData.firstName,
+  //         lastName: formData.lastName,
+  //         email: formData.email,
+  //         password: formData.password,
+  //         date: new Date(),
+  //         subscribeNewsletter: formData.subscribeNewsletter
+  //       })
+  //     });
+  //     const data = await res.json();
+  //     if (res.ok && data.success) {
+  //       setSignupStatus('success');
+  //       setTimeout(() => {
+  //         window.location.href = '/login';
+  //       }, 2000);
+  //     } else if (res.status === 409) {
+  //       setSignupStatus('error');
+  //       setErrors(prev => ({ ...prev, api: 'Email is already registered. Please log in.' }));
+  //     } else {
+  //       setSignupStatus('error');
+  //       setErrors(prev => ({ ...prev, api: data.message || 'Signup failed.' }));
+  //     }
   //   } catch (error) {
   //     setSignupStatus('error');
+  //     setErrors(prev => ({ ...prev, api: 'Network error. Please try again.' }));
   //   } finally {
   //     setIsLoading(false);
   //   }
   // };
+
+  // Handle manual signup
+const handleSignup = async (e) => {
+  e.preventDefault();
+  if (!validateForm()) return;
+  setIsLoading(true);
+  setSignupStatus(null);
+
+  try {
+    const res = await fetch('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+        date: new Date(),
+        subscribeNewsletter: formData.subscribeNewsletter
+      })
+    });
+
+    const data = await res.json();
+
+    if (res.ok && data.success) {
+      // ✅ Signup success
+      setSignupStatus('success');
+      setErrors({});
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 2000);
+    } 
+    else if (res.status === 409) {
+      // ✅ Email already exists → show friendly message
+      setSignupStatus('info'); // custom status
+      setErrors(prev => ({
+        ...prev,
+        api: 'This email is already registered. Please log in instead.'
+      }));
+    } 
+    else {
+      // ❌ Other server errors
+      setSignupStatus('error');
+      setErrors(prev => ({ 
+        ...prev, 
+        api: data.message || 'Signup failed. Please try again.' 
+      }));
+    }
+  } catch (error) {
+    // ❌ Network error
+    setSignupStatus('error');
+    setErrors(prev => ({ ...prev, api: 'Network error. Please try again.' }));
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+
+
+
+
+
+
+
+
+
+
+
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -477,23 +553,25 @@ const SignupPageClient = ({ signupData }) => {
               )}
             </motion.div>
 
-            {/* Signup Status */}
-            {signupStatus && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={`p-4 rounded-lg text-center ${
-                  signupStatus === 'success'
-                    ? 'bg-green-100 text-green-700 border border-green-200'
-                    : 'bg-red-100 text-red-700 border border-red-200'
-                }`}
-              >
-                {signupStatus === 'success'
-                  ? 'Account created successfully! Redirecting to login...'
-                  : 'Failed to create account. Please try again.'
-                }
-              </motion.div>
-            )}
+          {/* Signup Status */}
+{signupStatus && (
+  <motion.div
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    className={`p-4 rounded-lg text-center ${
+      signupStatus === 'success'
+        ? 'bg-green-100 text-green-700 border border-green-200'
+        : signupStatus === 'info'
+        ? 'bg-blue-100 text-blue-700 border border-blue-200'
+        : 'bg-red-100 text-red-700 border border-red-200'
+    }`}
+  >
+    {signupStatus === 'success' && 'Account created successfully! Redirecting to login...'}
+    {signupStatus === 'info' && 'This email is already registered. Please log in instead.'}
+    {signupStatus === 'error' && 'Failed to create account. Please try again.'}
+  </motion.div>
+)}
+
 
             {/* Submit Button */}
             <motion.button
