@@ -1,26 +1,42 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { FiSliders } from 'react-icons/fi';
-import Cards from '../../componets/cards/Cards';
-import Filters from './filters/Filters';
-import MobileFilters from './filters/MobileFilters';
-import Pagination from './Pagination';
+import { useState } from "react";
+import { FiSliders } from "react-icons/fi";
+import Cards from "../../componets/cards/Cards";
+import Filters from "./filters/Filters";
+import MobileFilters from "./filters/MobileFilters";
+import Pagination from "./Pagination";
+import { useGetData } from "@/lib/hooks/useGetData";
 
-const ProductsPageClient = ({ allProducts = [] }) => {
+
+const ProductsPageClient = () => {
+  // ✅ Fetch products using custom hook
+  const { data, isLoading, error } = useGetData({ name: "products", api: "/api/products" });
+  const allProducts = Array.isArray(data?.Data) ? data.Data : [];
+console.log(allProducts);
+  // ✅ Local state for pagination & sorting
   const [currentPage, setCurrentPage] = useState(1);
-  const [sortBy, setSortBy] = useState('most-popular');
+  const [sortBy, setSortBy] = useState("most-popular");
   const productsPerPage = 8;
 
-  // Calculate pagination
+  // ✅ Handle loading & error states
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+  if (error) {
+    return <div>Error loading products</div>;
+  }
+
+  // ✅ Calculate pagination
   const totalPages = Math.ceil(allProducts.length / productsPerPage);
   const startIndex = (currentPage - 1) * productsPerPage;
   const endIndex = startIndex + productsPerPage;
   const currentProducts = allProducts.slice(startIndex, endIndex);
 
+  // ✅ Handlers
   const handlePageChange = (page) => {
     setCurrentPage(page);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleSortChange = (value) => {
@@ -53,7 +69,7 @@ const ProductsPageClient = ({ allProducts = [] }) => {
             </span>
             <div className="flex items-center">
               Sort by:{" "}
-              <select 
+              <select
                 value={sortBy}
                 onChange={(e) => handleSortChange(e.target.value)}
                 className="font-medium text-sm px-1.5 sm:text-base w-fit text-black bg-transparent border-none outline-none cursor-pointer"
@@ -74,11 +90,7 @@ const ProductsPageClient = ({ allProducts = [] }) => {
 
         {/* Pagination */}
         <hr className="border-t-black/10" />
-        <Pagination 
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-        />
+        <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
       </div>
     </div>
   );
