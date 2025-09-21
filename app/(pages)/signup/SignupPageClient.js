@@ -6,8 +6,11 @@ import { Eye, EyeOff, Mail, Lock, User, Crown, Percent, Gift, Zap, Check, X } fr
 import Link from 'next/link';
 import Image from 'next/image';
 import GoogleSignButton from '../../../lib/GoogleSignButton';
+import { useAddData } from '../../../lib/hooks/useAddData';
+import { useRouter } from 'next/navigation';
 
 const SignupPageClient = ({ signupData }) => {
+  const router = useRouter();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -19,9 +22,14 @@ const SignupPageClient = ({ signupData }) => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [signupStatus, setSignupStatus] = useState(null);
   const [errors, setErrors] = useState({});
+
+  // Initialize useAddData hook
+  const { addData, isLoading, error: addDataError } = useAddData({
+    name: 'users',
+    api: '/api/users'
+  });
 
   // Icon mapping function
   const getIcon = (iconName) => {
@@ -116,101 +124,61 @@ const SignupPageClient = ({ signupData }) => {
 
 
 
-  // Handle manual signup
-  // const handleSignup = async (e) => {
-  //   e.preventDefault();
-  //   if (!validateForm()) return;
-  //   setIsLoading(true);
-  //   setSignupStatus(null);
-  //   try {
-  //     const res = await fetch('/api/users', {
-  //       method: 'POST',
-  //       headers: { 'Content-Type': 'application/json' },
-  //       body: JSON.stringify({
-  //         firstName: formData.firstName,
-  //         lastName: formData.lastName,
-  //         email: formData.email,
-  //         password: formData.password,
-  //         date: new Date(),
-  //         subscribeNewsletter: formData.subscribeNewsletter
-  //       })
-  //     });
-  //     const data = await res.json();
-  //     if (res.ok && data.success) {
-  //       setSignupStatus('success');
-  //       setTimeout(() => {
-  //         window.location.href = '/login';
-  //       }, 2000);
-  //     } else if (res.status === 409) {
-  //       setSignupStatus('error');
-  //       setErrors(prev => ({ ...prev, api: 'Email is already registered. Please log in.' }));
-  //     } else {
-  //       setSignupStatus('error');
-  //       setErrors(prev => ({ ...prev, api: data.message || 'Signup failed.' }));
-  //     }
-  //   } catch (error) {
-  //     setSignupStatus('error');
-  //     setErrors(prev => ({ ...prev, api: 'Network error. Please try again.' }));
-  //   } finally {
-  //     setIsLoading(false);
-  //   }
-  // };
+  
 
   // Handle manual signup
 const handleSignup = async (e) => {
   e.preventDefault();
   if (!validateForm()) return;
-  setIsLoading(true);
   setSignupStatus(null);
+  setErrors({});
 
   try {
-    const res = await fetch('/api/users', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-        password: formData.password,
-        date: new Date(),
-        subscribeNewsletter: formData.subscribeNewsletter
-      })
+    const userData = {
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      email: formData.email,
+      password: formData.password,
+      date: new Date(),
+      subscribeNewsletter: formData.subscribeNewsletter
+    };
+
+    await addData(userData, {
+      onSuccess: () => {
+        // ✅ Only redirect on actual success
+        setSignupStatus("success");
+        setTimeout(() => {
+          router.push("/login?message=Account created successfully");
+        }, 2000);
+      },
+      onError: (error) => {
+        // ✅ Show error message instead of redirect
+        setSignupStatus("error");
+
+        if (error.message.includes("already registered")) {
+          setSignupStatus("info");
+          setErrors(prev => ({
+            ...prev,
+            api: "This email is already registered. Please log in instead."
+          }));
+        } else {
+          setErrors(prev => ({
+            ...prev,
+            api: error.message || "Failed to create account. Please try again."
+          }));
+        }
+      }
     });
-
-    const data = await res.json();
-
-    if (res.ok && data.success) {
-      // ✅ Signup success
-      setSignupStatus('success');
-      setErrors({});
-      setTimeout(() => {
-        window.location.href = '/login';
-      }, 2000);
-    } 
-    else if (res.status === 409) {
-      // ✅ Email already exists → show friendly message
-      setSignupStatus('info'); // custom status
-      setErrors(prev => ({
-        ...prev,
-        api: 'This email is already registered. Please log in instead.'
-      }));
-    } 
-    else {
-      // ❌ Other server errors
-      setSignupStatus('error');
-      setErrors(prev => ({ 
-        ...prev, 
-        api: data.message || 'Signup failed. Please try again.' 
-      }));
-    }
   } catch (error) {
-    // ❌ Network error
-    setSignupStatus('error');
-    setErrors(prev => ({ ...prev, api: 'Network error. Please try again.' }));
-  } finally {
-    setIsLoading(false);
+    console.error("Unexpected signup error:", error);
+    setSignupStatus("error");
+    setErrors(prev => ({
+      ...prev,
+      api: "Something went wrong. Please try again."
+    }));
   }
 };
+
 
 
 
