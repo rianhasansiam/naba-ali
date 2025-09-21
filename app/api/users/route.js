@@ -11,11 +11,13 @@ import { getCollection } from '../../../lib/mongodb';
 // =======================
 // SIGNUP (Create new user)
 // =======================
+// =======================
+// SIGNUP (Create new user)
+// =======================
 export async function POST(request) {
   try {
     const users = await getCollection('allUsers');
     const body = await request.json();
-
 
     // Check if user already exists
     const existingUser = await users.findOne({ email: body.email });
@@ -26,9 +28,17 @@ export async function POST(request) {
       );
     }
 
-  // Hash password using bcryptjs
-  const hashedPassword = await bcrypt.hash(body.password, 10);
-  const userToInsert = { ...body, password: hashedPassword };
+    let userToInsert;
+
+    if (body.password) {
+      // Normal signup: hash the password
+      const hashedPassword = await bcrypt.hash(body.password, 10);
+      userToInsert = { ...body, password: hashedPassword, role:"user", createdAt: new Date() };
+    } else {
+      // Google signup: no password
+      userToInsert = { ...body, role: "user", createdAt: new Date() };
+    }
+
     const userData = await users.insertOne(userToInsert);
 
     return NextResponse.json({
@@ -44,6 +54,7 @@ export async function POST(request) {
     );
   }
 }
+
 
 // =======================
 // LOGIN (Authenticate user)

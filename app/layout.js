@@ -4,6 +4,7 @@ import StoreProvider from "./redux/provider";
 import Navbar from "./componets/navbar/Navbar";
 import Footer from "./componets/footer/Footer";
 import ReactQueryProvider from "../lib/ReactQueryProvider";
+import AuthProvider from "../lib/AuthProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -53,15 +54,17 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <StoreProvider>
-          <ReactQueryProvider>
-            <div className="bg-white min-h-screen text-black">
-              <Navbar />
-              {children}
-              <Footer />
-            </div>
-          </ReactQueryProvider>
-        </StoreProvider>
+        <AuthProvider>
+          <StoreProvider>
+            <ReactQueryProvider>
+              <div className="bg-white min-h-screen text-black">
+                <Navbar />
+                {children}
+                <Footer />
+              </div>
+            </ReactQueryProvider>
+          </StoreProvider>
+        </AuthProvider>
       </body>
     </html>
   );

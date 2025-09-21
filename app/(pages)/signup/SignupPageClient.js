@@ -135,11 +135,10 @@ const handleSignup = async (e) => {
 
   try {
     const userData = {
-      firstName: formData.firstName,
-      lastName: formData.lastName,
+      name: formData.firstName + ' ' + formData.lastName,
       email: formData.email,
       password: formData.password,
-      date: new Date(),
+      image: null, // No image for manual signup
       subscribeNewsletter: formData.subscribeNewsletter
     };
 
