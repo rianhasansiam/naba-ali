@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import defaultAvatar from '../../../../../public/logo.png';
 import { 
   Search, 
   Edit, 
@@ -16,22 +17,29 @@ import {
   Star,
   Eye
 } from 'lucide-react';
+import { useGetData } from '@/lib/hooks/useGetData';
 
-const AllUsers = ({ usersData }) => {
+const AllUsers = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
+  const [allUsers, setAllUsers] = useState([]);
 
+  const { data, isLoading, error } = useGetData({ name: 'users', api: '/api/users' });
 
+  useEffect(() => {
+    if (data) {
+      // Ensure data is always an array
+      setAllUsers(Array.isArray(data) ? data : [data]);
+    }
+  }, [data]);
 
-  const filteredUsers = usersData.users.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = filterStatus === 'all' || user.status.toLowerCase() === filterStatus;
-    return matchesSearch && matchesStatus;
-  });
+  // Search filter
+  const filteredUsers = allUsers.filter((user) =>
+    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const getUserStatusIcon = (status) => {
-    switch (status.toLowerCase()) {
+    switch ((status || 'regular').toLowerCase()) {
       case 'vip':
         return <Crown className="text-gray-600" size={16} />;
       case 'premium':
@@ -42,19 +50,13 @@ const AllUsers = ({ usersData }) => {
   };
 
   const getUserStatusColor = (status) => {
-    switch (status.toLowerCase()) {
+    switch ((status || 'regular').toLowerCase()) {
       case 'vip':
-        return 'bg-gray-100 text-gray-800';
       case 'premium':
-        return 'bg-gray-100 text-gray-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
   };
-
-  const { totalUsers, vipUsers, premiumUsers, regularUsers } = usersData.stats;
-  const totalRevenue = usersData.users.reduce((sum, u) => sum + u.totalSpent, 0);
-  const averageSpent = totalRevenue / usersData.users.length;
 
   return (
     <div className="space-y-6">
@@ -64,44 +66,27 @@ const AllUsers = ({ usersData }) => {
           <h1 className="text-3xl font-bold text-gray-900">Customer Management</h1>
           <p className="text-gray-600">Manage your customer base and relationships</p>
         </div>
-        
-       
       </div>
 
-      {/* Stats Overview */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
-        <div className="bg-white rounded-xl p-4 shadow-sm">
-            <div className="flex items-center space-x-2">
-              <Users className="text-gray-600" size={20} />
-              <span className="text-sm text-gray-600">Total Users</span>
-            </div>
-            <p className="text-2xl font-bold text-gray-900 mt-1">{totalUsers}</p>
-          </div>
-      </div>
-
-      {/* Filters and Search */}
-    
-        <div className="flex flex-col lg:flex-row lg:items-center space-y-4 lg:space-y-0 lg:space-x-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
-            <input
-              type="text"
-              placeholder="Search customers..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent w-full lg:w-72"
-            />
-          </div>
-          
-         
+      {/* Search */}
+      <div className="flex flex-col lg:flex-row lg:items-center space-y-4 lg:space-y-0 lg:space-x-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+          <input
+            type="text"
+            placeholder="Search customers..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent w-full lg:w-72"
+          />
         </div>
-      
+      </div>
 
       {/* Users List */}
       <div className="space-y-4">
         {filteredUsers.map((user, index) => (
           <motion.div
-            key={user.id}
+            key={user._id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
@@ -110,8 +95,8 @@ const AllUsers = ({ usersData }) => {
             <div className="flex items-center space-x-6">
               <div className="w-16 h-16 rounded-full overflow-hidden">
                 <Image
-                  src={user.avatar}
-                  alt={user.name}
+                  src={user?.image || defaultAvatar}
+                  alt={user?.name}
                   width={64}
                   height={64}
                   className="w-full h-full object-cover"
@@ -125,7 +110,7 @@ const AllUsers = ({ usersData }) => {
                     <div className="flex items-center space-x-1">
                       {getUserStatusIcon(user.status)}
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getUserStatusColor(user.status)}`}>
-                        {user.status.toUpperCase()}
+                        {(user.role || 'User').toUpperCase()}
                       </span>
                     </div>
                   </div>
@@ -141,24 +126,11 @@ const AllUsers = ({ usersData }) => {
                   <p className="text-sm text-gray-600 mb-1">Member Since</p>
                   <div className="flex items-center text-sm">
                     <Calendar size={14} className="mr-2 text-gray-400" />
-                    <span>{user.joinDate}</span>
+                    <span>{new Date(user.createdAt).toLocaleDateString()}</span>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">Last order: {user.lastOrder}</p>
                 </div>
                 
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Orders & Spending</p>
-                  <div className="space-y-1">
-                    <div className="flex items-center text-sm">
-                      <ShoppingBag size={14} className="mr-2 text-gray-600" />
-                      <span className="font-medium text-gray-600">{user.totalOrders} orders</span>
-                    </div>
-                    <div className="flex items-center text-sm">
-                      <DollarSign size={14} className="mr-2 text-green-600" />
-                      <span className="font-medium text-green-600">${user.totalSpent.toLocaleString()}</span>
-                    </div>
-                  </div>
-                </div>
+               
                 
                 <div className="flex items-center space-x-2">
                   <button className="flex items-center space-x-2 bg-gray-600 text-white px-3 py-2 rounded-lg hover:bg-gray-700 transition-colors text-sm">

@@ -122,10 +122,7 @@ export async function GET() {
     const users = await getCollection('allUsers');
     const allUsers = await users.find({}).toArray();
 
-    return NextResponse.json({
-      success: true,
-      Data: allUsers,
-    });
+    return NextResponse.json(allUsers);
   } catch (error) {
     console.error('Error fetching users:', error);
     return NextResponse.json(
