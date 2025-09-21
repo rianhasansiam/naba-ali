@@ -18,7 +18,7 @@ import OrderDetails from './adminComponents/orderDetails/OrderDetails';
 import AllReviews from './adminComponents/allReviews/AllReviews';
 import AllCupons from './adminComponents/allCupons/AllCupons';
 import AllCategory from './adminComponents/allCategory/AllCategory';
-import UserHistory from './adminComponents/userHistory/UserHistory';
+
 
 // Metadata for SEO - Admin Panel
 export const metadata = {
@@ -98,13 +98,6 @@ export default function AdminPage() {
       icon: ShoppingCart,
       component: OrderDetails,
       description: 'Order Management'
-    },
-    {
-      id: 'history',
-      name: 'User History',
-      icon: History,
-      component: UserHistory,
-      description: 'Customer Purchase History'
     },
     {
       id: 'reviews',

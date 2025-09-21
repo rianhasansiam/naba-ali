@@ -10,7 +10,6 @@ import {
   Star, 
   Ticket, 
   FolderOpen,
-  History,
   Settings,
   LogOut,
   Menu,
@@ -27,7 +26,7 @@ import OrderDetails from './adminComponents/orderDetails/OrderDetails';
 import AllReviews from './adminComponents/allReviews/AllReviews';
 import AllCupons from './adminComponents/allCupons/AllCupons';
 import AllCategory from './adminComponents/allCategory/AllCategory';
-import UserHistory from './adminComponents/userHistory/UserHistory';
+
 
 const AdminPageClient = ({ adminData, navigationItems }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -39,7 +38,6 @@ const AdminPageClient = ({ adminData, navigationItems }) => {
     'products': Package,
     'users': Users,
     'orders': ShoppingCart,
-    'history': History,
     'reviews': Star,
     'categories': FolderOpen,
     'coupons': Ticket
@@ -51,7 +49,6 @@ const AdminPageClient = ({ adminData, navigationItems }) => {
     'products': AllProducts,
     'users': AllUsers,
     'orders': OrderDetails,
-    'history': UserHistory,
     'reviews': AllReviews,
     'categories': AllCategory,
     'coupons': AllCupons
@@ -70,7 +67,7 @@ const AdminPageClient = ({ adminData, navigationItems }) => {
             animate={{ x: 0 }}
             exit={{ x: -300 }}
             transition={{ duration: 0.3 }}
-            className="fixed lg:relative z-30 w-80 bg-gradient-to-b from-gray-900 to-black shadow-xl lg:shadow-lg h-screen overflow-y-auto"
+            className="fixed lg:relative z-30 w-80 bg-gradient-to-b from-gray-900 to-black shadow-xl lg:shadow-lg h-screen overflow-y-auto "
           >
             {/* Sidebar Header */}
             <div className="p-6 border-b border-gray-700">
@@ -124,19 +121,7 @@ const AdminPageClient = ({ adminData, navigationItems }) => {
               })}
             </nav>
 
-            {/* Sidebar Footer */}
-            <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-700 bg-gray-900">
-              <div className="space-y-2">
-                <button className="w-full flex items-center space-x-3 p-3 text-gray-300 hover:bg-gray-800 rounded-xl transition-colors">
-                  <Settings size={20} />
-                  <span>Settings</span>
-                </button>
-                <button className="w-full flex items-center space-x-3 p-3 text-red-400 hover:bg-red-900/20 rounded-xl transition-colors">
-                  <LogOut size={20} />
-                  <span>Logout</span>
-                </button>
-              </div>
-            </div>
+           
           </motion.div>
         )}
       </AnimatePresence>
@@ -163,38 +148,7 @@ const AdminPageClient = ({ adminData, navigationItems }) => {
               </div>
             </div>
 
-            <div className="flex items-center space-x-4">
-              {/* Search */}
-              <div className="hidden md:flex items-center space-x-2">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
-                  <input
-                    type="text"
-                    placeholder="Search..."
-                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
-                  />
-                </div>
-              </div>
-
-              {/* Notifications */}
-              <button className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors">
-                <Bell size={20} />
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                  {adminData.notifications.count}
-                </span>
-              </button>
-
-              {/* Profile */}
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gradient-to-r from-gray-600 to-gray-800 rounded-full flex items-center justify-center">
-                  <span className="text-white font-medium text-sm">{adminData.user.initials}</span>
-                </div>
-                <div className="hidden md:block">
-                  <p className="text-sm font-medium text-gray-900">{adminData.user.name}</p>
-                  <p className="text-xs text-gray-500">{adminData.user.role}</p>
-                </div>
-              </div>
-            </div>
+          
           </div>
         </header>
 

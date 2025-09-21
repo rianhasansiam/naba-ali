@@ -11,7 +11,7 @@ function cn(classes) {
 
 export default function Footer() {
   return (
-    <footer className="mt-10 bg-black">
+    <footer className=" bg-black">
       
       <div className="pt-8 md:pt-[50px] container mx-auto px-4 pb-4 ">
         <div className="max-w-frame mx-auto">
