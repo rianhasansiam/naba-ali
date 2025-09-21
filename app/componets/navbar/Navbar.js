@@ -28,6 +28,12 @@ export default function Navbar() {
       href: '/about',
       icon: ''
     },
+     { 
+      label: 'Admin', 
+      hasDropdown: false,
+      href: '/admin',
+      icon: ''
+    },
   ];
 
   const shopCategories = [
