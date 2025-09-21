@@ -10,33 +10,60 @@ import {
   Grid,
   List,
   Download,
-  Upload
+  Upload,
+  AlertCircle
 } from 'lucide-react';
 import ProductCard from './allProductsCompoment/ProductCard';
 import ProductListItem from './allProductsCompoment/ProductListItem';
 import AddProductModal from './allProductsCompoment/AddProductModal';
+import { useGetData } from '../../../../../lib/hooks/useGetData';
 
 
-const AllProductsClient = ({productsData}) => {
+const AllProductsClient = () => {
   const [viewMode, setViewMode] = useState('grid');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
 
-
-  // Extract categories and add 'all' option
-  const categories = ['all', ...productsData.categories];
-
-  // Filter products
-  const filteredProducts = productsData.products.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = filterCategory === 'all' || product.category === filterCategory;
-    return matchesSearch && matchesCategory;
+  // Fetch products data using hook
+  const { data, isLoading, error } = useGetData({
+    name: 'allProducts',
+    api: '/api/products'
   });
+
+
+  console.log(data);
+  // Handle loading and error states
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-96 text-red-500">
+        <AlertCircle size={48} />
+        <h2 className="text-xl font-semibold mt-4">Error loading products</h2>
+        <p>{error.message || 'Something went wrong'}</p>
+      </div>
+    );
+  }
+
+  // Process the data once it's loaded
+  const productsData = data 
+  
+  // Extract categories and add 'all' option
+  const categories = ['all' || []];  
+
+  // Simple product filtering
+  const filteredProducts = data
 
   // Calculate stats from productsData
   const stats = {
-    total: productsData.stats.totalProducts
+    total: data?.length || 0,
   };
 
   return (
@@ -133,7 +160,7 @@ const AllProductsClient = ({productsData}) => {
           ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' 
           : 'space-y-4'
       }`}>
-        {filteredProducts.map(product => 
+        {data?.map(product => 
           viewMode === 'grid' ? (
             <ProductCard key={product.id} product={product} />
           ) : (

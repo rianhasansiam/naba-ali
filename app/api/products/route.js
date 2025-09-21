@@ -10,10 +10,9 @@ export async function GET(request) {
     // Find all products
     const allProducts = await products.find({}).toArray();
     
-    return NextResponse.json({
-      success: true,
-      Data: allProducts
-    });
+    return NextResponse.json(
+      allProducts
+    );
 
   } catch (error) {
     console.error("Error fetching products:", error); 

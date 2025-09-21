@@ -12,7 +12,7 @@ import { useGetData } from "@/lib/hooks/useGetData";
 const ProductsPageClient = () => {
   // ✅ Fetch products using custom hook
   const { data, isLoading, error } = useGetData({ name: "products", api: "/api/products" });
-  const allProducts = Array.isArray(data?.Data) ? data.Data : [];
+  const allProducts = Array.isArray(data) ? data : [];
 console.log(allProducts);
   // ✅ Local state for pagination & sorting
   const [currentPage, setCurrentPage] = useState(1);

@@ -1,7 +1,7 @@
 
 
 import Image from 'next/image';
-import { Star, MoreVertical } from 'lucide-react';
+import { Star, MoreVertical, Tag } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const ProductCard = ({ product }) => (
@@ -18,20 +18,23 @@ const ProductCard = ({ product }) => (
         height={200}
         className="w-full h-48 object-cover"
       />
-      <div className="absolute top-3 right-3">
-        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-          product.status === 'active' ? 'bg-green-100 text-green-800' :
-          product.status === 'low_stock' ? 'bg-yellow-100 text-yellow-800' :
-          'bg-red-100 text-red-800'
-        }`}>
-          {product.status === 'active' ? 'Active' : 
-           product.status === 'low_stock' ? 'Low Stock' : 'Out of Stock'}
-        </span>
+      <div className="absolute top-3 right-3 flex flex-col gap-1">
+        {product.isNew && (
+          <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+            New
+          </span>
+        )}
+        {product.isOnSale && (
+          <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
+            On Sale
+          </span>
+        )}
       </div>
       <div className="absolute top-3 left-3">
         <div className="flex items-center bg-white/90 backdrop-blur-sm rounded-full px-2 py-1">
           <Star className="text-yellow-500 fill-current" size={14} />
           <span className="text-sm font-medium ml-1">{product.rating}</span>
+          <span className="text-xs text-gray-500 ml-1">({product.reviews})</span>
         </div>
       </div>
     </div>
@@ -40,7 +43,11 @@ const ProductCard = ({ product }) => (
       <div className="flex items-start justify-between mb-3">
         <div>
           <h3 className="font-bold text-gray-900 text-lg">{product.name}</h3>
-          <p className="text-gray-600 text-sm">{product.category}</p>
+          <div className="flex gap-2 items-center">
+            <p className="text-gray-600 text-sm">{product.category}</p>
+            <span className="text-gray-400">•</span>
+            <p className="text-gray-600 text-sm">{product.style}</p>
+          </div>
         </div>
         <div className="relative">
           <button className="p-2 hover:bg-gray-100 rounded-lg transition-colors">
@@ -62,24 +69,22 @@ const ProductCard = ({ product }) => (
           </div>
         </div>
         <div>
-          <p className="text-gray-500 text-xs">Stock</p>
-          <span className={`font-bold ${
-            product.stock > 50 ? 'text-green-600' :
-            product.stock > 0 ? 'text-yellow-600' : 'text-red-600'
-          }`}>
-            {product.stock} units
-          </span>
+          <p className="text-gray-500 text-xs">Color</p>
+          <div className="flex items-center">
+            <div className="w-4 h-4 rounded-full mr-2" style={{ backgroundColor: product.color.toLowerCase() }}></div>
+            <span className="font-medium text-gray-700">{product.color}</span>
+          </div>
         </div>
       </div>
       
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <div>
-          <p className="text-gray-500 text-xs">Sold</p>
-          <span className="font-bold text-gray-700">{product.sold} units</span>
-        </div>
-        <div>
-          <p className="text-gray-500 text-xs">Created</p>
-          <span className="font-bold text-gray-700">{product.createdAt}</span>
+      <div className="mb-6">
+        <p className="text-gray-500 text-xs mb-2">Available Sizes</p>
+        <div className="flex flex-wrap gap-2">
+          {product.sizes && product.sizes.map((size, index) => (
+            <span key={index} className="px-2 py-1 bg-gray-100 text-gray-700 text-xs font-medium rounded">
+              {size}
+            </span>
+          ))}
         </div>
       </div>
 
