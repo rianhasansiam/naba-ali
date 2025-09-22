@@ -1,0 +1,106 @@
+import { NextResponse } from 'next/server';
+import { ObjectId } from 'mongodb';
+import { getCollection } from '../../../../lib/mongodb';
+
+// DELETE - Delete user by ID
+export async function DELETE(request, { params }) {
+  try {
+    const { id } = params;
+    
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: 'User ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate ObjectId format
+    if (!ObjectId.isValid(id)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid user ID format' },
+        { status: 400 }
+      );
+    }
+
+    const users = await getCollection('allUsers');
+    
+    // Check if user exists
+    const existingUser = await users.findOne({ _id: new ObjectId(id) });
+    if (!existingUser) {
+      return NextResponse.json(
+        { success: false, error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    // Delete the user
+    const result = await users.deleteOne({ _id: new ObjectId(id) });
+    
+    if (result.deletedCount === 0) {
+      return NextResponse.json(
+        { success: false, error: 'Failed to delete user' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'User deleted successfully',
+      deletedId: id
+    });
+    
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
+// GET - Get specific user by ID
+export async function GET(request, { params }) {
+  try {
+    const { id } = params;
+    
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: 'User ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate ObjectId format
+    if (!ObjectId.isValid(id)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid user ID format' },
+        { status: 400 }
+      );
+    }
+
+    const users = await getCollection('allUsers');
+    const user = await users.findOne({ _id: new ObjectId(id) });
+    
+    if (!user) {
+      return NextResponse.json(
+        { success: false, error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    // Remove password from response
+    const { password, ...userWithoutPassword } = user;
+    
+    return NextResponse.json({
+      success: true,
+      user: userWithoutPassword
+    });
+    
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}

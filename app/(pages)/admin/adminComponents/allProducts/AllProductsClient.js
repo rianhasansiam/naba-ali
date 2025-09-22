@@ -182,7 +182,7 @@ const AllProductsClient = () => {
             <Package className="text-gray-700" size={20} />
             <span className="text-sm text-gray-600">Total Products</span>
           </div>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{stats.total}</p>
+          <p className="text-2xl font-bold text-gray-900 mt-1">{productsData?.length}</p>
         </div>
         
        

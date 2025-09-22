@@ -1,12 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import defaultAvatar from '../../../../../public/logo.png';
 import { 
   Search, 
-  Edit, 
   Trash2, 
   Users, 
   Mail, 
@@ -15,15 +14,29 @@ import {
   DollarSign,
   Crown,
   Star,
-  Eye
+  Eye,
+  X,
+  Package,
+  Clock,
+  AlertTriangle,
+  Loader2
 } from 'lucide-react';
 import { useGetData } from '@/lib/hooks/useGetData';
+import { useDeleteData } from '@/lib/hooks/useDeleteData';
 
 const AllUsers = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [allUsers, setAllUsers] = useState([]);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showOrderModal, setShowOrderModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [userOrders, setUserOrders] = useState([]);
+  const [deletingUserId, setDeletingUserId] = useState(null);
+  const [toast, setToast] = useState({ show: false, type: 'success', message: '' });
 
   const { data, isLoading, error } = useGetData({ name: 'users', api: '/api/users' });
+  const { data: ordersData } = useGetData({ name: 'orders', api: '/api/orders' });
+  const { deleteData, isLoading: isDeleting } = useDeleteData({ name: 'users', api: '/api/users' });
 
   useEffect(() => {
     if (data) {
@@ -52,9 +65,61 @@ const AllUsers = () => {
   const getUserStatusColor = (status) => {
     switch ((status || 'regular').toLowerCase()) {
       case 'vip':
+        return 'bg-yellow-100 text-yellow-800';
       case 'premium':
+        return 'bg-purple-100 text-purple-800';
       default:
         return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  // Handler functions
+  const handleViewOrders = (user) => {
+    setSelectedUser(user);
+    // Filter orders for this user
+    const userOrderHistory = ordersData?.Data?.filter(order => 
+      order.userEmail === user.email || order.userId === user._id
+    ) || [];
+    setUserOrders(userOrderHistory);
+    setShowOrderModal(true);
+  };
+
+  const handleDeleteUser = (user) => {
+    setSelectedUser(user);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (selectedUser) {
+      setDeletingUserId(selectedUser._id);
+      try {
+        await deleteData(selectedUser._id);
+        setShowDeleteModal(false);
+        setSelectedUser(null);
+        setToast({
+          show: true,
+          type: 'success',
+          message: `User "${selectedUser.name}" deleted successfully!`
+        });
+        // Update local state
+        setAllUsers(prev => prev.filter(user => user._id !== selectedUser._id));
+      } catch (error) {
+        console.error('Delete failed:', error);
+        setToast({
+          show: true,
+          type: 'error',
+          message: 'Failed to delete user. Please try again.'
+        });
+      } finally {
+        setDeletingUserId(null);
+      }
+    }
+  };
+
+  const handleCloseDeleteModal = () => {
+    if (!isDeleting) {
+      setShowDeleteModal(false);
+      setSelectedUser(null);
     }
   };
 
@@ -133,16 +198,23 @@ const AllUsers = () => {
                
                 
                 <div className="flex items-center space-x-2">
-                  <button className="flex items-center space-x-2 bg-gray-600 text-white px-3 py-2 rounded-lg hover:bg-gray-700 transition-colors text-sm">
+                  <button 
+                    onClick={() => handleViewOrders(user)}
+                    className="flex items-center space-x-2 bg-gray-600 text-white px-3 py-2 rounded-lg hover:bg-gray-700 transition-colors text-sm"
+                  >
                     <Eye size={14} />
-                    <span>View</span>
+                    <span>Orders</span>
                   </button>
-                  <button className="flex items-center space-x-2 bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm">
-                    <Edit size={14} />
-                    <span>Edit</span>
-                  </button>
-                  <button className="bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition-colors">
-                    <Trash2 size={14} />
+                  <button 
+                    onClick={() => handleDeleteUser(user)}
+                    disabled={deletingUserId === user._id}
+                    className="bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                  >
+                    {deletingUserId === user._id ? (
+                      <Loader2 className="animate-spin" size={14} />
+                    ) : (
+                      <Trash2 size={14} />
+                    )}
                   </button>
                 </div>
               </div>
@@ -159,6 +231,243 @@ const AllUsers = () => {
           <p className="text-gray-600">Try adjusting your search or filter criteria</p>
         </div>
       )}
+
+      {/* Order History Modal */}
+      <AnimatePresence>
+        {showOrderModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden"
+            >
+              {/* Header */}
+              <div className="bg-gradient-to-r from-gray-700 to-black p-6 text-white">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-white/20 rounded-xl">
+                      <ShoppingBag size={24} />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold">Order History</h2>
+                      <p className="text-gray-200">{selectedUser?.name}&apos;s previous orders</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowOrderModal(false)}
+                    className="p-2 hover:bg-white/20 rounded-xl transition-colors"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Orders Content */}
+              <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+                {userOrders.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Package className="mx-auto text-gray-400 mb-4" size={48} />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No Orders Found</h3>
+                    <p className="text-gray-600">This user hasn&apos;t placed any orders yet</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {userOrders.map((order, index) => (
+                      <motion.div
+                        key={order._id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className="bg-gray-50 rounded-xl p-4 border border-gray-200"
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center space-x-3">
+                            <div className="p-2 bg-gray-700 rounded-lg text-white">
+                              <Package size={16} />
+                            </div>
+                            <div>
+                              <h4 className="font-medium text-gray-900">Order #{order._id?.slice(-8) || 'Unknown'}</h4>
+                              <div className="flex items-center text-sm text-gray-600">
+                                <Clock size={12} className="mr-1" />
+                                {new Date(order.createdAt).toLocaleDateString()}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-lg font-bold text-gray-900">
+                              ${order.totalAmount || order.total || 0}
+                            </div>
+                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                              order.status === 'completed' 
+                                ? 'bg-green-100 text-green-800' 
+                                : order.status === 'pending'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-gray-100 text-gray-800'
+                            }`}>
+                              {(order.status || 'pending').toUpperCase()}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        {/* Order Items */}
+                        {order.items && order.items.length > 0 && (
+                          <div className="border-t border-gray-200 pt-3 mt-3">
+                            <p className="text-sm font-medium text-gray-700 mb-2">Items ({order.items.length})</p>
+                            <div className="space-y-2">
+                              {order.items.slice(0, 3).map((item, itemIndex) => (
+                                <div key={itemIndex} className="flex items-center justify-between text-sm">
+                                  <span className="text-gray-600">{item.name || item.productName}</span>
+                                  <span className="text-gray-900">
+                                    {item.quantity}x ${item.price}
+                                  </span>
+                                </div>
+                              ))}
+                              {order.items.length > 3 && (
+                                <p className="text-sm text-gray-500 italic">
+                                  +{order.items.length - 3} more items
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {showDeleteModal && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+            >
+              {/* Header */}
+              <div className="bg-gradient-to-r from-red-500 to-red-600 p-6 text-white">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-white/20 rounded-xl">
+                      <AlertTriangle size={24} />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold">Delete User</h2>
+                      <p className="text-red-100">This action cannot be undone</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleCloseDeleteModal}
+                    disabled={isDeleting}
+                    className="p-2 hover:bg-white/20 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="p-6">
+                <div className="text-center mb-6">
+                  <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                    <Trash2 className="text-red-600" size={32} />
+                  </div>
+                  
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    Delete User &quot;{selectedUser?.name}&quot;?
+                  </h3>
+                  
+                  <p className="text-gray-600 text-sm leading-relaxed">
+                    Are you sure you want to delete this user? This will permanently remove 
+                    the user account and all associated data. Their order history will be preserved 
+                    but disconnected from the user profile.
+                  </p>
+                </div>
+
+                {/* Warning Box */}
+                <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+                  <div className="flex items-start space-x-3">
+                    <AlertTriangle className="text-red-600 flex-shrink-0 mt-0.5" size={16} />
+                    <div>
+                      <p className="text-red-800 text-sm font-medium mb-1">
+                        Warning: This action is irreversible
+                      </p>
+                      <ul className="text-red-700 text-xs space-y-1">
+                        <li>• The user account will be permanently deleted</li>
+                        <li>• User profile data will be lost</li>
+                        <li>• Login access will be revoked</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="flex space-x-3">
+                  <button
+                    type="button"
+                    onClick={handleCloseDeleteModal}
+                    disabled={isDeleting}
+                    className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleConfirmDelete}
+                    disabled={isDeleting}
+                    className="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                  >
+                    {isDeleting ? (
+                      <>
+                        <Loader2 className="animate-spin" size={16} />
+                        <span>Deleting...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 size={16} />
+                        <span>Delete User</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toast.show && (
+          <motion.div
+            initial={{ opacity: 0, y: -100, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -100, scale: 0.95 }}
+            className="fixed top-4 right-4 z-50"
+          >
+            <div className={`${
+              toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'
+            } text-white rounded-xl shadow-2xl p-4 min-w-[300px] max-w-md`}>
+              <div className="flex items-center justify-between">
+                <p className="font-medium text-sm">{toast.message}</p>
+                <button
+                  onClick={() => setToast({ ...toast, show: false })}
+                  className="ml-4 p-1 hover:bg-white/20 rounded-lg transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
