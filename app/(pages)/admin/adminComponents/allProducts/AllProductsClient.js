@@ -16,7 +16,12 @@ import {
 import ProductCard from './allProductsCompoment/ProductCard';
 import ProductListItem from './allProductsCompoment/ProductListItem';
 import AddProductModal from './allProductsCompoment/AddProductModal';
+import EditProductModal from './allProductsCompoment/EditProductModal';
+import DeleteConfirmationDialog from './allProductsCompoment/DeleteConfirmationDialog';
+import Toast from './allProductsCompoment/Toast';
 import { useGetData } from '../../../../../lib/hooks/useGetData';
+import { useUpdateData } from '../../../../../lib/hooks/useUpdateData';
+import { useDeleteData } from '../../../../../lib/hooks/useDeleteData';
 
 
 const AllProductsClient = () => {
@@ -24,6 +29,11 @@ const AllProductsClient = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [deletingProductId, setDeletingProductId] = useState(null);
+  const [toast, setToast] = useState({ show: false, type: 'success', message: '' });
 
   // Fetch products data using hook
   const { data, isLoading, error } = useGetData({
@@ -31,8 +41,68 @@ const AllProductsClient = () => {
     api: '/api/products'
   });
 
+  // Initialize update and delete hooks
+  const { updateData, isLoading: isUpdating } = useUpdateData({
+    name: 'allProducts',
+    api: '/api/products'
+  });
+
+  const { deleteData, isLoading: isDeleting } = useDeleteData({
+    name: 'allProducts',
+    api: '/api/products'
+  });
+
 
   console.log(data);
+
+  // Handler functions
+  const handleEditProduct = (product) => {
+    setSelectedProduct(product);
+    setShowEditModal(true);
+  };
+
+  const handleDeleteProduct = (product) => {
+    setSelectedProduct(product);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (selectedProduct) {
+      setDeletingProductId(selectedProduct._id);
+      try {
+        await deleteData(selectedProduct._id);
+        setShowDeleteModal(false);
+        setSelectedProduct(null);
+        setToast({
+          show: true,
+          type: 'success',
+          message: `Product "${selectedProduct.name}" deleted successfully!`
+        });
+      } catch (error) {
+        console.error('Delete failed:', error);
+        setToast({
+          show: true,
+          type: 'error',
+          message: 'Failed to delete product. Please try again.'
+        });
+      } finally {
+        setDeletingProductId(null);
+      }
+    }
+  };
+
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+    setSelectedProduct(null);
+  };
+
+  const handleCloseDeleteModal = () => {
+    if (!isDeleting) {  // Prevent closing during delete operation
+      setShowDeleteModal(false);
+      setSelectedProduct(null);
+    }
+  };
+
   // Handle loading and error states
   if (isLoading) {
     return (
@@ -162,9 +232,21 @@ const AllProductsClient = () => {
       }`}>
         {data?.map(product => 
           viewMode === 'grid' ? (
-            <ProductCard key={product.id} product={product} />
+            <ProductCard 
+              key={product._id || product.id} 
+              product={product} 
+              onEdit={handleEditProduct}
+              onDelete={handleDeleteProduct}
+              isDeleting={deletingProductId === product._id}
+            />
           ) : (
-            <ProductListItem key={product.id} product={product} />
+            <ProductListItem 
+              key={product._id || product.id} 
+              product={product}
+              onEdit={handleEditProduct}
+              onDelete={handleDeleteProduct}
+              isDeleting={deletingProductId === product._id}
+            />
           )
         )}
       </div>
@@ -183,6 +265,31 @@ const AllProductsClient = () => {
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
         categories={categories.filter(cat => cat !== 'all')}
+      />
+
+      {/* Edit Product Modal */}
+      <EditProductModal 
+        isOpen={showEditModal}
+        onClose={handleCloseEditModal}
+        product={selectedProduct}
+        categories={categories.filter(cat => cat !== 'all')}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog 
+        isOpen={showDeleteModal}
+        onClose={handleCloseDeleteModal}
+        onConfirm={handleConfirmDelete}
+        productName={selectedProduct?.name}
+        isLoading={isDeleting}
+      />
+
+      {/* Toast Notification */}
+      <Toast
+        type={toast.type}
+        message={toast.message}
+        isVisible={toast.show}
+        onClose={() => setToast({ ...toast, show: false })}
       />
     </div>
   );

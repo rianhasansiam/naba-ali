@@ -2,10 +2,10 @@
 
 
 import { motion } from 'framer-motion';
-import { Eye, Edit, Trash2 } from 'lucide-react';
+import { Eye, Edit, Trash2, Loader } from 'lucide-react';
 import Image from 'next/image';
 
-const ProductListItem = ({ product }) => (
+const ProductListItem = ({ product, onEdit, onDelete, isDeleting }) => (
   <motion.div
     initial={{ opacity: 0, x: -20 }}
     animate={{ opacity: 1, x: 0 }}
@@ -38,24 +38,39 @@ const ProductListItem = ({ product }) => (
             product.stock > 50 ? 'text-green-600' :
             product.stock > 0 ? 'text-yellow-600' : 'text-red-600'
           }`}>
-            {product.stock} units
+            {product?.stock || 0} Units
           </p>
         </div>
         
         <div>
-          <p className="font-medium text-gray-700">{product.sold} sold</p>
-          <p className="text-xs text-gray-500">★ {product.rating}</p>
+          <p className="text-xs text-gray-500">Rating</p>
+          <p className="text-xs text-gray-500">★ {product?.rating || 0}</p>
         </div>
         
         <div className="flex space-x-2">
-          <button className="p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+          <button 
+            disabled={isDeleting}
+            className="p-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             <Eye size={16} />
           </button>
-          <button className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors">
+          <button 
+            onClick={() => onEdit?.(product)}
+            disabled={isDeleting}
+            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             <Edit size={16} />
           </button>
-          <button className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-            <Trash2 size={16} />
+          <button 
+            onClick={() => onDelete?.(product)}
+            disabled={isDeleting}
+            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isDeleting ? (
+              <Loader className="animate-spin" size={16} />
+            ) : (
+              <Trash2 size={16} />
+            )}
           </button>
         </div>
       </div>

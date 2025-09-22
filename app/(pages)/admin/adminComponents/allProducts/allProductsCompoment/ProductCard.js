@@ -1,10 +1,10 @@
 
 
 import Image from 'next/image';
-import { Star, MoreVertical, Tag } from 'lucide-react';
+import { Star, MoreVertical, Tag, Loader } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const ProductCard = ({ product }) => (
+const ProductCard = ({ product, onEdit, onDelete, isDeleting }) => (
   <motion.div
     initial={{ opacity: 0, scale: 0.9 }}
     animate={{ opacity: 1, scale: 1 }}
@@ -58,7 +58,7 @@ const ProductCard = ({ product }) => (
       
       <p className="text-gray-600 text-sm mb-4">{product.description}</p>
       
-      <div className="grid grid-cols-2 gap-4 mb-4">
+      <div className="grid grid-cols-3 gap-4 mb-4">
         <div>
           <p className="text-gray-500 text-xs">Price</p>
           <div className="flex items-center space-x-2">
@@ -67,6 +67,15 @@ const ProductCard = ({ product }) => (
               <span className="text-gray-400 line-through text-sm">${product.originalPrice}</span>
             )}
           </div>
+        </div>
+        <div>
+          <p className="text-gray-500 text-xs">Stock</p>
+          <span className={`font-medium ${
+            product.stock > 50 ? 'text-green-600' :
+            product.stock > 0 ? 'text-yellow-600' : 'text-red-600'
+          }`}>
+            {product?.stock || 0} units
+          </span>
         </div>
         <div>
           <p className="text-gray-500 text-xs">Color</p>
@@ -89,11 +98,26 @@ const ProductCard = ({ product }) => (
       </div>
 
       <div className="flex space-x-2">
-        <button className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-600 py-2 rounded-lg text-sm font-medium transition-colors">
+        <button 
+          onClick={() => onEdit?.(product)}
+          disabled={isDeleting}
+          className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-600 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
           Edit
         </button>
-        <button className="flex-1 bg-red-50 hover:bg-red-100 text-red-600 py-2 rounded-lg text-sm font-medium transition-colors">
-          Delete
+        <button 
+          onClick={() => onDelete?.(product)}
+          disabled={isDeleting}
+          className="flex-1 bg-red-50 hover:bg-red-100 text-red-600 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1"
+        >
+          {isDeleting ? (
+            <>
+              <Loader className="animate-spin" size={14} />
+              <span>Deleting...</span>
+            </>
+          ) : (
+            'Delete'
+          )}
         </button>
       </div>
     </div>
