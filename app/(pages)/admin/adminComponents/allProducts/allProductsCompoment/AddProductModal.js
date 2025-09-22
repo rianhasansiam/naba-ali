@@ -327,16 +327,15 @@ const AddProductModal = ({ isOpen, onClose, categories }) => {
                     value={formData.category}
                     onChange={handleChange}
                     className={`w-full px-4 py-3 rounded-lg border ${formErrors.category ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20' : 'border-gray-200/60 focus:border-gray-500 focus:ring-gray-500/20'} focus:outline-none focus:ring-2 transition-all duration-200 text-sm bg-white/80 backdrop-blur-sm`}
+                    disabled={!categories || categories.length === 0}
                   >
-                    <option value="">Select a category</option>
-                    <option value="Shirt">Shirt</option>
-                    <option value="T-Shirt">T-Shirt</option>
-                    <option value="Pants">Pants</option>
-                    <option value="Dress">Dress</option>
-                    <option value="Shoes">Shoes</option>
-                    <option value="Accessories">Accessories</option>
-                    {categories?.map((category) => (
-                      <option key={category.id || category.name} value={category.name || category.id}>
+                    <option value="">
+                      {!categories ? 'Loading categories...' : 
+                       categories.length === 0 ? 'No categories available - Create one first' : 
+                       'Select a category'}
+                    </option>
+                    {categories?.filter(category => category.status === 'active' || !category.status)?.map((category) => (
+                      <option key={category._id || category.id || category.name} value={category.name}>
                         {category.name}
                       </option>
                     ))}
@@ -345,6 +344,21 @@ const AddProductModal = ({ isOpen, onClose, categories }) => {
                     <p className="mt-1 text-sm text-red-600 flex items-center">
                       <AlertCircle className="w-4 h-4 mr-1" />
                       {formErrors.category}
+                    </p>
+                  )}
+                  {categories && categories.length === 0 && (
+                    <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-sm text-blue-700 mb-2">
+                        No categories found. You need to create categories first.
+                      </p>
+                      <p className="text-xs text-blue-600">
+                        💡 Go to Category Management → Add New Category to create your first category
+                      </p>
+                    </div>
+                  )}
+                  {categories && categories.filter(cat => cat.status === 'active' || !cat.status).length !== categories.length && (
+                    <p className="mt-1 text-xs text-gray-500">
+                      Only showing active categories ({categories.filter(cat => cat.status === 'active' || !cat.status).length} available)
                     </p>
                   )}
                 </div>

@@ -41,6 +41,12 @@ const AllProductsClient = () => {
     api: '/api/products'
   });
 
+  // Fetch categories data using hook
+  const { data: categoriesData, isLoading: categoriesLoading, error: categoriesError } = useGetData({
+    name: 'allCategories',
+    api: '/api/categories'
+  });
+
   // Initialize update and delete hooks
   const { updateData, isLoading: isUpdating } = useUpdateData({
     name: 'allProducts',
@@ -125,15 +131,26 @@ const AllProductsClient = () => {
   // Process the data once it's loaded
   const productsData = data 
   
-  // Extract categories and add 'all' option
-  const categories = ['all' || []];  
+  // Extract categories from database and add 'all' option
+  const dbCategories = categoriesData?.Data || [];
+  const categories = ['all', ...dbCategories];
 
-  // Simple product filtering
-  const filteredProducts = data
+  // Filter products based on search term and category
+  const filteredProducts = data?.Data?.filter(product => {
+    const matchesSearch = product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         product.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         product.category?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesCategory = filterCategory === 'all' || product.category === filterCategory;
+    
+    return matchesSearch && matchesCategory;
+  }) || [];
 
-  // Calculate stats from productsData
+  // Calculate stats from filtered products
   const stats = {
-    total: data?.length || 0,
+    total: filteredProducts.length || 0,
+    totalValue: filteredProducts.reduce((sum, product) => sum + (product.price || 0), 0),
+    categories: new Set(filteredProducts.map(product => product.category)).size,
   };
 
   return (
@@ -194,11 +211,20 @@ const AllProductsClient = () => {
               onChange={(e) => setFilterCategory(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
             >
-              {categories.map(category => (
-                <option key={category} value={category}>
-                  {category === 'all' ? 'All Categories' : category}
-                </option>
-              ))}
+              {categories.map(category => {
+                if (category === 'all') {
+                  return (
+                    <option key="all" value="all">
+                      All Categories
+                    </option>
+                  );
+                }
+                return (
+                  <option key={category._id || category.name} value={category.name}>
+                    {category.name}
+                  </option>
+                );
+              })}
             </select>
           </div>
           
@@ -264,7 +290,7 @@ const AllProductsClient = () => {
       <AddProductModal 
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
-        categories={categories.filter(cat => cat !== 'all')}
+        categories={dbCategories}
       />
 
       {/* Edit Product Modal */}
@@ -272,7 +298,7 @@ const AllProductsClient = () => {
         isOpen={showEditModal}
         onClose={handleCloseEditModal}
         product={selectedProduct}
-        categories={categories.filter(cat => cat !== 'all')}
+        categories={dbCategories}
       />
 
       {/* Delete Confirmation Dialog */}

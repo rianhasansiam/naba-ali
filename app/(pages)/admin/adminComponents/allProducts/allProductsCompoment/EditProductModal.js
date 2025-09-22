@@ -340,9 +340,15 @@ const EditProductModal = ({ isOpen, onClose, categories, product }) => {
                       formErrors.category ? 'border-red-500 bg-red-50' : 'border-gray-300'
                     }`}
                   >
-                    <option value="">Select Category</option>
-                    {categories?.map(cat => (
-                      <option key={cat} value={cat}>{cat}</option>
+                    <option value="">
+                      {!categories ? 'Loading categories...' : 
+                       categories.length === 0 ? 'No categories available - Create one first' : 
+                       'Select a category'}
+                    </option>
+                    {categories?.filter(category => category.status === 'active' || !category.status)?.map((category) => (
+                      <option key={category._id || category.id || category.name} value={category.name}>
+                        {category.name}
+                      </option>
                     ))}
                   </select>
                   {formErrors.category && (
@@ -350,6 +356,16 @@ const EditProductModal = ({ isOpen, onClose, categories, product }) => {
                       <AlertCircle size={14} />
                       {formErrors.category}
                     </p>
+                  )}
+                  {categories && categories.length === 0 && (
+                    <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-sm text-blue-700 mb-2">
+                        No categories found. You need to create categories first.
+                      </p>
+                      <p className="text-xs text-blue-600">
+                        💡 Go to Category Management → Add New Category to create your first category
+                      </p>
+                    </div>
                   )}
                 </div>
               </div>
