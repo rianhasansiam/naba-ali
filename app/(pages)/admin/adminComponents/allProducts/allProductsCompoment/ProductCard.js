@@ -1,10 +1,10 @@
 
 
 import Image from 'next/image';
-import { Star, MoreVertical, Tag, Loader } from 'lucide-react';
+import { Star, MoreVertical, Tag, Loader, MessageSquare } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const ProductCard = ({ product, onEdit, onDelete, isDeleting }) => (
+const ProductCard = ({ product, onEdit, onDelete, onAddReview, isDeleting }) => (
   <motion.div
     initial={{ opacity: 0, scale: 0.9 }}
     animate={{ opacity: 1, scale: 1 }}
@@ -104,6 +104,14 @@ const ProductCard = ({ product, onEdit, onDelete, isDeleting }) => (
           className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-600 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Edit
+        </button>
+        <button 
+          onClick={() => onAddReview?.(product)}
+          disabled={isDeleting}
+          className="flex-1 bg-green-50 hover:bg-green-100 text-green-600 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1"
+        >
+          <MessageSquare size={14} />
+          <span>Review</span>
         </button>
         <button 
           onClick={() => onDelete?.(product)}

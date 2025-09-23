@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { Heart, Eye, ShoppingCart, Star } from 'lucide-react';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 
 // Badge component
@@ -167,10 +168,15 @@ const ProductCard = ({
 
 // Main Cards component for displaying multiple products
 const Cards = ({ products = [] }) => {
+  const router = useRouter();
+
   // Handle product click (view details)
   const handleProductClick = (product) => {
-    console.log('View product:', product);
-    // You can add navigation logic here, e.g., router.push(`/products/${product.id}`)
+    // Navigate to product details page with the product ID
+    const productId = product._id || product.id;
+    if (productId) {
+      router.push(`/productDetails/${productId}`);
+    }
   };
 
   // Handle add to cart

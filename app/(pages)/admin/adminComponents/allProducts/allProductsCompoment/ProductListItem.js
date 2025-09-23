@@ -2,10 +2,10 @@
 
 
 import { motion } from 'framer-motion';
-import { Eye, Edit, Trash2, Loader } from 'lucide-react';
+import { Eye, Edit, Trash2, Loader, MessageSquare } from 'lucide-react';
 import Image from 'next/image';
 
-const ProductListItem = ({ product, onEdit, onDelete, isDeleting }) => (
+const ProductListItem = ({ product, onEdit, onDelete, onAddReview, isDeleting }) => (
   <motion.div
     initial={{ opacity: 0, x: -20 }}
     animate={{ opacity: 1, x: 0 }}
@@ -60,6 +60,14 @@ const ProductListItem = ({ product, onEdit, onDelete, isDeleting }) => (
             className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Edit size={16} />
+          </button>
+          <button 
+            onClick={() => onAddReview?.(product)}
+            disabled={isDeleting}
+            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Add Review"
+          >
+            <MessageSquare size={16} />
           </button>
           <button 
             onClick={() => onDelete?.(product)}

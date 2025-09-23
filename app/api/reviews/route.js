@@ -9,11 +9,8 @@ export async function GET(request) {
     
     // Find all reviews
     const allReviews = await reviews.find({}).toArray();
-    
-    return NextResponse.json({
-      success: true,
-      Data: allReviews
-    });
+
+    return NextResponse.json( allReviews );
 
   } catch (error) {
     console.error("Error fetching reviews:", error); 
@@ -51,38 +48,48 @@ export async function POST(request) {
   }
 } // End of POST function
 
-// PUT - Update admin review by _id
+// PUT - Update review by _id
 export async function PUT(request) {
   try {
-    const adminReviews = await getCollection('adminReviews');
+    const reviews = await getCollection('allReviews');
     const body = await request.json();
     const { _id, ...updateData } = body;
     if (!_id) {
-      return NextResponse.json({ success: false, error: 'Admin review _id is required for update' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'Review _id is required for update' }, { status: 400 });
     }
     const { ObjectId } = (await import('mongodb'));
-    const result = await adminReviews.updateOne({ _id: new ObjectId(_id) }, { $set: updateData });
-    return NextResponse.json({ success: true, Data: result, message: 'Admin review updated successfully' });
+    const result = await reviews.updateOne({ _id: new ObjectId(_id) }, { $set: updateData });
+    
+    if (result.matchedCount === 0) {
+      return NextResponse.json({ success: false, error: 'Review not found' }, { status: 404 });
+    }
+    
+    return NextResponse.json({ success: true, Data: result, message: 'Review updated successfully' });
   } catch (error) {
-    console.error('Error updating admin review:', error);
-    return NextResponse.json({ success: false, error: 'Failed to update admin review' }, { status: 500 });
+    console.error('Error updating review:', error);
+    return NextResponse.json({ success: false, error: 'Failed to update review' }, { status: 500 });
   }
 } // End of PUT function
 
-// DELETE - Delete admin review by _id
+// DELETE - Delete review by _id
 export async function DELETE(request) {
   try {
-    const adminReviews = await getCollection('adminReviews');
+    const reviews = await getCollection('allReviews');
     const body = await request.json();
     const { _id } = body;
     if (!_id) {
-      return NextResponse.json({ success: false, error: 'Admin review _id is required for delete' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'Review _id is required for delete' }, { status: 400 });
     }
     const { ObjectId } = (await import('mongodb'));
-    const result = await adminReviews.deleteOne({ _id: new ObjectId(_id) });
-    return NextResponse.json({ success: true, Data: result, message: 'Admin review deleted successfully' });
+    const result = await reviews.deleteOne({ _id: new ObjectId(_id) });
+    
+    if (result.deletedCount === 0) {
+      return NextResponse.json({ success: false, error: 'Review not found' }, { status: 404 });
+    }
+    
+    return NextResponse.json({ success: true, Data: result, message: 'Review deleted successfully' });
   } catch (error) {
-    console.error('Error deleting admin review:', error);
-    return NextResponse.json({ success: false, error: 'Failed to delete admin review' }, { status: 500 });
+    console.error('Error deleting review:', error);
+    return NextResponse.json({ success: false, error: 'Failed to delete review' }, { status: 500 });
   }
 } // End of DELETE function

@@ -11,13 +11,15 @@ import {
   List,
   Download,
   Upload,
-  AlertCircle
+  AlertCircle,
+  MessageSquare
 } from 'lucide-react';
 import ProductCard from './allProductsCompoment/ProductCard';
 import ProductListItem from './allProductsCompoment/ProductListItem';
 import AddProductModal from './allProductsCompoment/AddProductModal';
 import EditProductModal from './allProductsCompoment/EditProductModal';
 import DeleteConfirmationDialog from './allProductsCompoment/DeleteConfirmationDialog';
+import AddReviewModal from './allProductsCompoment/AddReviewModal';
 import Toast from './allProductsCompoment/Toast';
 import { useGetData } from '../../../../../lib/hooks/useGetData';
 import { useUpdateData } from '../../../../../lib/hooks/useUpdateData';
@@ -31,7 +33,9 @@ const AllProductsClient = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showAddReviewModal, setShowAddReviewModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [selectedProductForReview, setSelectedProductForReview] = useState(null);
   const [deletingProductId, setDeletingProductId] = useState(null);
   const [toast, setToast] = useState({ show: false, type: 'success', message: '' });
 
@@ -72,6 +76,11 @@ const AllProductsClient = () => {
     setShowDeleteModal(true);
   };
 
+  const handleAddReview = (product) => {
+    setSelectedProductForReview(product);
+    setShowAddReviewModal(true);
+  };
+
   const handleConfirmDelete = async () => {
     if (selectedProduct) {
       setDeletingProductId(selectedProduct._id);
@@ -106,6 +115,58 @@ const AllProductsClient = () => {
     if (!isDeleting) {  // Prevent closing during delete operation
       setShowDeleteModal(false);
       setSelectedProduct(null);
+    }
+  };
+
+  const handleCloseAddReviewModal = () => {
+    setShowAddReviewModal(false);
+    setSelectedProductForReview(null);
+  };
+
+  const handleSubmitReview = async (reviewData) => {
+    try {
+      const { productId, review } = reviewData;
+      
+      console.log('Review data received:', reviewData);
+      console.log('Product ID:', productId);
+      
+      // Validate productId
+      if (!productId) {
+        throw new Error('Product ID is required');
+      }
+      
+      // Find the product to update
+      const productToUpdate = data?.find(product => product._id === productId);
+      if (!productToUpdate) {
+        throw new Error(`Product with ID ${productId} not found`);
+      }
+
+      console.log('Product to update:', productToUpdate);
+
+      // Add the new review to the product's reviews array
+      const updatedProduct = {
+        ...productToUpdate,
+        reviews: [...(productToUpdate.reviews || []), review]
+      };
+
+      console.log('Updated product:', updatedProduct);
+
+      // Update the product using the updateData hook with correct format
+      await updateData({ id: productId, data: updatedProduct });
+      
+      setToast({
+        show: true,
+        type: 'success',
+        message: 'Review added successfully!'
+      });
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      setToast({
+        show: true,
+        type: 'error',
+        message: `Failed to add review: ${error.message}`
+      });
+      throw error;
     }
   };
 
@@ -163,7 +224,14 @@ const AllProductsClient = () => {
         </div>
         
         <div className="flex items-center space-x-3">
-         
+          <button 
+            onClick={() => setShowAddReviewModal(true)}
+            className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <MessageSquare size={16} />
+            <span>Add Review</span>
+          </button>
+          
           <button 
             onClick={() => setShowAddModal(true)}
             className="flex items-center space-x-2 bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors"
@@ -263,6 +331,7 @@ const AllProductsClient = () => {
               product={product} 
               onEdit={handleEditProduct}
               onDelete={handleDeleteProduct}
+              onAddReview={handleAddReview}
               isDeleting={deletingProductId === product._id}
             />
           ) : (
@@ -271,6 +340,7 @@ const AllProductsClient = () => {
               product={product}
               onEdit={handleEditProduct}
               onDelete={handleDeleteProduct}
+              onAddReview={handleAddReview}
               isDeleting={deletingProductId === product._id}
             />
           )
@@ -308,6 +378,14 @@ const AllProductsClient = () => {
         onConfirm={handleConfirmDelete}
         productName={selectedProduct?.name}
         isLoading={isDeleting}
+      />
+
+      {/* Add Review Modal */}
+      <AddReviewModal 
+        isOpen={showAddReviewModal}
+        onClose={handleCloseAddReviewModal}
+        products={data}
+        onSubmitReview={handleSubmitReview}
       />
 
       {/* Toast Notification */}

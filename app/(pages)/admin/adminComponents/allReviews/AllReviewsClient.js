@@ -1,23 +1,66 @@
 'use client';
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search,
   Star, 
-  Eye,
   MessageSquare,
   Calendar,
-  ThumbsUp,
   User,
-  Trash2
+  Trash2,
+  Plus,
+  X
 } from 'lucide-react';
+import AddReviewModal from './AddReviewModal';
+import { useGetData } from '../../../../../lib/hooks/useGetData';
+import axios from 'axios';
+import Image from 'next/image';
 
 const AllReviewsClient = ({reviewsData}) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRating, setFilterRating] = useState('all');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [toast, setToast] = useState({ show: false, type: 'success', message: '' });
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedReview, setSelectedReview] = useState(null);
+  const [deletingReviewId, setDeletingReviewId] = useState(null);
+  
+  // Fetch live reviews data from database
+  const { data: liveReviewsData, refetch: refetchReviews } = useGetData({
+    name: 'reviews',
+    api: '/api/reviews'
+  });
 
-  if (!reviewsData) {
+  // Use live data if available, otherwise fallback to static data
+  const reviewsList = liveReviewsData?.success ? 
+    (liveReviewsData.Data || []) : 
+    (Array.isArray(liveReviewsData) ? liveReviewsData : reviewsData?.reviews || []);
+
+  const currentReviewsData = {
+    reviews: reviewsList,
+    stats: {
+      totalReviews: reviewsList.length || 0,
+      averageRating: reviewsList.length > 0 ? 
+        (reviewsList.reduce((sum, review) => sum + (review.rating || 0), 0) / reviewsList.length).toFixed(1) : 0,
+      pendingReviews: reviewsList.filter(review => review.status === 'pending').length || 0,
+      approvedReviews: reviewsList.filter(review => review.status === 'approved').length || 0
+    }
+  };
+
+  // Auto-hide toast after 4 seconds
+  useEffect(() => {
+    if (toast.show) {
+      const timer = setTimeout(() => {
+        setToast(prevToast => ({ ...prevToast, show: false }));
+      }, 4000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [toast.show]);
+
+  if (!currentReviewsData) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <p className="text-gray-500">Loading review data...</p>
@@ -25,7 +68,7 @@ const AllReviewsClient = ({reviewsData}) => {
     );
   }
 
-  const { reviews = [], stats = {} } = reviewsData;
+  const { reviews = [], stats = {} } = currentReviewsData;
 
   const filteredReviews = reviews.filter(review => {
     const matchesSearch = review.productName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -64,6 +107,79 @@ const AllReviewsClient = ({reviewsData}) => {
     approvedReviews = 0
   } = stats;
 
+  // Handle review added callback
+  const handleReviewAdded = (newReview) => {
+    setIsSubmittingReview(false);
+    setIsAddModalOpen(false);
+    setToast({
+      show: true,
+      type: 'success',
+      message: 'Review added successfully!'
+    });
+    refetchReviews(); // Refresh the reviews list
+  };
+
+  // Handle review submission start
+  const handleReviewSubmitStart = () => {
+    setIsSubmittingReview(true);
+  };
+
+  // Handle review submission error
+  const handleReviewSubmitError = () => {
+    setIsSubmittingReview(false);
+  };
+
+  // Handle delete review
+  const handleDeleteClick = (review) => {
+    setSelectedReview(review);
+    setShowDeleteModal(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (selectedReview) {
+      const reviewId = selectedReview._id || selectedReview.id;
+      setDeletingReviewId(reviewId);
+      
+      console.log('Attempting to delete review with ID:', reviewId);
+      console.log('Selected review object:', selectedReview);
+      
+      try {
+        const response = await axios.delete('/api/reviews', {
+          data: { _id: reviewId }
+        });
+        
+        console.log('Delete response:', response.data);
+        
+        if (response.data.success) {
+          setShowDeleteModal(false);
+          setSelectedReview(null);
+          setToast({
+            show: true,
+            type: 'success',
+            message: 'Review deleted successfully!'
+          });
+          refetchReviews(); // Refresh the reviews list
+        } else {
+          throw new Error(response.data.error || 'Failed to delete review');
+        }
+      } catch (error) {
+        console.error('Delete failed:', error);
+        setToast({
+          show: true,
+          type: 'error',
+          message: error.response?.data?.error || error.message || 'Failed to delete review'
+        });
+      } finally {
+        setDeletingReviewId(null);
+      }
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+    setSelectedReview(null);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -72,32 +188,27 @@ const AllReviewsClient = ({reviewsData}) => {
           <h1 className="text-3xl font-bold text-gray-900">Reviews Management</h1>
           <p className="text-gray-600">Monitor and manage customer reviews</p>
         </div>
+        
+        <button
+          onClick={() => {
+            setIsAddModalOpen(true);
+          }}
+          disabled={isSubmittingReview}
+          className="flex items-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600"
+        >
+          <Plus size={20} className={isSubmittingReview ? 'animate-spin' : ''} />
+          <span>{isSubmittingReview ? 'Adding Review...' : 'Add Review'}</span>
+        </button>
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl p-4 shadow-sm">
           <div className="flex items-center space-x-2">
             <MessageSquare className="text-gray-600" size={20} />
             <span className="text-sm text-gray-600">Total Reviews</span>
           </div>
           <p className="text-2xl font-bold text-gray-900 mt-1">{totalReviews}</p>
-        </div>
-        
-        <div className="bg-white rounded-xl p-4 shadow-sm">
-          <div className="flex items-center space-x-2">
-            <ThumbsUp className="text-green-600" size={20} />
-            <span className="text-sm text-gray-600">Approved</span>
-          </div>
-          <p className="text-2xl font-bold text-green-600 mt-1">{approvedReviews}</p>
-        </div>
-        
-        <div className="bg-white rounded-xl p-4 shadow-sm">
-          <div className="flex items-center space-x-2">
-            <Eye className="text-yellow-600" size={20} />
-            <span className="text-sm text-gray-600">Pending</span>
-          </div>
-          <p className="text-2xl font-bold text-yellow-600 mt-1">{pendingReviews}</p>
         </div>
         
 
@@ -107,7 +218,7 @@ const AllReviewsClient = ({reviewsData}) => {
             <Star className="text-gray-600" size={20} />
             <span className="text-sm text-gray-600">Avg Rating</span>
           </div>
-          <p className="text-2xl font-bold text-gray-600 mt-1">{stats.averageRating.toFixed(1)}</p>
+          <p className="text-2xl font-bold text-gray-600 mt-1">{stats.averageRating || 0}</p>
         </div>
         
       
@@ -147,7 +258,7 @@ const AllReviewsClient = ({reviewsData}) => {
       <div className="space-y-4">
         {filteredReviews.map((review, index) => (
           <motion.div
-            key={review.id}
+            key={review._id || review.id}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
@@ -156,12 +267,7 @@ const AllReviewsClient = ({reviewsData}) => {
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1">
                 <div className="flex items-center space-x-3 mb-2">
-                  <h3 className="text-lg font-bold text-gray-900">{review.title}</h3>
-                  {review.verified && (
-                    <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
-                      Verified Purchase
-                    </span>
-                  )}
+                  <h3 className="text-lg font-bold text-gray-900">{review.title || `Review by ${review.customerName}`}</h3>
                 </div>
                 
                 <div className="flex items-center space-x-4 mb-3">
@@ -169,40 +275,41 @@ const AllReviewsClient = ({reviewsData}) => {
                     {getRatingStars(review.rating)}
                   </div>
                   <span className="text-sm text-gray-600">by {review.customerName}</span>
-                  <span className="text-sm text-gray-500">{review.date}</span>
+                  <span className="text-sm text-gray-500">
+                    {new Date(review.createdAt).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'short', 
+                      day: 'numeric'
+                    })}
+                  </span>
                 </div>
                 
                 <p className="text-sm text-gray-600 mb-2">Product: <span className="font-medium">{review.productName}</span></p>
                 <p className="text-gray-700 leading-relaxed">{review.comment}</p>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(review.status)}`}>
-                  {review.status.charAt(0).toUpperCase() + review.status.slice(1)}
-                </span>
+                
+                {review.photo && (
+                  <div className="mt-3">
+                    <Image 
+                      src={review.photo} 
+                      alt="Review" 
+                      width={128}
+                      height={128}
+                      className="w-32 h-32 object-cover rounded-lg shadow-sm"
+                    />
+                  </div>
+                )}
               </div>
             </div>
             
-            <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-              <div className="flex items-center text-sm text-gray-600">
-                <ThumbsUp size={14} className="mr-1" />
-                <span>{review.helpful} people found this helpful</span>
-              </div>
-              
-              <div className="flex space-x-2">
-                <button className="flex items-center space-x-2 bg-gray-600 text-white px-3 py-2 rounded-lg hover:bg-gray-700 transition-colors text-sm">
-                  <Eye size={14} />
-                  <span>View</span>
-                </button>
-                <button className="flex items-center space-x-2 bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm">
-                  <ThumbsUp size={14} />
-                  <span>Approve</span>
-                </button>
-                <button className="flex items-center space-x-2 bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm">
-                  <Trash2 size={14} />
-                  <span>Delete</span>
-                </button>
-              </div>
+            <div className="flex items-center justify-end pt-4 border-t border-gray-200">
+              <button 
+                onClick={() => handleDeleteClick(review)}
+                disabled={deletingReviewId === (review._id || review.id)}
+                className="flex items-center space-x-2 bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm disabled:opacity-50"
+              >
+                <Trash2 size={14} className={deletingReviewId === (review._id || review.id) ? 'animate-spin' : ''} />
+                <span>{deletingReviewId === (review._id || review.id) ? 'Deleting...' : 'Delete'}</span>
+              </button>
             </div>
           </motion.div>
         ))}
@@ -216,6 +323,118 @@ const AllReviewsClient = ({reviewsData}) => {
           <p className="text-gray-600">Try adjusting your search or filter criteria</p>
         </div>
       )}
+
+      {/* Add Review Modal */}
+      <AddReviewModal
+        isOpen={isAddModalOpen}
+        onClose={() => {
+          setIsAddModalOpen(false);
+          setIsSubmittingReview(false);
+        }}
+        onReviewAdded={handleReviewAdded}
+        onSubmitStart={handleReviewSubmitStart}
+        onSubmitError={handleReviewSubmitError}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {showDeleteModal && selectedReview && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+            onClick={(e) => e.target === e.currentTarget && handleCancelDelete()}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-gray-900">Delete Review</h3>
+                <button
+                  onClick={handleCancelDelete}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  disabled={deletingReviewId}
+                >
+                  <X size={20} className="text-gray-500" />
+                </button>
+              </div>
+
+              <div className="mb-6">
+                <p className="text-gray-600 mb-4">
+                  Are you sure you want to delete this review? This action cannot be undone.
+                </p>
+                <div className="bg-gray-50 rounded-lg p-4 border-l-4 border-red-500">
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-1">
+                      <p className="font-medium text-gray-900">{selectedReview.customerName}</p>
+                      <p className="text-sm text-gray-600">Product: {selectedReview.productName}</p>
+                      <div className="flex items-center mt-1">
+                        {Array.from({ length: 5 }, (_, index) => (
+                          <Star
+                            key={index}
+                            size={14}
+                            className={index < selectedReview.rating ? 'text-yellow-500 fill-current' : 'text-gray-300'}
+                          />
+                        ))}
+                        <span className="ml-2 text-sm text-gray-600">({selectedReview.rating}/5)</span>
+                      </div>
+                      <p className="text-sm text-gray-700 mt-2 line-clamp-2">{selectedReview.comment}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex space-x-3">
+                <button
+                  onClick={handleCancelDelete}
+                  disabled={deletingReviewId}
+                  className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmDelete}
+                  disabled={deletingReviewId}
+                  className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center space-x-2"
+                >
+                  <Trash2 size={16} className={deletingReviewId ? 'animate-spin' : ''} />
+                  <span>{deletingReviewId ? 'Deleting...' : 'Delete Review'}</span>
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toast.show && (
+          <motion.div
+            initial={{ opacity: 0, y: -100, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -100, scale: 0.95 }}
+            className="fixed top-4 right-4 z-50"
+          >
+            <div className={`${
+              toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'
+            } text-white rounded-xl shadow-2xl p-4 min-w-[300px] max-w-md`}>
+              <div className="flex items-center justify-between">
+                <p className="font-medium text-sm">{toast.message}</p>
+                <button
+                  onClick={() => setToast({ ...toast, show: false })}
+                  className="ml-4 p-1 hover:bg-white/20 rounded-lg transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
