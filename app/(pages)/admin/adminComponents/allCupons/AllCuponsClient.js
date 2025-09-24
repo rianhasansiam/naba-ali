@@ -57,14 +57,14 @@ const AllCouponsClient = () => {
   });
 
   // Filter coupons based on search term and status
-  const filteredCoupons = data?.Data?.filter(coupon => {
+  const filteredCoupons = Array.isArray(data) ? data.filter(coupon => {
     const matchesSearch = coupon.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          coupon.description?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = filterStatus === 'all' || coupon.status === filterStatus;
     
     return matchesSearch && matchesStatus;
-  }) || [];
+  }) : [];
 
   // Handler functions
   const handleEditCoupon = (coupon) => {

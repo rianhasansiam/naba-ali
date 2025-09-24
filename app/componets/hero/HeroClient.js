@@ -107,7 +107,7 @@ const HeroClient = ({
                 const suffix = match ? match[2] : "";
                 
                 return (
-                  <div key={index}>
+                  <div key={stat.label || `stat-${index}`}>
                     <h3 className="text-2xl font-bold">
                       <Counter 
                         to={numericValue} 

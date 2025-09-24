@@ -3,12 +3,17 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, ShoppingCart, User, Menu, ChevronDown, Heart } from 'lucide-react';
+import { useAppSelector } from '@/app/redux/reduxHooks';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { signOutAction } from './actions';
 
-const NavbarClient = ({ navItems, shopCategories, cartItems = 0, wishlistItems = 0 }) => {
+const NavbarClient = ({ navItems, shopCategories }) => {
+  // Get cart and wishlist counts from Redux store
+  const cartTotalQuantity = useAppSelector((state) => state.user.cart.totalQuantity);
+  const wishlistTotalItems = useAppSelector((state) => state.user.wishlist.totalItems);
+  
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isShopDropdownOpen, setIsShopDropdownOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -101,7 +106,7 @@ const NavbarClient = ({ navItems, shopCategories, cartItems = 0, wishlistItems =
                           <h3 className="text-lg font-bold mb-4">Shop Categories</h3>
                           <div className="grid grid-cols-3 gap-3">
                             {shopCategories.map((category, index) => (
-                              <Link key={index} href={category.href}>
+                              <Link key={category.title || `category-${index}`} href={category.href}>
                                 <motion.div
                                   initial={{ opacity: 0, y: 15 }}
                                   animate={{ opacity: 1, y: 0 }}
@@ -157,9 +162,9 @@ const NavbarClient = ({ navItems, shopCategories, cartItems = 0, wishlistItems =
             <Link href="/wishList">
               <motion.button whileHover={{ y: -2 }} className="relative p-3 hover:bg-gray-100 rounded-xl">
                 <Heart className="w-5 h-5" />
-                {wishlistItems > 0 && (
+                {wishlistTotalItems > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {wishlistItems}
+                    {wishlistTotalItems}
                   </span>
                 )}
               </motion.button>
@@ -168,9 +173,9 @@ const NavbarClient = ({ navItems, shopCategories, cartItems = 0, wishlistItems =
             <Link href="/addToCart">
               <motion.button whileHover={{ y: -2 }} className="relative p-3 bg-black text-white rounded-xl">
                 <ShoppingCart className="w-5 h-5" />
-                {cartItems > 0 && (
+                {cartTotalQuantity > 0 && (
                   <span className="absolute -top-2 -right-2 bg-yellow-400 text-black text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold">
-                    {cartItems}
+                    {cartTotalQuantity}
                   </span>
                 )}
               </motion.button>

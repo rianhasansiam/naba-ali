@@ -1,6 +1,9 @@
 'use client';
 
+import React from 'react';
 import { useGetData } from '@/lib/hooks/useGetData';
+import { useAppDispatch } from '@/app/redux/reduxHooks';
+import { addToCart, addToWishlist, removeFromWishlist } from '@/app/redux/slice';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
@@ -8,6 +11,13 @@ import { Star, StarIcon, ThumbsUp, ShieldCheck, Clock, User, MessageSquare, Hear
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function ProductDetailPage({ params }) {
+  // Unwrap params using React.use() for Next.js 15 compatibility
+  const resolvedParams = React.use(params);
+  const productId = resolvedParams.id;
+  
+  // Redux hook
+  const dispatch = useAppDispatch();
+  
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
@@ -31,10 +41,10 @@ export default function ProductDetailPage({ params }) {
   });
 
   // Find the specific product by ID from real database
-  const product = products?.find(p => p._id === params.id);
+  const product = products?.find(p => p._id === productId);
   
   // Filter reviews for this specific product
-  const productReviews = allReviews?.filter(review => review.productId === params.id) || [];
+  const productReviews = allReviews?.filter(review => review.productId === productId) || [];
 
   // Local Storage utility functions
   const getCartFromStorage = () => {
@@ -88,31 +98,25 @@ export default function ProductDetailPage({ params }) {
   const handleAddToCart = () => {
     if (!product) return;
     
-    const cart = getCartFromStorage();
-    const existingItemIndex = cart.findIndex(item => item.id === product._id);
+    if (!selectedSize || !selectedColor) {
+      showToast('error', 'Please select size and color before adding to cart!');
+      return;
+    }
     
-    if (existingItemIndex !== -1) {
-      // Remove from cart if already exists
-      cart.splice(existingItemIndex, 1);
-      saveCartToStorage(cart);
-      setIsInCart(false);
-      showToast('success', 'Product removed from cart!');
-    } else {
-      // Add new item to cart
-      cart.push({
-        id: product._id,
-        name: product.name,
-        price: product.price,
-        image: product.image,
+    try {
+      // Add to Redux store
+      dispatch(addToCart({
+        product: product,
         quantity: quantity,
         size: selectedSize,
-        color: selectedColor,
-        stock: product.stock
-      });
+        color: selectedColor
+      }));
       
-      saveCartToStorage(cart);
       setIsInCart(true);
       showToast('success', 'Product added to cart successfully!');
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      showToast('error', 'Failed to add product to cart!');
     }
   };
 
@@ -120,29 +124,21 @@ export default function ProductDetailPage({ params }) {
   const handleAddToWishlist = () => {
     if (!product) return;
     
-    const wishlist = getWishlistFromStorage();
-    const existingItem = wishlist.find(item => item.id === product._id);
-    
-    if (existingItem) {
-      // Remove from wishlist if already exists
-      const updatedWishlist = wishlist.filter(item => item.id !== product._id);
-      saveWishlistToStorage(updatedWishlist);
-      setIsInWishlist(false);
-      showToast('success', 'Product removed from wishlist!');
-    } else {
-      // Add to wishlist
-      wishlist.push({
-        id: product._id,
-        name: product.name,
-        price: product.price,
-        image: product.image,
-        category: product.category,
-        rating: product.rating || 0
-      });
-      
-      saveWishlistToStorage(wishlist);
-      setIsInWishlist(true);
-      showToast('success', 'Product added to wishlist!');
+    try {
+      if (isInWishlist) {
+        // Remove from wishlist
+        dispatch(removeFromWishlist(product._id));
+        setIsInWishlist(false);
+        showToast('success', 'Product removed from wishlist!');
+      } else {
+        // Add to wishlist
+        dispatch(addToWishlist(product));
+        setIsInWishlist(true);
+        showToast('success', 'Product added to wishlist successfully!');
+      }
+    } catch (error) {
+      console.error('Error updating wishlist:', error);
+      showToast('error', 'Failed to update wishlist!');
     }
   };
 
@@ -248,7 +244,7 @@ export default function ProductDetailPage({ params }) {
           {/* Main Image */}
           <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
             <Image
-              src={product.images?.[selectedImageIndex] || product.image || '/placeholder-product.jpg'}
+              src={product.images?.[selectedImageIndex] || product.image || 'https://via.placeholder.com/600x600/f3f4f6/374151?text=Product'}
               alt={product.name}
               width={600}
               height={600}

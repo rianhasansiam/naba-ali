@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { FiSliders } from "react-icons/fi";
 import Cards from "../../componets/cards/Cards";
 import Filters from "./filters/Filters";
@@ -8,41 +8,73 @@ import MobileFilters from "./filters/MobileFilters";
 import Pagination from "./Pagination";
 import { useGetData } from "@/lib/hooks/useGetData";
 
-
 const ProductsPageClient = () => {
-  // ✅ Fetch products using custom hook
-  const { data, isLoading, error } = useGetData({ name: "products", api: "/api/products" });
-  const allProducts = Array.isArray(data) ? data : [];
-console.log(allProducts);
   // ✅ Local state for pagination & sorting
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState("most-popular");
   const productsPerPage = 8;
 
-  // ✅ Handle loading & error states
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-  if (error) {
-    return <div>Error loading products</div>;
-  }
+  // ✅ Fetch products using custom hook
+  const { data, isLoading, error } = useGetData({ name: "products", api: "/api/products" });
+  
+  // ✅ Memoize products array to prevent unnecessary re-renders
+  const allProducts = useMemo(() => Array.isArray(data) ? data : [], [data]);
 
-  // ✅ Calculate pagination
-  const totalPages = Math.ceil(allProducts.length / productsPerPage);
-  const startIndex = (currentPage - 1) * productsPerPage;
-  const endIndex = startIndex + productsPerPage;
-  const currentProducts = allProducts.slice(startIndex, endIndex);
-
-  // ✅ Handlers
-  const handlePageChange = (page) => {
+  // ✅ Memoized handlers to prevent unnecessary re-renders
+  const handlePageChange = useCallback((page) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+  }, []);
 
-  const handleSortChange = (value) => {
+  const handleSortChange = useCallback((value) => {
     setSortBy(value);
     setCurrentPage(1); // Reset to first page when sorting
-  };
+  }, []);
+
+  // ✅ Memoize calculations to prevent unnecessary recalculations
+  const { totalPages, startIndex, endIndex, currentProducts } = useMemo(() => {
+    const total = Math.ceil(allProducts.length / productsPerPage);
+    const start = (currentPage - 1) * productsPerPage;
+    const end = start + productsPerPage;
+    const products = allProducts.slice(start, end);
+    
+    return {
+      totalPages: total,
+      startIndex: start,
+      endIndex: end,
+      currentProducts: products
+    };
+  }, [allProducts, currentPage, productsPerPage]);
+
+  // ✅ Handle loading & error states with better UI
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="text-gray-600">Loading products...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center space-y-4">
+          <div className="text-red-500 text-6xl">⚠️</div>
+          <h3 className="text-lg font-semibold text-gray-900">Unable to load products</h3>
+          <p className="text-red-600 mb-4">{error.message}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex md:space-x-5 items-start">

@@ -75,7 +75,7 @@ const ReviewCard = ({ review }) => {
   );
 };
 
-export default function ReviewClient({ reviews = [] }) {
+export default function ReviewClient({ reviews = [], stats, error }) {
   const scrollContainerRef = useRef(null);
   const [isPaused, setIsPaused] = useState(false);
 
@@ -99,16 +99,34 @@ export default function ReviewClient({ reviews = [] }) {
       animationFrame = requestAnimationFrame(autoScroll);
     };
 
-    // Start auto-scroll
     animationFrame = requestAnimationFrame(autoScroll);
-
-    // Cleanup
+    
     return () => {
       if (animationFrame) {
         cancelAnimationFrame(animationFrame);
       }
     };
   }, [isPaused]);
+
+  // Handle error state
+  if (error) {
+    return (
+      <div className="text-center py-16">
+        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">Customer Reviews</h2>
+        <p className="text-gray-600">Unable to load reviews at the moment. Please try again later.</p>
+      </div>
+    );
+  }
+
+  // Handle empty reviews
+  if (reviews.length === 0) {
+    return (
+      <div className="text-center py-16">
+        <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">Customer Reviews</h2>
+        <p className="text-gray-600">No reviews available yet. Be the first to share your experience!</p>
+      </div>
+    );
+  }
 
   // Duplicate reviews for seamless scrolling
   const duplicatedReviews = [...reviews, ...reviews];
@@ -141,7 +159,9 @@ export default function ReviewClient({ reviews = [] }) {
         viewport={{ once: true }}
       >
         <div className="text-center">
-          <div className="text-3xl md:text-4xl font-bold text-black mb-2">4.8</div>
+          <div className="text-3xl md:text-4xl font-bold text-black mb-2">
+            {stats?.averageRating || "4.8"}
+          </div>
           <div className="flex items-center justify-center gap-1 mb-1">
             {[...Array(5)].map((_, i) => (
               <FiStar
@@ -156,7 +176,9 @@ export default function ReviewClient({ reviews = [] }) {
         <div className="w-px h-12 bg-gray-300"></div>
         
         <div className="text-center">
-          <div className="text-3xl md:text-4xl font-bold text-black mb-2">2.5K+</div>
+          <div className="text-3xl md:text-4xl font-bold text-black mb-2">
+            {stats?.totalReviews ? `${stats.totalReviews > 1000 ? Math.round(stats.totalReviews/1000) + 'K' : stats.totalReviews}+` : "2.5K+"}
+          </div>
           <p className="text-sm text-gray-500">Happy Customers</p>
         </div>
         

@@ -9,11 +9,8 @@ export async function GET(request) {
     
     // Find all orders
     const allOrders = await orders.find({}).toArray();
-    
-    return NextResponse.json({
-      success: true,
-      Data: allOrders
-    });
+
+    return NextResponse.json(allOrders);
 
   } catch (error) {
     console.error("Error fetching orders:", error); 

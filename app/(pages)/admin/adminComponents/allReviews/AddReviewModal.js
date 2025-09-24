@@ -47,7 +47,7 @@ const AddReviewModal = ({ isOpen, onClose, onReviewAdded, onSubmitStart, onSubmi
 
   const handleProductSelect = (e) => {
     const selectedProductId = e.target.value;
-    const products = Array.isArray(productsData) ? productsData : productsData?.Data || [];
+    const products = Array.isArray(productsData) ? productsData : [];
     const selectedProduct = products.find(product => product._id === selectedProductId);
     
     setFormData(prev => ({
@@ -352,11 +352,11 @@ const AddReviewModal = ({ isOpen, onClose, onReviewAdded, onSubmitStart, onSubmi
                 disabled={isSubmitting}
               >
                 <option value="">Choose a product...</option>
-                {(Array.isArray(productsData) ? productsData : productsData?.Data || []).map((product) => (
+                {Array.isArray(productsData) ? productsData.map((product) => (
                   <option key={product._id} value={product._id}>
                     {product.name} - ${product.price}
                   </option>
-                ))}
+                )) : []}
               </select>
             </div>
 

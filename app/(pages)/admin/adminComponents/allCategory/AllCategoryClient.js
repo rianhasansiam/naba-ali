@@ -63,10 +63,10 @@ const AllCategoryClient = () => {
   });
 
   // Filter categories based on search
-  const filteredCategories = data?.Data?.filter(category =>
+  const filteredCategories = Array.isArray(data) ? data.filter(category =>
     category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     category.description?.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  ) : [];
 
   // Handler functions
   const handleEditCategory = (category) => {

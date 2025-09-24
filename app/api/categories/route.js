@@ -10,10 +10,7 @@ export async function GET(request) {
     // Find all categories
     const allCategories = await categories.find({}).toArray();
     
-    return NextResponse.json({
-      success: true,
-      Data: allCategories
-    });
+    return NextResponse.json(allCategories);
 
   } catch (error) {
     console.error("Error fetching categories:", error); 

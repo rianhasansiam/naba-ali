@@ -77,9 +77,9 @@ const AllUsers = () => {
   const handleViewOrders = (user) => {
     setSelectedUser(user);
     // Filter orders for this user
-    const userOrderHistory = ordersData?.Data?.filter(order => 
+    const userOrderHistory = Array.isArray(ordersData) ? ordersData.filter(order => 
       order.userEmail === user.email || order.userId === user._id
-    ) || [];
+    ) : [];
     setUserOrders(userOrderHistory);
     setShowOrderModal(true);
   };

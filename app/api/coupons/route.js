@@ -9,11 +9,8 @@ export async function GET(request) {
     
     // Find all coupons
     const allCoupons = await coupons.find({}).toArray();
-    
-    return NextResponse.json({
-      success: true,
-      Data: allCoupons
-    });
+
+    return NextResponse.json(allCoupons);
 
   } catch (error) {
     console.error("Error fetching coupons:", error); 

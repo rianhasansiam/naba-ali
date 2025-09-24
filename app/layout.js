@@ -3,7 +3,7 @@ import "./globals.css";
 import StoreProvider from "./redux/provider";
 import Navbar from "./componets/navbar/Navbar";
 import Footer from "./componets/footer/Footer";
-
+import ErrorBoundary from "./componets/shared/ErrorBoundary";
 import AuthProvider from "../lib/AuthProvider";
 import ReactQueryProvider from "@/lib/ReactQueryProvider";
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { 
   Plus, 
   Search, 
@@ -24,7 +24,6 @@ import Toast from './allProductsCompoment/Toast';
 import { useGetData } from '../../../../../lib/hooks/useGetData';
 import { useUpdateData } from '../../../../../lib/hooks/useUpdateData';
 import { useDeleteData } from '../../../../../lib/hooks/useDeleteData';
-
 
 const AllProductsClient = () => {
   const [viewMode, setViewMode] = useState('grid');
@@ -62,24 +61,49 @@ const AllProductsClient = () => {
     api: '/api/products'
   });
 
+  // Memoized computed values
+  const { products, categories, stats } = useMemo(() => {
+    const allProducts = Array.isArray(data) ? data : [];
+    const allCategories = Array.isArray(categoriesData) ? categoriesData : [];
+    
+    const productStats = {
+      total: allProducts.length,
+      totalValue: allProducts.reduce((sum, product) => sum + (product.price || 0), 0),
+      outOfStock: allProducts.filter(product => (product.stock || 0) === 0).length
+    };
+    
+    return {
+      products: allProducts,
+      categories: allCategories,
+      stats: productStats
+    };
+  }, [data, categoriesData]);
 
-  console.log(data);
+  // Memoized filtered and sorted products
+  const filteredProducts = useMemo(() => {
+    return products.filter(product => {
+      const matchesSearch = product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           product.category?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = filterCategory === 'all' || product.category === filterCategory;
+      return matchesSearch && matchesCategory;
+    });
+  }, [products, searchTerm, filterCategory]);
 
-  // Handler functions
-  const handleEditProduct = (product) => {
+  // Memoized handler functions
+  const handleEditProduct = useCallback((product) => {
     setSelectedProduct(product);
     setShowEditModal(true);
-  };
+  }, []);
 
-  const handleDeleteProduct = (product) => {
+  const handleDeleteProduct = useCallback((product) => {
     setSelectedProduct(product);
     setShowDeleteModal(true);
-  };
+  }, []);
 
-  const handleAddReview = (product) => {
+  const handleAddReview = useCallback((product) => {
     setSelectedProductForReview(product);
     setShowAddReviewModal(true);
-  };
+  }, []);
 
   const handleConfirmDelete = async () => {
     if (selectedProduct) {
@@ -171,7 +195,7 @@ const AllProductsClient = () => {
   };
 
   // Handle loading and error states
-  if (isLoading) {
+  if (isLoading || categoriesLoading) {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
@@ -179,40 +203,26 @@ const AllProductsClient = () => {
     );
   }
 
-  if (error) {
+  if (error || categoriesError) {
     return (
       <div className="flex flex-col items-center justify-center h-96 text-red-500">
         <AlertCircle size={48} />
-        <h2 className="text-xl font-semibold mt-4">Error loading products</h2>
-        <p>{error.message || 'Something went wrong'}</p>
+        <h2 className="text-xl font-semibold mt-4">Error loading data</h2>
+        <p>{error?.message || categoriesError?.message || 'Something went wrong'}</p>
       </div>
     );
   }
 
-  // Process the data once it's loaded
-  const productsData = data 
-  
-  // Extract categories from database and add 'all' option
-  const dbCategories = categoriesData?.Data || [];
-  const categories = ['all', ...dbCategories];
-
-  // Filter products based on search term and category
-  const filteredProducts = data?.Data?.filter(product => {
-    const matchesSearch = product.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.category?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesCategory = filterCategory === 'all' || product.category === filterCategory;
-    
-    return matchesSearch && matchesCategory;
-  }) || [];
-
-  // Calculate stats from filtered products
-  const stats = {
-    total: filteredProducts.length || 0,
-    totalValue: filteredProducts.reduce((sum, product) => sum + (product.price || 0), 0),
-    categories: new Set(filteredProducts.map(product => product.category)).size,
-  };
+  // Use memoized categories with proper structure for dropdown
+  const categoryOptions = [
+    { _id: 'all', name: 'all' },
+    ...categories.map(cat => ({
+      _id: cat._id,
+      name: cat.name,
+      status: cat.status,
+      productCount: cat.productCount
+    }))
+  ];
 
   return (
     <div className="space-y-6">
@@ -250,7 +260,7 @@ const AllProductsClient = () => {
             <Package className="text-gray-700" size={20} />
             <span className="text-sm text-gray-600">Total Products</span>
           </div>
-          <p className="text-2xl font-bold text-gray-900 mt-1">{productsData?.length}</p>
+          <p className="text-2xl font-bold text-gray-900 mt-1">{stats.total}</p>
         </div>
         
        
@@ -279,8 +289,8 @@ const AllProductsClient = () => {
               onChange={(e) => setFilterCategory(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
             >
-              {categories.map(category => {
-                if (category === 'all') {
+              {categoryOptions.map(category => {
+                if (category.name === 'all') {
                   return (
                     <option key="all" value="all">
                       All Categories
@@ -288,8 +298,8 @@ const AllProductsClient = () => {
                   );
                 }
                 return (
-                  <option key={category._id || category.name} value={category.name}>
-                    {category.name}
+                  <option key={category._id} value={category.name}>
+                    {category.name} ({category.productCount || 0} products)
                   </option>
                 );
               })}
@@ -324,7 +334,7 @@ const AllProductsClient = () => {
           ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' 
           : 'space-y-4'
       }`}>
-        {data?.map(product => 
+        {filteredProducts?.map(product => 
           viewMode === 'grid' ? (
             <ProductCard 
               key={product._id || product.id} 
@@ -360,7 +370,7 @@ const AllProductsClient = () => {
       <AddProductModal 
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
-        categories={dbCategories}
+        categories={categories}
       />
 
       {/* Edit Product Modal */}
@@ -368,7 +378,7 @@ const AllProductsClient = () => {
         isOpen={showEditModal}
         onClose={handleCloseEditModal}
         product={selectedProduct}
-        categories={dbCategories}
+        categories={categories}
       />
 
       {/* Delete Confirmation Dialog */}

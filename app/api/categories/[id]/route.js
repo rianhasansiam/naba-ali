@@ -104,10 +104,7 @@ export async function GET(request, { params }) {
       }, { status: 404 });
     }
 
-    return NextResponse.json({
-      success: true,
-      Data: category
-    });
+    return NextResponse.json(category);
 
   } catch (error) {
     console.error('Error fetching category:', error);

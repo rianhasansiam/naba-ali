@@ -33,10 +33,8 @@ const AllReviewsClient = ({reviewsData}) => {
     api: '/api/reviews'
   });
 
-  // Use live data if available, otherwise fallback to static data
-  const reviewsList = liveReviewsData?.success ? 
-    (liveReviewsData.Data || []) : 
-    (Array.isArray(liveReviewsData) ? liveReviewsData : reviewsData?.reviews || []);
+  // Use live data from API (direct array response)
+  const reviewsList = Array.isArray(liveReviewsData) ? liveReviewsData : [];
 
   const currentReviewsData = {
     reviews: reviewsList,

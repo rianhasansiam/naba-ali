@@ -61,7 +61,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
       <div className="flex items-center space-x-2">
         {getPageNumbers().map((page, index) => (
           <button
-            key={index}
+            key={page === '...' ? `ellipsis-${index}` : page}
             onClick={() => typeof page === 'number' && onPageChange(page)}
             disabled={page === '...'}
             className={`px-3 py-2 text-sm font-medium rounded-md ${

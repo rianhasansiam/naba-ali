@@ -4,6 +4,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 
 export default function CategoryClient({ categories = [] }) {
+  // Filter to show only active categories
+  const activeCategories = categories.filter(category => 
+    category.status === 'active' || !category.hasOwnProperty('status')
+  );
 
   return (
     <div>
@@ -19,9 +23,9 @@ export default function CategoryClient({ categories = [] }) {
 
       {/* Categories Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-        {categories.map((category) => (
+        {activeCategories.map((category) => (
           <Link 
-            key={category.id}
+            key={category._id}
             href={`/allProducts?category=${encodeURIComponent(category.name)}`}
             className="group text-center"
           >
@@ -38,8 +42,13 @@ export default function CategoryClient({ categories = [] }) {
               {category.name}
             </h3>
             <p className="text-xs text-gray-500 mt-1">
-              {category.description}
+              {category.description || 'Explore this category'}
             </p>
+            {category.productCount !== undefined && (
+              <p className="text-xs text-gray-400 mt-1">
+                {category.productCount} items
+              </p>
+            )}
           </Link>
         ))}
       </div>

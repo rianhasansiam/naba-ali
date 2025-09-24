@@ -10,7 +10,7 @@ export async function GET(request) {
     // Find all reviews
     const allReviews = await reviews.find({}).toArray();
 
-    return NextResponse.json( allReviews );
+    return NextResponse.json(allReviews);
 
   } catch (error) {
     console.error("Error fetching reviews:", error); 

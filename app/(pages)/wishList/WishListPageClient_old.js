@@ -52,40 +52,51 @@ const WishlistProductCard = ({ product, onRemove, onAddToCart, isSelected, onSel
     onSelect(product.id);
   };
 
-  console.log(product);
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.8 }}
+      className={`group relative bg-white rounded-2xl overflow-hidden border border-gray-100 hover:shadow-xl transition-all duration-300 cursor-pointer ${
+        isSelected ? 'ring-2 ring-gray-900' : ''
+      }`}
       whileHover={{ y: -5 }}
-      className="group relative bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl border border-gray-100 transition-all duration-300"
     >
       {/* Selection Checkbox */}
-      <div className="absolute top-4 left-4 z-10">
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
+      <div className="absolute top-4 left-4 z-20">
+        <button
           onClick={handleSelect}
-          className={`w-6 h-6 rounded-full border-2 transition-all duration-200 ${
-            isSelected 
-              ? 'bg-gray-900 border-gray-900 text-white' 
-              : 'bg-white border-gray-300 hover:border-gray-900'
+          className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+            isSelected
+              ? 'bg-gray-900 border-gray-900 text-white'
+              : 'border-gray-300 hover:border-gray-900 bg-white'
           }`}
         >
           {isSelected && <FiCheck size={12} />}
-        </motion.button>
+        </button>
       </div>
 
-      {/* Sale Badge */}
-      {discount > 0 && (
-        <div className="absolute top-4 right-4 z-10 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium">
-          -{discount}%
-        </div>
-      )}
+      {/* Badges */}
+      <div className="absolute top-4 left-16 z-10 flex flex-col gap-2">
+        {product.isNew && (
+          <span className="bg-green-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+            NEW
+          </span>
+        )}
+        {product.isOnSale && discount > 0 && (
+          <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+            {discount}% OFF
+          </span>
+        )}
+        {!product.inStock && (
+          <span className="bg-gray-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+            OUT OF STOCK
+          </span>
+        )}
+      </div>
 
-      {/* Actions */}
+      {/* Quick Actions */}
       <div className="absolute top-4 right-4 z-10 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
         <motion.button
           whileHover={{ scale: 1.1 }}
@@ -111,7 +122,7 @@ const WishlistProductCard = ({ product, onRemove, onAddToCart, isSelected, onSel
       {/* Product Image */}
       <div className="relative aspect-square overflow-hidden bg-gray-50">
         <Image
-          src={product.image || 'https://via.placeholder.com/400x400/f3f4f6/374151?text=Product'}
+          src={product.image || '/placeholder-product.jpg'}
           alt={product.name}
           fill
           className="object-cover group-hover:scale-105 transition-transform duration-500"
@@ -142,51 +153,46 @@ const WishlistProductCard = ({ product, onRemove, onAddToCart, isSelected, onSel
               />
             ))}
           </div>
-          <span className="text-sm text-gray-500">
-            {product.rating} ({product.reviews})
-          </span>
+          <span className="text-sm text-gray-500">({product.reviews})</span>
+        </div>
+
+        {/* Size and Color */}
+        <div className="flex items-center gap-4 mb-3 text-sm text-gray-600">
+          <span>Color: {product.color}</span>
+          <span>•</span>
+          <span>Sizes: {product.sizes.join(', ')}</span>
         </div>
 
         {/* Price */}
         <div className="flex items-center gap-2 mb-4">
-          <span className="text-xl font-bold text-gray-900">
-            ${product.price}
-          </span>
+          <span className="text-xl font-bold text-gray-900">${product.price}</span>
           {product.originalPrice && (
-            <span className="text-sm text-gray-500 line-through">
-              ${product.originalPrice}
-            </span>
+            <span className="text-sm text-gray-500 line-through">${product.originalPrice}</span>
           )}
         </div>
 
-        {/* Add to Cart Button */}
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={handleAddToCart}
-          disabled={isAddingToCart || !product.inStock}
-          className={`w-full py-3 rounded-xl font-medium transition-all duration-200 ${
-            !product.inStock
-              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-              : isAddingToCart
-              ? 'bg-green-500 text-white'
-              : 'bg-gray-900 text-white hover:bg-gray-800'
-          }`}
-        >
-          {!product.inStock ? (
-            'Out of Stock'
-          ) : isAddingToCart ? (
-            <div className="flex items-center justify-center gap-2">
-              <FiCheck className="w-4 h-4" />
-              Added to Cart
-            </div>
-          ) : (
-            <div className="flex items-center justify-center gap-2">
-              <FiShoppingCart className="w-4 h-4" />
-              Add to Cart
-            </div>
-          )}
-        </motion.button>
+        {/* Added Date */}
+        <p className="text-xs text-gray-400 mb-4">
+          Added {new Date(product.addedDate).toLocaleDateString()}
+        </p>
+
+        {/* Actions */}
+        <div className="flex gap-2">
+          <button 
+            onClick={handleAddToCart}
+            disabled={!product.inStock || isAddingToCart}
+            className={`flex-1 inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+              !product.inStock
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                : isAddingToCart
+                ? 'bg-green-500 text-white'
+                : 'bg-gray-900 text-white hover:bg-gray-800'
+            }`}
+          >
+            <FiShoppingCart className="w-4 h-4 mr-2" />
+            {!product.inStock ? 'Out of Stock' : isAddingToCart ? 'Added!' : 'Add to Cart'}
+          </button>
+        </div>
       </div>
     </motion.div>
   );
@@ -201,7 +207,7 @@ export default function WishListPageClient() {
 
   // Redux hooks
   const dispatch = useAppDispatch();
-  const wishlistItems = useAppSelector((state) => state.user.wishlist.items);
+  const wishlistItems = useAppSelector((state) => state.cart.wishlistItems);
   
   const [items, setItems] = useState([]);
   const [viewMode, setViewMode] = useState('grid');
@@ -298,6 +304,33 @@ export default function WishListPageClient() {
           color: item.color,
           stock: item.inStock ? 10 : 0
         }));
+        
+        console.log('Added to cart:', itemId);
+        resolve();
+      }, 500);
+    });
+  };
+
+    return new Promise(resolve => {
+      setTimeout(() => {
+        const cart = getCartFromStorage();
+        const existingItemIndex = cart.findIndex(cartItem => cartItem.id === itemId);
+        
+        if (existingItemIndex === -1) {
+          // Add new item to cart
+          cart.push({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            image: item.image,
+            quantity: 1,
+            size: item.sizes[0], // Default to first available size
+            color: item.color,
+            stock: item.inStock ? 10 : 0 // Assume stock of 10 if in stock
+          });
+          
+          saveCartToStorage(cart);
+        }
         
         console.log('Added to cart:', itemId);
         resolve();
