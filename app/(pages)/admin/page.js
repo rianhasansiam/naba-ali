@@ -20,7 +20,6 @@ import OrderDetails from './adminComponents/orderDetails/OrderDetails';
 import AllReviews from './adminComponents/allReviews/AllReviews';
 import AllCupons from './adminComponents/allCupons/AllCupons';
 import AllCategory from './adminComponents/allCategory/AllCategory';
-import RoleManagement from './adminComponents/roleManagement/RoleManagement';
 
 
 // Metadata for SEO - Admin Panel
@@ -123,13 +122,7 @@ export default function AdminPage() {
       component: AllCupons,
       description: 'Discount Coupons'
     },
-    {
-      id: 'roles',
-      name: 'Role Management',
-      icon: Shield,
-      component: RoleManagement,
-      description: 'Manage User Roles'
-    }
+    
   ];
 
   // Create serializable navigation data for client (without icons and components)

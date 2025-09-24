@@ -11,12 +11,6 @@ export default function Navbar() {
       icon: '🛍️'
     },
     { 
-      label: 'Products', 
-      hasDropdown: false,
-      href: '/allProducts',
-      icon: ''
-    },
-    { 
       label: 'Contact', 
       hasDropdown: false,
       href: '/contact',
@@ -36,41 +30,43 @@ export default function Navbar() {
     },
   ];
 
-  const shopCategories = [
+  // Shop categories will be loaded dynamically in NavbarClient
+  // This provides default fallback categories
+  const defaultShopCategories = [
     {
-      title: 'All Products',
+      name: 'All Products',
       description: 'Browse our complete collection',
       icon: '🛍️',
-      featured: true,
+      count: 0,
       href: '/allProducts'
     },
     {
-      title: 'Product Details',
-      description: 'View detailed product information',
-      icon: '🔍',
-      featured: true,
-      href: '/productDetails'
+      name: 'New Arrivals',
+      description: 'Latest fashion trends',
+      icon: '✨',
+      count: 0,
+      href: '/allProducts?sort=newest'
     },
     {
-      title: 'Men\'s Fashion',
-      description: 'Shirts, pants, jackets and more',
-      icon: '👔',
-      featured: false,
-      href: '/allProducts?category=men'
+      name: 'Sale Items',
+      description: 'Great deals and discounts',
+      icon: '🏷️',
+      count: 0,
+      href: '/allProducts?sale=true'
     },
     {
-      title: 'Women\'s Fashion',
-      description: 'Dresses, tops, accessories',
-      icon: '👗',
-      featured: true,
-      href: '/allProducts?category=women'
+      name: 'Popular',
+      description: 'Trending products',
+      icon: '�',
+      count: 0,
+      href: '/allProducts?sort=popular'
     }
   ];
 
   return (
     <NavbarClient 
       navItems={navItems}
-      shopCategories={shopCategories}
+      defaultShopCategories={defaultShopCategories}
     />
   );
 }

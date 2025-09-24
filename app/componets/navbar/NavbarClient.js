@@ -1,15 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, ShoppingCart, User, Menu, ChevronDown, Heart, LogOut, Shield } from 'lucide-react';
 import { useAppSelector } from '@/app/redux/reduxHooks';
 import { useSession, signOut } from 'next-auth/react';
+import { useGetData } from '@/lib/hooks/useGetData';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-const NavbarClient = ({ navItems, shopCategories }) => {
+const NavbarClient = ({ navItems, defaultShopCategories }) => {
   // Get authentication data
   const { data: session, status } = useSession();
   
@@ -17,18 +18,77 @@ const NavbarClient = ({ navItems, shopCategories }) => {
   const cartTotalQuantity = useAppSelector((state) => state.user.cart.totalQuantity);
   const wishlistTotalItems = useAppSelector((state) => state.user.wishlist.totalItems);
   
+  // Fetch real categories from API
+  const { data: categoriesData, isLoading: categoriesLoading } = useGetData({
+    name: 'navbar-categories',
+    api: '/api/categories',
+    cacheType: 'STATIC'
+  });
+  
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isShopDropdownOpen, setIsShopDropdownOpen] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Loading states for cart/wishlist
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  
+  // Dropdown hover timeout refs
+  const shopDropdownTimeoutRef = useRef(null);
+  const userDropdownTimeoutRef = useRef(null);
   const pathname = usePathname();
+
+  // Helper function to get category icon
+  const getCategoryIcon = useCallback((categoryName) => {
+    const name = categoryName?.toLowerCase() || '';
+    if (name.includes('men') || name.includes('male')) return '👔';
+    if (name.includes('women') || name.includes('female') || name.includes('ladies')) return '👗';
+    if (name.includes('shoes') || name.includes('footwear')) return '👟';
+    if (name.includes('accessories') || name.includes('jewelry')) return '💍';
+    if (name.includes('bags') || name.includes('handbag')) return '👜';
+    if (name.includes('kids') || name.includes('children')) return '👶';
+    if (name.includes('sportswear') || name.includes('athletic')) return '🏃';
+    return '👕'; // Default clothing icon
+  }, []);
+
+  // Combine real categories with default shop categories
+  const shopCategories = useMemo(() => {
+    const categories = [];
+    
+    // Add default categories first
+    categories.push(...defaultShopCategories);
+    
+    // Add real categories from API if available
+    if (Array.isArray(categoriesData)) {
+      const realCategories = categoriesData
+        .filter(category => category.status === 'active' || !category.status)
+        .slice(0, 4) // Limit to 4 categories to fit in dropdown
+        .map(category => ({
+          name: category.name,
+          description: `${category.productCount || 0} items available`,
+          icon: getCategoryIcon(category.name),
+          count: category.productCount || 0,
+          href: `/allProducts?category=${encodeURIComponent(category.name)}`
+        }));
+      
+      // Replace default categories with real ones, keeping "All Products" at the top
+      categories.splice(1, categories.length - 1, ...realCategories);
+    }
+    
+    return categories.slice(0, 6); // Maximum 6 items in dropdown
+  }, [categoriesData, defaultShopCategories, getCategoryIcon]);
+
+  // Helper function to check if user is admin
+  const isAdmin = useCallback(() => {
+    return session?.user?.role?.toLowerCase() === 'admin';
+  }, [session?.user?.role]);
 
   // Filter nav items based on user role
   const filteredNavItems = navItems.filter(item => {
     if (item.label === 'Admin') {
       // Only show admin link if user is logged in and has admin role
-      return session?.user?.role?.toLowerCase() === 'admin';
+      return isAdmin();
     }
     return true;
   });
@@ -39,10 +99,46 @@ const NavbarClient = ({ navItems, shopCategories }) => {
     setIsUserDropdownOpen(false);
   };
 
+  // Improved hover handlers with delay
+  const handleShopDropdownEnter = useCallback(() => {
+    if (shopDropdownTimeoutRef.current) {
+      clearTimeout(shopDropdownTimeoutRef.current);
+    }
+    setIsShopDropdownOpen(true);
+  }, []);
+
+  const handleShopDropdownLeave = useCallback(() => {
+    shopDropdownTimeoutRef.current = setTimeout(() => {
+      setIsShopDropdownOpen(false);
+    }, 150);
+  }, []);
+
+  const handleUserDropdownEnter = useCallback(() => {
+    if (userDropdownTimeoutRef.current) {
+      clearTimeout(userDropdownTimeoutRef.current);
+    }
+    setIsUserDropdownOpen(true);
+  }, []);
+
+  const handleUserDropdownLeave = useCallback(() => {
+    userDropdownTimeoutRef.current = setTimeout(() => {
+      setIsUserDropdownOpen(false);
+    }, 150);
+  }, []);
+
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  useEffect(() => {
+    // Remove initial loading after a short delay to prevent showing zero counts briefly
+    const timer = setTimeout(() => {
+      setIsInitialLoad(false);
+    }, 1000);
+    
+    return () => clearTimeout(timer);
   }, []);
 
   return (
@@ -79,14 +175,14 @@ const NavbarClient = ({ navItems, shopCategories }) => {
           </Link>
 
           {/* Navigation - Use filtered items */}
-          <nav className="hidden lg:flex items-center space-x-4">
+          <nav className="hidden md:flex items-center space-x-2 lg:space-x-4">
             {filteredNavItems.map((item) => (
               <div key={item.label} className="relative">
                 {item.hasDropdown ? (
                   <motion.button
-                    onMouseEnter={() => setIsShopDropdownOpen(true)}
-                    onMouseLeave={() => setIsShopDropdownOpen(false)}
-                    className={`flex items-center gap-2 px-4 py-2 font-medium transition-colors duration-300 ${
+                    onMouseEnter={handleShopDropdownEnter}
+                    onMouseLeave={handleShopDropdownLeave}
+                    className={`flex items-center gap-1 md:gap-2 px-2 md:px-4 py-2 font-medium text-sm md:text-base transition-colors duration-300 ${
                       pathname.startsWith('/shop') 
                         ? 'text-black bg-gray-100 rounded-lg' 
                         : 'text-gray-700 hover:text-black'
@@ -100,7 +196,7 @@ const NavbarClient = ({ navItems, shopCategories }) => {
                   <Link href={item.href}>
                     <motion.div
                       whileHover={{ y: -2 }}
-                      className={`flex items-center gap-2 px-4 py-2 font-medium cursor-pointer transition-colors duration-300 ${
+                      className={`flex items-center gap-1 md:gap-2 px-2 md:px-4 py-2 font-medium text-sm md:text-base cursor-pointer transition-colors duration-300 ${
                         pathname === item.href 
                           ? 'bg-gray-200 rounded-xl font' 
                           : 'text-gray-700 hover:text-black'
@@ -126,13 +222,13 @@ const NavbarClient = ({ navItems, shopCategories }) => {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -10, scale: 0.96 }}
                         transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-                        onMouseEnter={() => setIsShopDropdownOpen(true)}
-                        onMouseLeave={() => setIsShopDropdownOpen(false)}
-                        className="absolute top-full left-0 mt-2 w-80 bg-white border rounded-2xl shadow-2xl z-50"
+                        onMouseEnter={handleShopDropdownEnter}
+                        onMouseLeave={handleShopDropdownLeave}
+                        className="absolute top-full left-0 mt-2 w-[45vw] bg-white border rounded-2xl shadow-2xl z-50"
                       >
                         <div className="p-6">
                           <h3 className="text-lg font-semibold text-gray-800 mb-4">Shop Categories</h3>
-                          <div className="grid grid-cols-2 gap-3">
+                          <div className="grid grid-cols-3 gap-3">
                             {shopCategories.map((category) => (
                               <Link 
                                 key={category.name} 
@@ -166,25 +262,41 @@ const NavbarClient = ({ navItems, shopCategories }) => {
           </nav>
 
           {/* Right side actions */}
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1 md:space-x-2">
             <Link href="/wishList">
-              <motion.button whileHover={{ y: -2 }} className="relative p-3 hover:bg-gray-100 rounded-xl">
+              <motion.button 
+                whileHover={{ y: -2 }} 
+                className="relative p-2 md:p-3 hover:bg-gray-100 rounded-xl"
+                aria-label={`Wishlist ${wishlistTotalItems > 0 ? `(${wishlistTotalItems} items)` : '(empty)'}`}
+              >
                 <Heart className="w-5 h-5" />
-                {wishlistTotalItems > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {wishlistTotalItems}
-                  </span>
+                {isInitialLoad ? (
+                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-gray-300 rounded-full animate-pulse"></div>
+                ) : (
+                  wishlistTotalItems > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      {wishlistTotalItems}
+                    </span>
+                  )
                 )}
               </motion.button>
             </Link>
 
             <Link href="/addToCart">
-              <motion.button whileHover={{ y: -2 }} className="relative p-3 bg-black text-white rounded-xl">
+              <motion.button 
+                whileHover={{ y: -2 }} 
+                className="relative p-2 md:p-3 bg-black text-white rounded-xl"
+                aria-label={`Shopping cart ${cartTotalQuantity > 0 ? `(${cartTotalQuantity} items)` : '(empty)'}`}
+              >
                 <ShoppingCart className="w-5 h-5" />
-                {cartTotalQuantity > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-yellow-400 text-black text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold">
-                    {cartTotalQuantity}
-                  </span>
+                {isInitialLoad ? (
+                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-gray-400 rounded-full animate-pulse"></div>
+                ) : (
+                  cartTotalQuantity > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-yellow-400 text-black text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold">
+                      {cartTotalQuantity}
+                    </span>
+                  )
                 )}
               </motion.button>
             </Link>
@@ -195,9 +307,9 @@ const NavbarClient = ({ navItems, shopCategories }) => {
                 // Logged in user - show avatar
                 <motion.button 
                   whileHover={{ y: -2 }} 
-                  className="relative p-1 hover:bg-gray-100 rounded-xl"
-                  onMouseEnter={() => setIsUserDropdownOpen(true)}
-                  onMouseLeave={() => setIsUserDropdownOpen(false)}
+                  className="relative p-1 md:p-2 hover:bg-gray-100 rounded-xl"
+                  onMouseEnter={handleUserDropdownEnter}
+                  onMouseLeave={handleUserDropdownLeave}
                 >
                   {session.user.image ? (
                     <Image
@@ -213,7 +325,7 @@ const NavbarClient = ({ navItems, shopCategories }) => {
                     </div>
                   )}
                   {/* Admin badge */}
-                  {session.user.role?.toLowerCase() === 'admin' && (
+                  {isAdmin() && (
                     <div className="absolute -top-1 -right-1 bg-purple-500 text-white rounded-full w-4 h-4 flex items-center justify-center">
                       <Shield className="w-2.5 h-2.5" />
                     </div>
@@ -221,22 +333,27 @@ const NavbarClient = ({ navItems, shopCategories }) => {
                 </motion.button>
               ) : (
                 // Not logged in - show user icon
-                <motion.button whileHover={{ y: -2 }} className="p-3 hover:bg-gray-100 rounded-xl">
+                <motion.button 
+                  whileHover={{ y: -2 }} 
+                  className="p-2 md:p-3 hover:bg-gray-100 rounded-xl"
+                  onMouseEnter={handleUserDropdownEnter}
+                  onMouseLeave={handleUserDropdownLeave}
+                >
                   <User className="w-5 h-5" />
                 </motion.button>
               )}
               
               {/* User Dropdown */}
               <AnimatePresence>
-                {(isUserDropdownOpen || !session?.user) && (
+                {isUserDropdownOpen && (
                   <motion.div
                     initial={{ opacity: 0, y: -10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -10, scale: 0.95 }}
                     transition={{ duration: 0.2 }}
                     className="absolute right-0 top-full mt-2 w-48 bg-white border rounded-xl shadow-lg z-50"
-                    onMouseEnter={() => setIsUserDropdownOpen(true)}
-                    onMouseLeave={() => setIsUserDropdownOpen(false)}
+                    onMouseEnter={handleUserDropdownEnter}
+                    onMouseLeave={handleUserDropdownLeave}
                   >
                     <div className="py-2">
                       {session?.user ? (
@@ -249,7 +366,7 @@ const NavbarClient = ({ navItems, shopCategories }) => {
                             <p className="text-xs text-gray-500">
                               {session.user.email}
                             </p>
-                            {session.user.role?.toLowerCase() === 'admin' && (
+                            {isAdmin() && (
                               <p className="text-xs text-purple-600 font-medium mt-1 flex items-center">
                                 <Shield className="w-3 h-3 mr-1" />
                                 Administrator
@@ -289,7 +406,10 @@ const NavbarClient = ({ navItems, shopCategories }) => {
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="lg:hidden p-3 hover:bg-gray-100 rounded-xl"
+              className="md:hidden p-2 md:p-3 hover:bg-gray-100 rounded-xl"
+              aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={isMenuOpen}
+              aria-controls="mobile-menu"
             >
               {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </motion.button>
@@ -304,7 +424,10 @@ const NavbarClient = ({ navItems, shopCategories }) => {
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-              className="lg:hidden border-t bg-white"
+              className="md:hidden border-t bg-white"
+              id="mobile-menu"
+              role="navigation"
+              aria-label="Mobile navigation menu"
             >
               <nav className="py-6 space-y-2">
                 {filteredNavItems.map((item, index) => (
@@ -362,7 +485,7 @@ const NavbarClient = ({ navItems, shopCategories }) => {
                             <p className="text-xs text-gray-500">
                               {session.user.email}
                             </p>
-                            {session.user.role?.toLowerCase() === 'admin' && (
+                            {isAdmin() && (
                               <p className="text-xs text-purple-600 font-medium flex items-center">
                                 <Shield className="w-3 h-3 mr-1" />
                                 Administrator
