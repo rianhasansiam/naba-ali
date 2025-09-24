@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useGetData } from '@/lib/hooks/useGetData';
 import { 
   FiHeart, 
   FiShoppingCart, 
@@ -195,14 +196,74 @@ const WishlistProductCard = ({ product, onRemove, onAddToCart, isSelected, onSel
   );
 };
 
-export default function WishListPageClient({ wishlistItems }) {
-  const [items, setItems] = useState(wishlistItems);
+export default function WishListPageClient() {
+  // Fetch all products from API
+  const { data: products, isLoading: productsLoading, error: productsError } = useGetData({
+    name: 'products',
+    api: '/api/products'
+  });
+
+  const [wishlistItems, setWishlistItems] = useState([]);
+  const [items, setItems] = useState([]);
   const [viewMode, setViewMode] = useState('grid');
   const [sortBy, setSortBy] = useState('recent');
   const [filterBy, setFilterBy] = useState('all');
   const [selectedItems, setSelectedItems] = useState([]);
   const [showSortDropdown, setShowSortDropdown] = useState(false);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+
+  // Local Storage utility functions
+  const getWishlistFromStorage = () => {
+    if (typeof window !== 'undefined') {
+      const wishlist = localStorage.getItem('wishlist');
+      return wishlist ? JSON.parse(wishlist) : [];
+    }
+    return [];
+  };
+
+  const saveWishlistToStorage = (wishlist) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('wishlist', JSON.stringify(wishlist));
+    }
+  };
+
+  // Load wishlist data from localStorage and match with products
+  useEffect(() => {
+    if (products && products.length > 0) {
+      const wishlistFromStorage = getWishlistFromStorage();
+      
+      // Match wishlist items with full product data
+      const fullWishlistItems = wishlistFromStorage
+        .map(wishlistItem => {
+          const fullProduct = products.find(product => product._id === wishlistItem.id);
+          if (fullProduct) {
+            return {
+              id: fullProduct._id,
+              name: fullProduct.name,
+              category: fullProduct.category,
+              style: fullProduct.style || 'Casual',
+              price: fullProduct.price,
+              originalPrice: fullProduct.originalPrice,
+              image: fullProduct.image,
+              rating: fullProduct.rating || wishlistItem.rating || 4.0,
+              reviews: fullProduct.reviews?.length || 0,
+              isNew: false, // Could be calculated based on createdAt
+              isOnSale: fullProduct.originalPrice && fullProduct.originalPrice > fullProduct.price,
+              color: fullProduct.colors?.[0] || 'Multiple',
+              sizes: fullProduct.sizes || ['S', 'M', 'L', 'XL'],
+              inStock: (fullProduct.stock || 0) > 0,
+              addedDate: new Date().toISOString(), // Current date as added date
+              description: fullProduct.description || `High-quality ${fullProduct.category?.toLowerCase()} perfect for any occasion.`
+            };
+          }
+          return null;
+        })
+        .filter(Boolean); // Remove null entries
+      
+      setWishlistItems(fullWishlistItems);
+      setItems(fullWishlistItems);
+    }
+  }, [products]);
 
   // Filter and sort items
   const filteredItems = items
@@ -226,14 +287,58 @@ export default function WishListPageClient({ wishlistItems }) {
     });
 
   const handleRemoveItem = (itemId) => {
-    setItems(items.filter(item => item.id !== itemId));
+    // Remove from state
+    const updatedItems = items.filter(item => item.id !== itemId);
+    setItems(updatedItems);
+    setWishlistItems(updatedItems);
     setSelectedItems(selectedItems.filter(id => id !== itemId));
+    
+    // Remove from localStorage
+    const wishlistFromStorage = getWishlistFromStorage();
+    const updatedWishlist = wishlistFromStorage.filter(item => item.id !== itemId);
+    saveWishlistToStorage(updatedWishlist);
   };
 
   const handleAddToCart = async (itemId) => {
-    // Simulate API call
+    const item = items.find(item => item.id === itemId);
+    if (!item) return;
+
+    // Get cart from localStorage
+    const getCartFromStorage = () => {
+      if (typeof window !== 'undefined') {
+        const cart = localStorage.getItem('cart');
+        return cart ? JSON.parse(cart) : [];
+      }
+      return [];
+    };
+
+    const saveCartToStorage = (cart) => {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('cart', JSON.stringify(cart));
+      }
+    };
+
     return new Promise(resolve => {
       setTimeout(() => {
+        const cart = getCartFromStorage();
+        const existingItemIndex = cart.findIndex(cartItem => cartItem.id === itemId);
+        
+        if (existingItemIndex === -1) {
+          // Add new item to cart
+          cart.push({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            image: item.image,
+            quantity: 1,
+            size: item.sizes[0], // Default to first available size
+            color: item.color,
+            stock: item.inStock ? 10 : 0 // Assume stock of 10 if in stock
+          });
+          
+          saveCartToStorage(cart);
+        }
+        
         console.log('Added to cart:', itemId);
         resolve();
       }, 500);
@@ -273,6 +378,55 @@ export default function WishListPageClient({ wishlistItems }) {
   const totalSavings = filteredItems.reduce((sum, item) => {
     return sum + (item.originalPrice ? item.originalPrice - item.price : 0);
   }, 0);
+
+  // Loading state
+  if (productsLoading) {
+    return (
+      <div className="pt-10">
+        <div className="text-center py-16">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mb-4"></div>
+          <p className="text-gray-600">Loading your wishlist...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (productsError) {
+    return (
+      <div className="pt-10">
+        <div className="text-center py-16">
+          <div className="text-red-500 mb-4">⚠️</div>
+          <p className="text-gray-600">Failed to load products. Please try again later.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Empty wishlist state
+  if (items.length === 0) {
+    return (
+      <div className="pt-10">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center py-16"
+        >
+          <div className="text-6xl mb-6">💝</div>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Your Wishlist is Empty</h1>
+          <p className="text-gray-600 max-w-2xl mx-auto mb-8">
+            Start adding items to your wishlist by clicking the heart icon on products you love.
+          </p>
+          <Link 
+            href="/allProducts"
+            className="inline-flex items-center px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors"
+          >
+            Browse Products
+          </Link>
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div className="pt-10">

@@ -3,13 +3,20 @@
 import { useGetData } from '@/lib/hooks/useGetData';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { Star, StarIcon, ThumbsUp, ShieldCheck, Clock, User, MessageSquare, Heart, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function ProductDetailPage({ params }) {
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [isInCart, setIsInCart] = useState(false);
+  const [isInWishlist, setIsInWishlist] = useState(false);
+  const [toast, setToast] = useState({ show: false, type: 'success', message: '' });
+  const [isPaused, setIsPaused] = useState(false);
+  const scrollContainerRef = useRef(null);
   
   // Fetch all products using real API
   const { data: products, isLoading, error } = useGetData({
@@ -17,8 +24,167 @@ export default function ProductDetailPage({ params }) {
     api: '/api/products'
   });
 
+  // Fetch reviews for this product
+  const { data: allReviews, isLoading: reviewsLoading } = useGetData({
+    name: 'reviews',
+    api: '/api/reviews'
+  });
+
   // Find the specific product by ID from real database
   const product = products?.find(p => p._id === params.id);
+  
+  // Filter reviews for this specific product
+  const productReviews = allReviews?.filter(review => review.productId === params.id) || [];
+
+  // Local Storage utility functions
+  const getCartFromStorage = () => {
+    if (typeof window !== 'undefined') {
+      const cart = localStorage.getItem('cart');
+      return cart ? JSON.parse(cart) : [];
+    }
+    return [];
+  };
+
+  const getWishlistFromStorage = () => {
+    if (typeof window !== 'undefined') {
+      const wishlist = localStorage.getItem('wishlist');
+      return wishlist ? JSON.parse(wishlist) : [];
+    }
+    return [];
+  };
+
+  const saveCartToStorage = (cart) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('cart', JSON.stringify(cart));
+    }
+  };
+
+  const saveWishlistToStorage = (wishlist) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('wishlist', JSON.stringify(wishlist));
+    }
+  };
+
+  // Check if product is in cart or wishlist
+  useEffect(() => {
+    if (product) {
+      const cart = getCartFromStorage();
+      const wishlist = getWishlistFromStorage();
+      
+      setIsInCart(cart.some(item => item.id === product._id));
+      setIsInWishlist(wishlist.some(item => item.id === product._id));
+    }
+  }, [product]);
+
+  // Show toast notification
+  const showToast = (type, message) => {
+    setToast({ show: true, type, message });
+    setTimeout(() => {
+      setToast({ show: false, type: 'success', message: '' });
+    }, 3000);
+  };
+
+  // Add to Cart function
+  const handleAddToCart = () => {
+    if (!product) return;
+    
+    const cart = getCartFromStorage();
+    const existingItemIndex = cart.findIndex(item => item.id === product._id);
+    
+    if (existingItemIndex !== -1) {
+      // Remove from cart if already exists
+      cart.splice(existingItemIndex, 1);
+      saveCartToStorage(cart);
+      setIsInCart(false);
+      showToast('success', 'Product removed from cart!');
+    } else {
+      // Add new item to cart
+      cart.push({
+        id: product._id,
+        name: product.name,
+        price: product.price,
+        image: product.image,
+        quantity: quantity,
+        size: selectedSize,
+        color: selectedColor,
+        stock: product.stock
+      });
+      
+      saveCartToStorage(cart);
+      setIsInCart(true);
+      showToast('success', 'Product added to cart successfully!');
+    }
+  };
+
+  // Add to Wishlist function
+  const handleAddToWishlist = () => {
+    if (!product) return;
+    
+    const wishlist = getWishlistFromStorage();
+    const existingItem = wishlist.find(item => item.id === product._id);
+    
+    if (existingItem) {
+      // Remove from wishlist if already exists
+      const updatedWishlist = wishlist.filter(item => item.id !== product._id);
+      saveWishlistToStorage(updatedWishlist);
+      setIsInWishlist(false);
+      showToast('success', 'Product removed from wishlist!');
+    } else {
+      // Add to wishlist
+      wishlist.push({
+        id: product._id,
+        name: product.name,
+        price: product.price,
+        image: product.image,
+        category: product.category,
+        rating: product.rating || 0
+      });
+      
+      saveWishlistToStorage(wishlist);
+      setIsInWishlist(true);
+      showToast('success', 'Product added to wishlist!');
+    }
+  };
+
+  // Smooth auto-scroll effect for reviews using requestAnimationFrame
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer || productReviews.length === 0) return;
+
+    let scrollSpeed = 0.5; // pixels per frame - smoother than interval
+    let animationFrame;
+
+    const autoScroll = () => {
+      if (!isPaused && scrollContainer) {
+        scrollContainer.scrollLeft += scrollSpeed;
+        
+        // Reset scroll when reaching the end for seamless loop
+        if (scrollContainer.scrollLeft >= scrollContainer.scrollWidth - scrollContainer.clientWidth) {
+          scrollContainer.scrollLeft = 0;
+        }
+      }
+      animationFrame = requestAnimationFrame(autoScroll);
+    };
+
+    // Start auto-scroll
+    animationFrame = requestAnimationFrame(autoScroll);
+
+    // Cleanup
+    return () => {
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
+      }
+    };
+  }, [isPaused, productReviews.length]);
+
+  // Handle mouse events for pausing
+  const handleMouseEnter = () => {
+    setIsPaused(true);
+  };
+
+  const handleMouseLeave = () => {
+    setIsPaused(false);
+  };
 
   // Set default selections when product loads
   if (product && !selectedColor && product.colors?.length > 0) {
@@ -195,23 +361,51 @@ export default function ProductDetailPage({ params }) {
           {product.colors && product.colors.length > 0 && (
             <div className="bg-gray-50 p-4 rounded-lg">
               <label className="block text-sm font-semibold text-gray-800 mb-3">
-                Available Colors
-                {selectedColor && <span className="text-gray-500 font-normal ml-2">- {selectedColor}</span>}
+                Available Colors{selectedColor ? ` - ${selectedColor}` : ''}
               </label>
               <div className="flex flex-wrap gap-3">
-                {product.colors.map((color, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setSelectedColor(color)}
-                    className={`px-5 py-2.5 text-sm font-medium border-2 rounded-lg transition-all duration-200 ${
-                      selectedColor === color
-                        ? 'border-black bg-black text-white shadow-lg transform scale-105'
-                        : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'
-                    }`}
-                  >
-                    {color}
-                  </button>
-                ))}
+                {product.colors.map((color, index) => {
+                  // Map color names to actual color values
+                  const colorMap = {
+                    'Red': '#EF4444',
+                    'Blue': '#3B82F6', 
+                    'Green': '#10B981',
+                    'Black': '#000000',
+                    'White': '#FFFFFF',
+                    'Gray': '#6B7280',
+                    'Grey': '#6B7280',
+                    'Yellow': '#F59E0B',
+                    'Orange': '#F97316',
+                    'Purple': '#8B5CF6',
+                    'Pink': '#EC4899',
+                    'Brown': '#92400E',
+                    'Navy': '#1E3A8A',
+                    'Beige': '#F5F5DC',
+                    'Maroon': '#7F1D1D'
+                  };
+                  
+                  const colorValue = colorMap[color] || color.toLowerCase();
+                  
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => setSelectedColor(color)}
+                      className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-2 rounded-lg transition-all duration-200 ${
+                        selectedColor === color
+                          ? 'border-black bg-gray-50 shadow-lg transform scale-105'
+                          : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'
+                      }`}
+                    >
+                      <div 
+                        className={`w-8 h-8 rounded-full border-2 ${
+                          color === 'White' ? 'border-gray-300' : 'border-gray-400'
+                        }`}
+                        style={{ backgroundColor: colorValue }}
+                      ></div>
+                      <span className="text-gray-800">{color}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -273,19 +467,38 @@ export default function ProductDetailPage({ params }) {
           {/* Action Buttons */}
           <div className="space-y-4 pt-6">
             <button 
+              onClick={handleAddToCart}
               className={`w-full py-4 px-6 rounded-lg font-semibold text-lg transition-all duration-200 ${
                 (product.stock || 0) === 0
                   ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : isInCart
+                  ? 'bg-red-600 text-white hover:bg-red-700 hover:shadow-lg transform hover:-translate-y-0.5'
                   : 'bg-black text-white hover:bg-gray-800 hover:shadow-lg transform hover:-translate-y-0.5'
               }`}
               disabled={(product.stock || 0) === 0}
             >
-              {(product.stock || 0) === 0 ? 'Out of Stock' : 'Add to Cart'}
+              {(product.stock || 0) === 0 
+                ? 'Out of Stock' 
+                : isInCart 
+                ? '✗ Remove from Cart' 
+                : 'Add to Cart'
+              }
             </button>
             
             <div className="grid grid-cols-2 gap-4">
-              <button className="py-3 px-6 border-2 border-gray-200 rounded-lg hover:border-gray-300 hover:bg-gray-50 transition-colors font-medium">
-                Add to Wishlist
+              <button 
+                onClick={handleAddToWishlist}
+                className={`py-3 px-6 border-2 rounded-lg font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
+                  isInWishlist
+                    ? 'border-red-500 bg-red-50 text-red-600 hover:bg-red-100'
+                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                <Heart 
+                  size={18} 
+                  className={`${isInWishlist ? 'fill-current text-red-500' : ''}`} 
+                />
+                {isInWishlist ? 'In Wishlist' : 'Add to Wishlist'}
               </button>
               <Link
                 href="/allProducts"
@@ -296,140 +509,421 @@ export default function ProductDetailPage({ params }) {
             </div>
           </div>
 
-            {/* Product Information */}
-            <div className="border-t border-gray-200 pt-8">
-              <h3 className="text-xl font-bold mb-6">Product Information</h3>
-              <div className="bg-gray-50 rounded-lg p-6 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                      <span className="font-medium text-gray-700">Product ID:</span>
-                      <span className="text-gray-900 font-mono text-sm">{product._id?.slice(-8).toUpperCase()}</span>
+           
+
+
+
+
+          </div>
+        </div>
+      </div>
+      </div>
+ {/* Product Information */}
+            <div className="border-t border-gray-200 pt-8 container mx-auto px-4">
+              <div className="flex items-center gap-3 mb-8">
+                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <ShieldCheck className="text-blue-600" size={20} />
+                </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-900">Product Details</h3>
+                  <p className="text-gray-600 text-sm">Everything you need to know about this product</p>
+                </div>
+              </div>
+
+              {/* Information Cards Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                {/* Product ID Card */}
+                <div className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow duration-300">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                      <span className="text-gray-600 font-mono text-lg">#</span>
                     </div>
-                    <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                      <span className="font-medium text-gray-700">Category:</span>
-                      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-medium">
-                        {product.category || 'General'}
-                      </span>
+                    <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-md text-xs font-medium">ID</span>
+                  </div>
+                  <h4 className="font-semibold text-gray-900 mb-1">Product ID</h4>
+                  <p className="text-gray-600 text-sm font-mono">{product._id?.slice(-8).toUpperCase()}</p>
+                </div>
+
+                {/* Category Card */}
+                <div className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow duration-300">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <span className="text-blue-600 text-lg">📂</span>
                     </div>
-                    <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                      <span className="font-medium text-gray-700">Brand:</span>
-                      <span className="text-gray-900 font-semibold">NABA ALI</span>
+                    <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-md text-xs font-medium">Category</span>
+                  </div>
+                  <h4 className="font-semibold text-gray-900 mb-1">Category</h4>
+                  <p className="text-blue-600 font-medium">{product.category || 'General'}</p>
+                </div>
+
+                {/* Brand Card */}
+                <div className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow duration-300">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                      <span className="text-purple-600 text-lg">🏷️</span>
+                    </div>
+                    <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-md text-xs font-medium">Brand</span>
+                  </div>
+                  <h4 className="font-semibold text-gray-900 mb-1">Brand</h4>
+                  <p className="text-purple-600 font-medium">NABA ALI</p>
+                </div>
+
+                {/* Stock Status Card */}
+                <div className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow duration-300">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                      (product.stock || 0) > 10 
+                        ? 'bg-green-100' 
+                        : (product.stock || 0) > 0 
+                        ? 'bg-orange-100' 
+                        : 'bg-red-100'
+                    }`}>
+                      <span className={`text-lg ${
+                        (product.stock || 0) > 10 
+                          ? 'text-green-600' 
+                          : (product.stock || 0) > 0 
+                          ? 'text-orange-600' 
+                          : 'text-red-600'
+                      }`}>📦</span>
+                    </div>
+                    <span className={`px-2 py-1 rounded-md text-xs font-medium ${
+                      (product.stock || 0) > 10 
+                        ? 'bg-green-100 text-green-700' 
+                        : (product.stock || 0) > 0 
+                        ? 'bg-orange-100 text-orange-700' 
+                        : 'bg-red-100 text-red-700'
+                    }`}>
+                      {(product.stock || 0) > 10 ? 'In Stock' : (product.stock || 0) > 0 ? 'Limited' : 'Out'}
+                    </span>
+                  </div>
+                  <h4 className="font-semibold text-gray-900 mb-1">Availability</h4>
+                  <p className={`font-medium ${
+                    (product.stock || 0) > 10 
+                      ? 'text-green-600' 
+                      : (product.stock || 0) > 0 
+                      ? 'text-orange-600' 
+                      : 'text-red-600'
+                  }`}>
+                    {(product.stock || 0)} units available
+                  </p>
+                </div>
+
+                {/* Style Card */}
+                <div className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow duration-300">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center">
+                      <span className="text-pink-600 text-lg">✨</span>
+                    </div>
+                    <span className="bg-pink-100 text-pink-700 px-2 py-1 rounded-md text-xs font-medium">Style</span>
+                  </div>
+                  <h4 className="font-semibold text-gray-900 mb-1">Style</h4>
+                  <p className="text-pink-600 font-medium">{product.style || 'Classic'}</p>
+                </div>
+
+                {/* Date Added Card */}
+                {product.createdAt && (
+                  <div className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-lg transition-shadow duration-300">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center">
+                        <Clock className="text-indigo-600" size={20} />
+                      </div>
+                      <span className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-md text-xs font-medium">Added</span>
+                    </div>
+                    <h4 className="font-semibold text-gray-900 mb-1">Date Added</h4>
+                    <p className="text-indigo-600 font-medium">
+                      {new Date(product.createdAt).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Premium Features Section */}
+              <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-2xl p-8 border border-blue-100">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                    <Star className="text-white fill-current" size={18} />
+                  </div>
+                  <h4 className="text-xl font-bold text-gray-900">Premium Benefits</h4>
+                </div>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="flex items-center gap-3 bg-white/60 backdrop-blur-sm rounded-xl p-4">
+                    <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                      <span className="text-green-600 text-lg">🚚</span>
+                    </div>
+                    <div>
+                      <h5 className="font-semibold text-gray-900 text-sm">Free Shipping</h5>
+                      <p className="text-gray-600 text-xs">On all orders</p>
                     </div>
                   </div>
                   
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                      <span className="font-medium text-gray-700">Availability:</span>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        (product.stock || 0) > 10 
-                          ? 'bg-green-100 text-green-800' 
-                          : (product.stock || 0) > 0 
-                          ? 'bg-orange-100 text-orange-800' 
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {(product.stock || 0) > 10 ? 'In Stock' : (product.stock || 0) > 0 ? 'Limited Stock' : 'Out of Stock'}
-                      </span>
+                  <div className="flex items-center gap-3 bg-white/60 backdrop-blur-sm rounded-xl p-4">
+                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                      <span className="text-blue-600 text-lg">↩️</span>
                     </div>
-                    <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                      <span className="font-medium text-gray-700">Style:</span>
-                      <span className="text-gray-900">{product.style || 'Classic'}</span>
+                    <div>
+                      <h5 className="font-semibold text-gray-900 text-sm">30-Day Returns</h5>
+                      <p className="text-gray-600 text-xs">Easy returns</p>
                     </div>
-                    {product.createdAt && (
-                      <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                        <span className="font-medium text-gray-700">Added:</span>
-                        <span className="text-gray-900">{new Date(product.createdAt).toLocaleDateString()}</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-3 bg-white/60 backdrop-blur-sm rounded-xl p-4">
+                    <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                      <ShieldCheck className="text-purple-600" size={20} />
+                    </div>
+                    <div>
+                      <h5 className="font-semibold text-gray-900 text-sm">Quality Guarantee</h5>
+                      <p className="text-gray-600 text-xs">Premium quality</p>
+                    </div>
+                  </div>
+                  
+                  {(product.stock || 0) > 0 && (
+                    <div className="flex items-center gap-3 bg-white/60 backdrop-blur-sm rounded-xl p-4">
+                      <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                        <span className="text-orange-600 text-lg">⚡</span>
                       </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Additional Features */}
-                <div className="mt-6 pt-4 border-t border-gray-200">
-                  <div className="flex flex-wrap gap-2">
-                    <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-xs font-medium">
-                      Free Shipping
-                    </span>
-                    <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-xs font-medium">
-                      30-Day Returns
-                    </span>
-                    <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-xs font-medium">
-                      Quality Guarantee
-                    </span>
-                    {(product.stock || 0) > 0 && (
-                      <span className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-xs font-medium">
-                        Fast Delivery
-                      </span>
-                    )}
-                  </div>
+                      <div>
+                        <h5 className="font-semibold text-gray-900 text-sm">Fast Delivery</h5>
+                        <p className="text-gray-600 text-xs">Quick shipping</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Reviews Section */}
-            {product.reviews?.user?.length > 0 && (
-              <div className="border-t border-gray-200 pt-8">
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-bold">Customer Reviews</h3>
-                  <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm font-medium">
-                    {product.reviews.user.length} review{product.reviews.user.length !== 1 ? 's' : ''}
-                  </span>
+      {/* Reviews Section - Full Width */}
+      <div className="bg-gray-50 border-t border-gray-200">
+        <div className="container mx-auto px-4 py-16">
+          {/* Section Header */}
+          <div className="text-center mb-12">
+            <div className="flex items-center justify-center space-x-3 mb-4">
+              <MessageSquare className="text-blue-600" size={32} />
+              <h2 className="text-3xl font-bold text-gray-900">Customer Reviews</h2>
+            </div>
+            <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+              See what our customers are saying about this product
+            </p>
+            <div className="mt-4">
+              <span className="bg-blue-100 text-blue-700 px-4 py-2 rounded-full text-sm font-medium">
+                {productReviews.length} review{productReviews.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+          </div>
+
+          {/* Reviews Summary */}
+          {productReviews.length > 0 && (
+            <div className="bg-white rounded-2xl shadow-lg p-8 mb-12 max-w-4xl mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                <div className="text-center">
+                  <div className="text-5xl font-bold text-gray-900 mb-2">
+                    {productReviews.length > 0 
+                      ? (productReviews.reduce((sum, review) => sum + review.rating, 0) / productReviews.length).toFixed(1)
+                      : '0.0'
+                    }
+                  </div>
+                  <div className="flex items-center justify-center mb-2">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        size={24}
+                        className={`${
+                          i < Math.round(productReviews.reduce((sum, review) => sum + review.rating, 0) / productReviews.length)
+                            ? 'text-yellow-400 fill-current' 
+                            : 'text-gray-300'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-gray-600">
+                    Based on {productReviews.length} reviews
+                  </p>
                 </div>
                 
-                <div className="space-y-6">
-                  {product.reviews.user.slice(0, 3).map((review, index) => (
-                    <div key={index} className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
-                            {review.name ? review.name.charAt(0).toUpperCase() : 'A'}
-                          </div>
-                          <div>
-                            <div className="font-semibold text-gray-900">{review.name || 'Anonymous'}</div>
-                            <div className="flex items-center gap-2">
-                              <div className="flex">
-                                {[...Array(5)].map((_, i) => (
-                                  <span
-                                    key={i}
-                                    className={`text-sm ${
-                                      i < review.stars ? 'text-yellow-400' : 'text-gray-300'
-                                    }`}
-                                  >
-                                    ★
-                                  </span>
-                                ))}
-                              </div>
-                              <span className="text-sm text-gray-500">({review.stars}/5)</span>
-                            </div>
-                          </div>
+                <div className="space-y-3">
+                  {[5, 4, 3, 2, 1].map(rating => {
+                    const count = productReviews.filter(review => review.rating === rating).length;
+                    const percentage = productReviews.length > 0 ? (count / productReviews.length) * 100 : 0;
+                    return (
+                      <div key={rating} className="flex items-center space-x-3">
+                        <span className="text-gray-600 w-4 text-sm font-medium">{rating}</span>
+                        <Star size={16} className="text-yellow-400 fill-current" />
+                        <div className="flex-1 bg-gray-200 rounded-full h-3 max-w-40">
+                          <div 
+                            className="bg-yellow-400 h-3 rounded-full transition-all duration-500" 
+                            style={{ width: `${percentage}%` }}
+                          ></div>
                         </div>
-                        {review.verified && (
-                          <span className="bg-green-100 text-green-800 px-2 py-1 text-xs font-medium rounded-full">
-                            Verified Purchase
-                          </span>
-                        )}
+                        <span className="text-gray-600 text-sm w-8">{count}</span>
                       </div>
-                      <p className="text-gray-700 leading-relaxed">{review.description}</p>
-                      {review.date && (
-                        <div className="text-xs text-gray-500 mt-3">
-                          Reviewed on {new Date(review.date).toLocaleDateString()}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                  
-                  {product.reviews.user.length > 3 && (
-                    <button className="w-full py-3 text-gray-600 hover:text-gray-900 font-medium border-2 border-dashed border-gray-300 hover:border-gray-400 rounded-lg transition-colors">
-                      View All {product.reviews.user.length} Reviews
-                    </button>
-                  )}
+                    );
+                  })}
                 </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Enhanced Reviews Cards - Horizontal Scroll */}
+          <div className="relative">
+            {reviewsLoading ? (
+              <div className="text-center py-16">
+                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600 mb-4"></div>
+                <p className="text-gray-600 text-lg">Loading reviews...</p>
+              </div>
+            ) : productReviews.length > 0 ? (
+              <motion.div 
+                className="relative overflow-hidden"
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                transition={{ duration: 0.8 }}
+                viewport={{ once: true }}
+              >
+                {/* Gradient overlays for smooth edges */}
+                <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-gray-50 to-transparent z-10 pointer-events-none"></div>
+                <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-gray-50 to-transparent z-10 pointer-events-none"></div>
+                
+                {/* Scroll Container */}
+                <div 
+                  ref={scrollContainerRef}
+                  className="flex gap-6 overflow-x-hidden py-4"
+                  style={{
+                    scrollbarWidth: 'none',
+                    msOverflowStyle: 'none'
+                  }}
+                  onMouseEnter={handleMouseEnter}
+                  onMouseLeave={handleMouseLeave}
+                >
+                  {/* Duplicate reviews for seamless scrolling */}
+                  {[...productReviews, ...productReviews].map((review, index) => (
+                    <motion.div 
+                      key={`${review._id}-${index}`} 
+                      className="flex-shrink-0 w-80 md:w-96 bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300"
+                      whileHover={{ y: -5 }}
+                    >
+                      {/* Customer Info */}
+                      <div className="flex items-center gap-4 mb-4">
+                        <div className="relative w-12 h-12">
+                          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold shadow-lg">
+                            <User size={20} />
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-semibold text-gray-900">
+                              {review.customerName || 'Anonymous Customer'}
+                            </h4>
+                            {review.verified && (
+                              <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs">
+                                <ShieldCheck className="w-3 h-3" />
+                                <span>Verified</span>
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-500">
+                            {new Date(review.createdAt).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric'
+                            })}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Rating */}
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="flex items-center">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`w-4 h-4 ${
+                                i < review.rating 
+                                  ? 'text-yellow-400 fill-current' 
+                                  : 'text-gray-300'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-sm font-medium text-gray-700">
+                          {review.rating}.0
+                        </span>
+                      </div>
+
+                      {/* Review Title */}
+                      <h3 className="font-bold text-lg text-gray-900 mb-3">
+                        {review.title || 'Great Product!'}
+                      </h3>
+
+                      {/* Review Comment */}
+                      <p className="text-gray-600 text-sm leading-relaxed mb-4 line-clamp-4">
+                        {review.comment}
+                      </p>
+
+                      {/* Product Info */}
+                      <div className="bg-gray-50 rounded-lg p-3">
+                        <p className="text-xs text-gray-500 mb-1">Reviewed Product:</p>
+                        <p className="font-medium text-gray-900 text-sm">{product?.name || 'This Product'}</p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+
+                {/* Pause indicator */}
+                <motion.div 
+                  className="text-center mt-8"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: isPaused ? 1 : 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <p className="text-sm text-gray-500">
+                    Hover over reviews to pause scrolling
+                  </p>
+                </motion.div>
+              </motion.div>
+            ) : (
+              <div className="text-center py-16 bg-white rounded-2xl shadow-lg">
+                <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <MessageSquare className="text-gray-400" size={32} />
+                </div>
+                <h4 className="text-2xl font-medium text-gray-900 mb-3">No Reviews Yet</h4>
+                <p className="text-gray-600 mb-8 max-w-md mx-auto">Be the first to share your thoughts about this product and help other customers make informed decisions!</p>
+                <button className="inline-flex items-center space-x-2 px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors shadow-lg">
+                  <Star size={20} />
+                  <span>Write a Review</span>
+                </button>
               </div>
             )}
           </div>
         </div>
       </div>
-      </div>
+
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toast.show && (
+          <motion.div
+            initial={{ opacity: 0, y: -100, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -100, scale: 0.95 }}
+            className="fixed top-4 right-4 z-[60]"
+          >
+            <div className={`${
+              toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'
+            } text-white rounded-xl shadow-2xl p-4 min-w-[300px] max-w-md`}>
+              <div className="flex items-center justify-between">
+                <p className="font-medium text-sm">{toast.message}</p>
+                <button
+                  onClick={() => setToast({ ...toast, show: false })}
+                  className="ml-4 p-1 hover:bg-white/20 rounded-lg transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useGetData } from '@/lib/hooks/useGetData';
 import { 
   ShoppingBag, Minus, Plus, X, Heart, Truck, Shield, 
   ArrowLeft, ArrowRight, Gift, Percent, Tag, CreditCard,
@@ -10,12 +11,116 @@ import {
 import Image from 'next/image';
 import Link from 'next/link';
 
-const AddToCartPageClient = ({ cartData }) => {
-  const [cartItems, setCartItems] = useState(cartData.cartItems);
+const AddToCartPageClient = () => {
+  // Fetch all products using real API
+  const { data: products, isLoading: productsLoading, error: productsError } = useGetData({
+    name: 'products',
+    api: '/api/products'
+  });
+
+  const [cartItems, setCartItems] = useState([]);
   const [selectedShipping, setSelectedShipping] = useState('standard');
   const [promoCode, setPromoCode] = useState('');
   const [appliedPromo, setAppliedPromo] = useState(null);
   const [showPromoInput, setShowPromoInput] = useState(false);
+
+  // Static configuration data (not user-specific)
+  const staticData = {
+    shipping: {
+      freeShippingThreshold: 500.00,
+      standardShipping: 15.99,
+      expressShipping: 29.99,
+      expeditedShipping: 49.99,
+      estimatedDays: {
+        standard: "5-7 business days",
+        express: "2-3 business days",
+        expedited: "1-2 business days"
+      }
+    },
+    taxes: {
+      salesTaxRate: 0.08,
+      region: "NY"
+    },
+    promocodes: {
+      available: [
+        {
+          code: "WELCOME10",
+          description: "10% off your first order",
+          discount: 0.10,
+          minAmount: 100
+        },
+        {
+          code: "SAVE25",
+          description: "25% off orders over $300",
+          discount: 0.25,
+          minAmount: 300
+        }
+      ]
+    },
+    paymentMethods: [
+      { name: "Visa", icon: "visa" },
+      { name: "Mastercard", icon: "mastercard" },
+      { name: "American Express", icon: "amex" },
+      { name: "PayPal", icon: "paypal" },
+      { name: "Apple Pay", icon: "applepay" },
+      { name: "Google Pay", icon: "googlepay" }
+    ],
+    security: {
+      sslSecured: true,
+      secureCheckout: true,
+      encryptedPayments: true
+    }
+  };
+
+  // Local Storage utility functions
+  const getCartFromStorage = () => {
+    if (typeof window !== 'undefined') {
+      const cart = localStorage.getItem('cart');
+      return cart ? JSON.parse(cart) : [];
+    }
+    return [];
+  };
+
+  const saveCartToStorage = (cart) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('cart', JSON.stringify(cart));
+    }
+  };
+
+  // Load cart data from localStorage and match with products
+  useEffect(() => {
+    if (products && products.length > 0) {
+      const cartFromStorage = getCartFromStorage();
+      
+      // Match cart items with full product data
+      const fullCartItems = cartFromStorage
+        .map(cartItem => {
+          const fullProduct = products.find(product => product._id === cartItem.id);
+          if (fullProduct) {
+            return {
+              id: fullProduct._id,
+              productId: fullProduct._id,
+              name: fullProduct.name,
+              brand: "NABA ALI",
+              price: fullProduct.price,
+              originalPrice: fullProduct.originalPrice || fullProduct.price,
+              discount: fullProduct.originalPrice ? Math.round(((fullProduct.originalPrice - fullProduct.price) / fullProduct.originalPrice) * 100) : 0,
+              quantity: cartItem.quantity || 1,
+              size: cartItem.size || fullProduct.sizes?.[0] || 'M',
+              color: cartItem.color || fullProduct.colors?.[0] || 'Default',
+              image: fullProduct.image,
+              inStock: (fullProduct.stock || 0) > 0,
+              stockCount: fullProduct.stock || 0,
+              category: fullProduct.category || 'Fashion'
+            };
+          }
+          return null;
+        })
+        .filter(Boolean); // Remove null entries
+      
+      setCartItems(fullCartItems);
+    }
+  }, [products]);
 
   // Calculate totals
   const calculateTotals = () => {
@@ -31,11 +136,11 @@ const AddToCartPageClient = ({ cartData }) => {
     }
 
     const discountedSubtotal = subtotal - promoDiscount;
-    const salesTax = discountedSubtotal * cartData.taxes.salesTaxRate;
+    const salesTax = discountedSubtotal * staticData.taxes.salesTaxRate;
     
     let shippingCost = 0;
-    if (discountedSubtotal < cartData.shipping.freeShippingThreshold) {
-      shippingCost = cartData.shipping[selectedShipping + 'Shipping'] || cartData.shipping.standardShipping;
+    if (discountedSubtotal < staticData.shipping.freeShippingThreshold) {
+      shippingCost = staticData.shipping[selectedShipping + 'Shipping'] || staticData.shipping.standardShipping;
     }
 
     const total = discountedSubtotal + salesTax + shippingCost;
@@ -47,7 +152,7 @@ const AddToCartPageClient = ({ cartData }) => {
       salesTax: salesTax.toFixed(2),
       shippingCost: shippingCost.toFixed(2),
       total: total.toFixed(2),
-      freeShippingRemaining: Math.max(0, cartData.shipping.freeShippingThreshold - discountedSubtotal)
+      freeShippingRemaining: Math.max(0, staticData.shipping.freeShippingThreshold - discountedSubtotal)
     };
   };
 
@@ -56,21 +161,43 @@ const AddToCartPageClient = ({ cartData }) => {
   // Update quantity
   const updateQuantity = (itemId, newQuantity) => {
     if (newQuantity < 1) return;
-    setCartItems(items =>
-      items.map(item =>
-        item.id === itemId ? { ...item, quantity: newQuantity } : item
-      )
+    
+    const updatedItems = cartItems.map(item =>
+      item.id === itemId ? { ...item, quantity: newQuantity } : item
     );
+    
+    setCartItems(updatedItems);
+    
+    // Update localStorage
+    const cartForStorage = updatedItems.map(item => ({
+      id: item.id,
+      quantity: item.quantity,
+      size: item.size,
+      color: item.color,
+      stock: item.stockCount
+    }));
+    saveCartToStorage(cartForStorage);
   };
 
   // Remove item
   const removeItem = (itemId) => {
-    setCartItems(items => items.filter(item => item.id !== itemId));
+    const updatedItems = cartItems.filter(item => item.id !== itemId);
+    setCartItems(updatedItems);
+    
+    // Update localStorage
+    const cartForStorage = updatedItems.map(item => ({
+      id: item.id,
+      quantity: item.quantity,
+      size: item.size,
+      color: item.color,
+      stock: item.stockCount
+    }));
+    saveCartToStorage(cartForStorage);
   };
 
   // Apply promo code
   const applyPromoCode = () => {
-    const promo = cartData.promocodes.available.find(p => p.code === promoCode.toUpperCase());
+    const promo = staticData.promocodes.available.find(p => p.code === promoCode.toUpperCase());
     if (promo && parseFloat(totals.subtotal) >= promo.minAmount) {
       setAppliedPromo(promo);
       setShowPromoInput(false);
@@ -219,12 +346,12 @@ const AddToCartPageClient = ({ cartData }) => {
       </h3>
       
       <div className="space-y-3">
-        {Object.entries(cartData.shipping.estimatedDays).map(([type, days]) => {
-          const cost = type === 'standard' ? cartData.shipping.standardShipping :
-                      type === 'express' ? cartData.shipping.expressShipping :
-                      cartData.shipping.expeditedShipping;
+        {Object.entries(staticData.shipping.estimatedDays).map(([type, days]) => {
+          const cost = type === 'standard' ? staticData.shipping.standardShipping :
+                      type === 'express' ? staticData.shipping.expressShipping :
+                      staticData.shipping.expeditedShipping;
           
-          const isFree = parseFloat(totals.total) >= cartData.shipping.freeShippingThreshold && type === 'standard';
+          const isFree = parseFloat(totals.total) >= staticData.shipping.freeShippingThreshold && type === 'standard';
           
           return (
             <label key={type} className="flex items-center space-x-3 cursor-pointer">
@@ -356,7 +483,7 @@ const AddToCartPageClient = ({ cartData }) => {
         )}
         
         <div className="flex justify-between">
-          <span className="text-gray-600">Sales Tax ({(cartData.taxes.salesTaxRate * 100).toFixed(1)}%)</span>
+          <span className="text-gray-600">Sales Tax ({(staticData.taxes.salesTaxRate * 100).toFixed(1)}%)</span>
           <span className="font-medium">${totals.salesTax}</span>
         </div>
         
@@ -392,7 +519,7 @@ const AddToCartPageClient = ({ cartData }) => {
       <div className="mb-6">
         <p className="text-sm font-medium text-gray-900 mb-2">We Accept:</p>
         <div className="flex items-center space-x-2">
-          {cartData.paymentMethods.map((method, index) => (
+          {staticData.paymentMethods.map((method, index) => (
             <div key={index} className="w-8 h-5 bg-gray-100 rounded flex items-center justify-center">
               <span className="text-xs font-bold text-gray-600">
                 {method.name.slice(0, 2).toUpperCase()}
@@ -419,44 +546,48 @@ const AddToCartPageClient = ({ cartData }) => {
   );
 
   // Recommendations Component
-  const RecommendationsSection = () => (
-    <div className="bg-white rounded-xl shadow-lg p-6 mt-8">
-      <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
-        <Star className="w-5 h-5 mr-2" />
-        You Might Also Like
-      </h3>
-      
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        {cartData.recommendations.map((item) => (
-          <motion.div
-            key={item.id}
-            className="group cursor-pointer"
-            whileHover={{ y: -5 }}
-          >
-            <div className="relative h-40 mb-3 rounded-lg overflow-hidden">
-              <Image
-                src={item.image}
-                alt={item.name}
-                fill
-                className="object-cover group-hover:scale-110 transition-transform duration-300"
-              />
-              <button className="absolute top-2 right-2 w-8 h-8 bg-white bg-opacity-80 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <Heart className="w-4 h-4 text-gray-600" />
-              </button>
-            </div>
-            <h4 className="font-medium text-gray-900 text-sm mb-1">{item.name}</h4>
-            <p className="text-xs text-gray-600 mb-2">{item.category}</p>
-            <div className="flex items-center justify-between">
-              <span className="font-semibold text-gray-900">${item.price}</span>
-              <button className="text-xs bg-black text-white px-2 py-1 rounded hover:bg-gray-800 transition-colors duration-200">
-                Add to Cart
-              </button>
-            </div>
-          </motion.div>
-        ))}
+  const RecommendationsSection = () => {
+    if (!products || products.length === 0) return null;
+    
+    return (
+      <div className="bg-white rounded-xl shadow-lg p-6 mt-8">
+        <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
+          <Star className="w-5 h-5 mr-2" />
+          You Might Also Like
+        </h3>
+        
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {products.slice(0, 4).map((item) => (
+            <motion.div
+              key={item._id}
+              className="group cursor-pointer"
+              whileHover={{ y: -5 }}
+            >
+              <div className="relative h-40 mb-3 rounded-lg overflow-hidden">
+                <Image
+                  src={item.imageUrl}
+                  alt={item.name}
+                  fill
+                  className="object-cover group-hover:scale-110 transition-transform duration-300"
+                />
+                <button className="absolute top-2 right-2 w-8 h-8 bg-white bg-opacity-80 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <Heart className="w-4 h-4 text-gray-600" />
+                </button>
+              </div>
+              <h4 className="font-medium text-gray-900 text-sm mb-1">{item.name}</h4>
+              <p className="text-xs text-gray-600 mb-2">{item.category || item.categoryName}</p>
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-gray-900">${item.price}</span>
+                <button className="text-xs bg-black text-white px-2 py-1 rounded hover:bg-gray-800 transition-colors duration-200">
+                  Add to Cart
+                </button>
+              </div>
+            </motion.div>
+          ))}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   if (cartItems.length === 0) {
     return (
