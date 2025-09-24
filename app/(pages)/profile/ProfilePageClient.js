@@ -14,11 +14,27 @@ const ProfilePageClient = ({ profileData }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({
-    firstName: profileData.user.firstName,
-    lastName: profileData.user.lastName,
-    email: profileData.user.email,
-    phone: profileData.user.phone
+    firstName: profileData?.user?.firstName || '',
+    lastName: profileData?.user?.lastName || '',
+    email: profileData?.user?.email || '',
+    phone: profileData?.user?.phone || ''
   });
+
+  // Show login prompt if no user data
+  if (!profileData?.user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="bg-white rounded-2xl shadow-xl p-8 text-center max-w-md">
+          <User className="mx-auto text-gray-400 mb-4" size={64} />
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Please Sign In</h2>
+          <p className="text-gray-600 mb-6">You need to be logged in to view your profile.</p>
+          <button className="bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors">
+            Sign In
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // Icon mapping function
   const getIcon = (iconName) => {
@@ -59,10 +75,10 @@ const ProfilePageClient = ({ profileData }) => {
 
   const handleCancel = () => {
     setEditData({
-      firstName: profileData.user.firstName,
-      lastName: profileData.user.lastName,
-      email: profileData.user.email,
-      phone: profileData.user.phone
+      firstName: profileData?.user?.firstName || '',
+      lastName: profileData?.user?.lastName || '',
+      email: profileData?.user?.email || '',
+      phone: profileData?.user?.phone || ''
     });
     setIsEditing(false);
   };
@@ -201,7 +217,12 @@ const ProfilePageClient = ({ profileData }) => {
                     {profileData.user.firstName} {profileData.user.lastName}
                   </h3>
                   <p className="text-gray-600">{profileData.user.email}</p>
-                  <p className="text-gray-600">{profileData.user.phone}</p>
+                  {profileData.user.phone && (
+                    <p className="text-gray-600">{profileData.user.phone}</p>
+                  )}
+                  {!profileData.user.phone && (
+                    <p className="text-gray-400 italic">Phone not provided</p>
+                  )}
                 </div>
                 <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
                   <Star className="w-4 h-4 mr-1" />
@@ -218,7 +239,7 @@ const ProfilePageClient = ({ profileData }) => {
         className="grid grid-cols-2 md:grid-cols-4 gap-4"
         variants={containerVariants}
       >
-        {profileData.stats.map((stat, index) => {
+        {(profileData.profileStats || []).map((stat, index) => {
           const IconComponent = getIcon(stat.iconName);
           return (
             <motion.div
@@ -250,12 +271,12 @@ const ProfilePageClient = ({ profileData }) => {
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-gray-900">Order History</h2>
         <div className="text-sm text-gray-600">
-          {profileData.orders.length} total orders
+          {(profileData.orders || []).length} total orders
         </div>
       </div>
 
       <div className="space-y-4">
-        {profileData.orders.map((order) => {
+        {(profileData.orders || []).map((order) => {
           const StatusIcon = getStatusIcon(order.status);
           return (
             <motion.div
@@ -345,7 +366,7 @@ const ProfilePageClient = ({ profileData }) => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {profileData.addresses.map((address) => (
+        {(profileData.addresses || []).map((address) => (
           <motion.div
             key={address.id}
             className="bg-white rounded-xl shadow-lg p-6 relative"
@@ -412,7 +433,7 @@ const ProfilePageClient = ({ profileData }) => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {profileData.paymentMethods.map((payment) => (
+        {(profileData.paymentMethods || []).map((payment) => (
           <motion.div
             key={payment.id}
             className="bg-white rounded-xl shadow-lg p-6 relative"

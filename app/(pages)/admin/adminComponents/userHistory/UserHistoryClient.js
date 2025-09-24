@@ -24,122 +24,14 @@ import {
   CreditCard
 } from 'lucide-react';
 
-const UserHistory = () => {
+const UserHistory = ({ userHistoryData = {} }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [selectedUser, setSelectedUser] = useState(null);
   const [timeFilter, setTimeFilter] = useState('all');
 
-  // Demo customer data with purchase history
-  const [customers] = useState([
-    {
-      id: 1,
-      name: 'Sarah Johnson',
-      email: 'sarah.johnson@email.com',
-      phone: '+1 (555) 123-4567',
-      address: '123 Fashion St, New York, NY 10001',
-      joinDate: '2024-01-15',
-      totalOrders: 8,
-      totalSpent: 1245.60,
-      averageOrder: 155.70,
-      lastOrder: '2025-09-15',
-      status: 'vip',
-      avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b17c?w=100&h=100&fit=crop',
-      orders: [
-        {
-          id: '#3210',
-          date: '2025-09-15',
-          items: [
-            { name: 'Premium Cotton T-Shirt', quantity: 2, price: 49.99, image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=50&h=50&fit=crop' },
-            { name: 'Designer Jeans', quantity: 1, price: 129.99, image: 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=50&h=50&fit=crop' }
-          ],
-          total: 229.97,
-          status: 'delivered'
-        },
-        {
-          id: '#3145',
-          date: '2025-08-28',
-          items: [
-            { name: 'Summer Dress', quantity: 1, price: 79.99, image: 'https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=50&h=50&fit=crop' }
-          ],
-          total: 79.99,
-          status: 'delivered'
-        }
-      ],
-      wishlist: ['Leather Jacket', 'Casual Sneakers', 'Formal Shirt'],
-      preferences: {
-        categories: ['T-Shirts', 'Jeans', 'Dresses'],
-        priceRange: '$50-150',
-        size: 'M',
-        notifications: true
-      }
-    },
-    {
-      id: 2,
-      name: 'Michael Chen',
-      email: 'michael.chen@email.com',
-      phone: '+1 (555) 234-5678',
-      address: '456 Style Ave, Los Angeles, CA 90210',
-      joinDate: '2024-03-22',
-      totalOrders: 12,
-      totalSpent: 2156.40,
-      averageOrder: 179.70,
-      lastOrder: '2025-09-12',
-      status: 'premium',
-      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop',
-      orders: [
-        {
-          id: '#3198',
-          date: '2025-09-12',
-          items: [
-            { name: 'Leather Jacket', quantity: 1, price: 249.99, image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=50&h=50&fit=crop' },
-            { name: 'Casual Sneakers', quantity: 1, price: 99.99, image: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=50&h=50&fit=crop' }
-          ],
-          total: 349.98,
-          status: 'shipped'
-        }
-      ],
-      wishlist: ['Premium Cotton T-Shirt', 'Formal Shirt'],
-      preferences: {
-        categories: ['Jackets', 'Shoes', 'Shirts'],
-        priceRange: '$100-300',
-        size: 'L',
-        notifications: false
-      }
-    },
-    {
-      id: 3,
-      name: 'Emily Davis',
-      email: 'emily.davis@email.com',
-      phone: '+1 (555) 345-6789',
-      address: '789 Trend Blvd, Miami, FL 33101',
-      joinDate: '2024-05-10',
-      totalOrders: 6,
-      totalSpent: 789.45,
-      averageOrder: 131.58,
-      lastOrder: '2025-09-08',
-      status: 'regular',
-      avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop',
-      orders: [
-        {
-          id: '#3167',
-          date: '2025-09-08',
-          items: [
-            { name: 'Formal Shirt', quantity: 2, price: 69.99, image: 'https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=50&h=50&fit=crop' }
-          ],
-          total: 139.98,
-          status: 'processing'
-        }
-      ],
-      wishlist: ['Designer Jeans', 'Summer Dress'],
-      preferences: {
-        categories: ['Shirts', 'Dresses', 'T-Shirts'],
-        priceRange: '$30-100',
-        size: 'S',
-        notifications: true
-      }
-    }
-  ]);
+  // Use real customer data from props
+  const customers = userHistoryData.customers || [];
 
   // Filter customers
   const filteredCustomers = customers.filter(customer => {

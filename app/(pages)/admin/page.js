@@ -1,4 +1,5 @@
 import AdminPageClient from './AdminPageClient';
+import AdminAuthWrapper from './components/AdminAuthWrapper';
 import { 
   LayoutDashboard, 
   Package, 
@@ -7,7 +8,8 @@ import {
   Star, 
   Ticket, 
   FolderOpen,
-  History
+  History,
+  Shield
 } from 'lucide-react';
 
 // Import admin components
@@ -18,6 +20,7 @@ import OrderDetails from './adminComponents/orderDetails/OrderDetails';
 import AllReviews from './adminComponents/allReviews/AllReviews';
 import AllCupons from './adminComponents/allCupons/AllCupons';
 import AllCategory from './adminComponents/allCategory/AllCategory';
+import RoleManagement from './adminComponents/roleManagement/RoleManagement';
 
 
 // Metadata for SEO - Admin Panel
@@ -119,6 +122,13 @@ export default function AdminPage() {
       icon: Ticket,
       component: AllCupons,
       description: 'Discount Coupons'
+    },
+    {
+      id: 'roles',
+      name: 'Role Management',
+      icon: Shield,
+      component: RoleManagement,
+      description: 'Manage User Roles'
     }
   ];
 
@@ -129,11 +139,13 @@ export default function AdminPage() {
     description: item.description
   }));
 
-  // Pass server-side data to client component
+  // Pass server-side data to client component with authentication wrapper
   return (
-    <AdminPageClient 
-      adminData={adminData} 
-      navigationItems={clientNavigationItems}
-    />
+    <AdminAuthWrapper>
+      <AdminPageClient 
+        adminData={adminData} 
+        navigationItems={clientNavigationItems}
+      />
+    </AdminAuthWrapper>
   );
 }

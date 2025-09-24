@@ -14,8 +14,12 @@ const ProductsPageClient = () => {
   const [sortBy, setSortBy] = useState("most-popular");
   const productsPerPage = 8;
 
-  // ✅ Fetch products using custom hook
-  const { data, isLoading, error } = useGetData({ name: "products", api: "/api/products" });
+  // ✅ Optimized: Reuse cached products data
+  const { data, isLoading, error } = useGetData({ 
+    name: "products", 
+    api: "/api/products",
+    cacheType: 'STATIC' // Products data is cached and shared across components
+  });
   
   // ✅ Memoize products array to prevent unnecessary re-renders
   const allProducts = useMemo(() => Array.isArray(data) ? data : [], [data]);

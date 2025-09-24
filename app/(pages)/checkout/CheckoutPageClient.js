@@ -531,6 +531,7 @@ const CheckoutPageClient = () => {
                         src={item.image || 'https://via.placeholder.com/64x64/f3f4f6/374151?text=Product'}
                         alt={item.name || 'Product'}
                         fill
+                        sizes="64px"
                         className="object-cover"
                       />
                     </div>

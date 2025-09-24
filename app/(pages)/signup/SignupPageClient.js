@@ -4,16 +4,13 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Mail, Lock, User, Crown, Percent, Gift, Zap, Check, X } from 'lucide-react';
 import Link from 'next/link';
-import Image from 'next/image';
-import GoogleSignButton from '../../../lib/GoogleSignButton';
-import { useAddData } from '../../../lib/hooks/useAddData';
+import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
 const SignupPageClient = ({ signupData }) => {
   const router = useRouter();
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+    name: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -23,13 +20,8 @@ const SignupPageClient = ({ signupData }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [signupStatus, setSignupStatus] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
-
-  // Initialize useAddData hook
-  const { addData, isLoading, error: addDataError } = useAddData({
-    name: 'users',
-    api: '/api/users'
-  });
 
   // Icon mapping function
   const getIcon = (iconName) => {
@@ -51,47 +43,41 @@ const SignupPageClient = ({ signupData }) => {
       number: /\d/.test(password),
       special: /[!@#$%^&*(),.?":{}|<>]/.test(password)
     };
-    
     return requirements;
   };
 
   // Form validation
   const validateForm = () => {
     const newErrors = {};
-    
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = 'First name is required';
+
+    if (!formData.name.trim()) {
+      newErrors.name = 'Name is required';
+    } else if (formData.name.trim().length < 2) {
+      newErrors.name = 'Name must be at least 2 characters';
     }
-    
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = 'Last name is required';
-    }
-    
+
     if (!formData.email) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email address';
     }
-    
+
     if (!formData.password) {
       newErrors.password = 'Password is required';
-    } else {
-      const passwordCheck = validatePassword(formData.password);
-      if (!Object.values(passwordCheck).every(Boolean)) {
-        newErrors.password = 'Password does not meet requirements';
-      }
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters';
     }
-    
+
     if (!formData.confirmPassword) {
       newErrors.confirmPassword = 'Please confirm your password';
     } else if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
     }
-    
+
     if (!formData.acceptTerms) {
-      newErrors.acceptTerms = 'You must agree to the Terms & Conditions';
+      newErrors.acceptTerms = 'You must accept the terms and conditions';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -99,14 +85,10 @@ const SignupPageClient = ({ signupData }) => {
   // Handle form input changes
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-
-
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
-    
-
 
     // Clear error when user starts typing
     if (errors[name]) {
@@ -117,79 +99,93 @@ const SignupPageClient = ({ signupData }) => {
     }
   };
 
+  // Handle signup
+  const handleSignup = async (e) => {
+    e.preventDefault();
 
+    if (!validateForm()) return;
 
+    setIsLoading(true);
+    setSignupStatus(null);
 
+    try {
+      // First create the user account
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name.trim(),
+          email: formData.email.toLowerCase(),
+          password: formData.password,
+          confirmPassword: formData.confirmPassword
+        }),
+      });
 
+      const data = await response.json();
 
-
-
-  
-
-  // Handle manual signup
-const handleSignup = async (e) => {
-  e.preventDefault();
-  if (!validateForm()) return;
-  setSignupStatus(null);
-  setErrors({});
-
-  try {
-    const userData = {
-      name: formData.firstName + ' ' + formData.lastName,
-      email: formData.email,
-      password: formData.password,
-      image: null, // No image for manual signup
-      subscribeNewsletter: formData.subscribeNewsletter
-    };
-
-    await addData(userData, {
-      onSuccess: () => {
-        // ✅ Only redirect on actual success
-        setSignupStatus("success");
-        setTimeout(() => {
-          router.push("/login?message=Account created successfully");
-        }, 2000);
-      },
-      onError: (error) => {
-        // ✅ Show error message instead of redirect
-        setSignupStatus("error");
-
-        if (error.message.includes("already registered")) {
-          setSignupStatus("info");
-          setErrors(prev => ({
-            ...prev,
-            api: "This email is already registered. Please log in instead."
-          }));
-        } else {
-          setErrors(prev => ({
-            ...prev,
-            api: error.message || "Failed to create account. Please try again."
-          }));
-        }
+      if (!response.ok) {
+        throw new Error(data.error || 'Signup failed');
       }
-    });
-  } catch (error) {
-    console.error("Unexpected signup error:", error);
-    setSignupStatus("error");
-    setErrors(prev => ({
-      ...prev,
-      api: "Something went wrong. Please try again."
-    }));
-  }
-};
 
+      // If signup successful, automatically sign in the user
+      const signInResult = await signIn('credentials', {
+        email: formData.email,
+        password: formData.password,
+        redirect: false,
+      });
 
+      if (signInResult?.error) {
+        // Account created but auto sign-in failed
+        setSignupStatus('success-manual-login');
+        setTimeout(() => {
+          router.push('/login?message=Account created successfully. Please sign in.');
+        }, 2000);
+      } else {
+        setSignupStatus('success');
+        router.push('/');
+      }
 
+    } catch (error) {
+      console.error('Signup error:', error);
+      setSignupStatus('error');
+      setErrors(prev => ({ 
+        ...prev, 
+        api: error.message || 'Something went wrong. Please try again.' 
+      }));
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  // Handle Google signup
+  const handleGoogleSignup = async () => {
+    setIsLoading(true);
+    
+    try {
+      const result = await signIn('google', {
+        callbackUrl: '/',
+        redirect: false
+      });
 
+      if (result?.error) {
+        setSignupStatus('error');
+        setErrors(prev => ({ ...prev, api: 'Google sign-up failed. Please try again.' }));
+        setIsLoading(false);
+      } else if (result?.url) {
+        setSignupStatus('success');
+        window.location.href = result.url;
+      }
+    } catch (error) {
+      console.error('Google signup error:', error);
+      setSignupStatus('error');
+      setErrors(prev => ({ ...prev, api: 'Google sign-up failed. Please try again.' }));
+      setIsLoading(false);
+    }
+  };
 
-
-
-
-
-
-
-
+  const passwordRequirements = validatePassword(formData.password);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -227,31 +223,6 @@ const handleSignup = async (e) => {
       x: 0,
       transition: { duration: 0.8 }
     }
-  };
-
-  // Password requirements component
-  const PasswordRequirements = () => {
-    const requirements = validatePassword(formData.password);
-    
-    return (
-      <div className="mt-2 space-y-1">
-        {signupData.passwordRequirements.map((requirement, index) => {
-          const isValid = Object.values(requirements)[index];
-          return (
-            <div key={index} className="flex items-center text-xs">
-              {isValid ? (
-                <Check className="w-3 h-3 text-green-500 mr-2" />
-              ) : (
-                <X className="w-3 h-3 text-gray-400 mr-2" />
-              )}
-              <span className={isValid ? 'text-green-600' : 'text-gray-500'}>
-                {requirement}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    );
   };
 
   return (
@@ -292,9 +263,55 @@ const handleSignup = async (e) => {
             </motion.p>
           </div>
 
+          {/* Success/Error Messages */}
+          {signupStatus === 'success' && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg"
+            >
+              Account created successfully! Redirecting...
+            </motion.div>
+          )}
+
+          {signupStatus === 'success-manual-login' && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg"
+            >
+              Account created successfully! Redirecting to login...
+            </motion.div>
+          )}
+
+          {signupStatus === 'error' && errors.api && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg"
+            >
+              {errors.api}
+            </motion.div>
+          )}
+
           {/* Google Signup Button */}
-          {signupData.authConfig.enableGoogleSignup && (
-            <GoogleSignButton />
+          {signupData.authConfig.enableGoogleAuth && (
+            <motion.div variants={itemVariants}>
+              <button
+                type="button"
+                onClick={handleGoogleSignup}
+                disabled={isLoading}
+                className="w-full flex justify-center items-center px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+              >
+                <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                </svg>
+                {isLoading ? 'Signing up...' : 'Continue with Google'}
+              </button>
+            </motion.div>
           )}
 
           {/* Divider */}
@@ -318,58 +335,31 @@ const handleSignup = async (e) => {
             initial="hidden"
             animate="visible"
           >
-            {/* Name Fields */}
-            <div className="grid grid-cols-2 gap-4">
-              <motion.div variants={itemVariants}>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">
-                  First Name
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="firstName"
-                    name="firstName"
-                    type="text"
-                    value={formData.firstName}
-                    onChange={handleChange}
-                    className={`block w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-colors duration-200 ${
-                      errors.firstName ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                    placeholder={signupData.formData.firstNamePlaceholder}
-                  />
+            {/* Name Field */}
+            <motion.div variants={itemVariants}>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+                Full Name
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <User className="h-5 w-5 text-gray-400" />
                 </div>
-                {errors.firstName && (
-                  <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>
-                )}
-              </motion.div>
-
-              <motion.div variants={itemVariants}>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">
-                  Last Name
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="lastName"
-                    name="lastName"
-                    type="text"
-                    value={formData.lastName}
-                    onChange={handleChange}
-                    className={`block w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-colors duration-200 ${
-                      errors.lastName ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                    placeholder={signupData.formData.lastNamePlaceholder}
-                  />
-                </div>
-                {errors.lastName && (
-                  <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>
-                )}
-              </motion.div>
-            </div>
+                <input
+                  id="name"
+                  name="name"
+                  type="text"
+                  value={formData.name}
+                  onChange={handleChange}
+                  className={`block w-full pl-10 pr-3 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-colors duration-200 ${
+                    errors.name ? 'border-red-300' : 'border-gray-300'
+                  }`}
+                  placeholder="John Doe"
+                />
+              </div>
+              {errors.name && (
+                <p className="mt-1 text-sm text-red-600">{errors.name}</p>
+              )}
+            </motion.div>
 
             {/* Email Field */}
             <motion.div variants={itemVariants}>
@@ -429,9 +419,54 @@ const handleSignup = async (e) => {
                   )}
                 </button>
               </div>
-              {formData.password && <PasswordRequirements />}
               {errors.password && (
                 <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+              )}
+
+              {/* Password Requirements */}
+              {formData.password && (
+                <div className="mt-2 space-y-1">
+                  <div className="flex items-center text-xs">
+                    {passwordRequirements.length ? (
+                      <Check className="h-3 w-3 text-green-500 mr-1" />
+                    ) : (
+                      <X className="h-3 w-3 text-red-500 mr-1" />
+                    )}
+                    <span className={passwordRequirements.length ? 'text-green-600' : 'text-red-600'}>
+                      At least 8 characters
+                    </span>
+                  </div>
+                  <div className="flex items-center text-xs">
+                    {passwordRequirements.uppercase ? (
+                      <Check className="h-3 w-3 text-green-500 mr-1" />
+                    ) : (
+                      <X className="h-3 w-3 text-red-500 mr-1" />
+                    )}
+                    <span className={passwordRequirements.uppercase ? 'text-green-600' : 'text-red-600'}>
+                      One uppercase letter
+                    </span>
+                  </div>
+                  <div className="flex items-center text-xs">
+                    {passwordRequirements.lowercase ? (
+                      <Check className="h-3 w-3 text-green-500 mr-1" />
+                    ) : (
+                      <X className="h-3 w-3 text-red-500 mr-1" />
+                    )}
+                    <span className={passwordRequirements.lowercase ? 'text-green-600' : 'text-red-600'}>
+                      One lowercase letter
+                    </span>
+                  </div>
+                  <div className="flex items-center text-xs">
+                    {passwordRequirements.number ? (
+                      <Check className="h-3 w-3 text-green-500 mr-1" />
+                    ) : (
+                      <X className="h-3 w-3 text-red-500 mr-1" />
+                    )}
+                    <span className={passwordRequirements.number ? 'text-green-600' : 'text-red-600'}>
+                      One number
+                    </span>
+                  </div>
+                </div>
               )}
             </motion.div>
 
@@ -453,7 +488,7 @@ const handleSignup = async (e) => {
                   className={`block w-full pl-10 pr-10 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent transition-colors duration-200 ${
                     errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
                   }`}
-                  placeholder={signupData.formData.confirmPasswordPlaceholder}
+                  placeholder="Confirm your password"
                 />
                 <button
                   type="button"
@@ -472,12 +507,8 @@ const handleSignup = async (e) => {
               )}
             </motion.div>
 
-            {/* Terms & Newsletter */}
-            <motion.div
-              className="space-y-4"
-              variants={itemVariants}
-            >
-              {/* Terms Acceptance */}
+            {/* Terms and Newsletter */}
+            <motion.div variants={itemVariants} className="space-y-3">
               <div className="flex items-start">
                 <input
                   id="acceptTerms"
@@ -485,15 +516,17 @@ const handleSignup = async (e) => {
                   type="checkbox"
                   checked={formData.acceptTerms}
                   onChange={handleChange}
-                  className="h-4 w-4 text-black focus:ring-black border-gray-300 rounded mt-1"
+                  className={`mt-1 h-4 w-4 text-black focus:ring-black border-gray-300 rounded ${
+                    errors.acceptTerms ? 'border-red-300' : ''
+                  }`}
                 />
-                <label htmlFor="acceptTerms" className="ml-2 block text-sm text-gray-700">
-                  {signupData.formData.termsText.split(' and ')[0]}{' '}
-                  <Link href={signupData.formData.termsLink} className="text-black hover:text-gray-700 font-medium">
-                    Terms & Conditions
-                  </Link>{' '}
-                  and{' '}
-                  <Link href={signupData.formData.privacyLink} className="text-black hover:text-gray-700 font-medium">
+                <label htmlFor="acceptTerms" className="ml-2 text-sm text-gray-600">
+                  I agree to the{' '}
+                  <Link href="/terms" className="text-black hover:underline font-medium">
+                    Terms of Service
+                  </Link>
+                  {' '}and{' '}
+                  <Link href="/privacy" className="text-black hover:underline font-medium">
                     Privacy Policy
                   </Link>
                 </label>
@@ -502,8 +535,7 @@ const handleSignup = async (e) => {
                 <p className="text-sm text-red-600">{errors.acceptTerms}</p>
               )}
 
-              {/* Newsletter Subscription */}
-              {signupData.authConfig.enableNewsletterOptIn && (
+              {signupData.authConfig.enableNewsletter && (
                 <div className="flex items-start">
                   <input
                     id="subscribeNewsletter"
@@ -511,138 +543,102 @@ const handleSignup = async (e) => {
                     type="checkbox"
                     checked={formData.subscribeNewsletter}
                     onChange={handleChange}
-                    className="h-4 w-4 text-black focus:ring-black border-gray-300 rounded mt-1"
+                    className="mt-1 h-4 w-4 text-black focus:ring-black border-gray-300 rounded"
                   />
-                  <label htmlFor="subscribeNewsletter" className="ml-2 block text-sm text-gray-700">
-                    {signupData.formData.newsletterText}
+                  <label htmlFor="subscribeNewsletter" className="ml-2 text-sm text-gray-600">
+                    Subscribe to our newsletter for updates and offers
                   </label>
                 </div>
               )}
             </motion.div>
 
-          {/* Signup Status */}
-{signupStatus && (
-  <motion.div
-    initial={{ opacity: 0, y: 10 }}
-    animate={{ opacity: 1, y: 0 }}
-    className={`p-4 rounded-lg text-center ${
-      signupStatus === 'success'
-        ? 'bg-green-100 text-green-700 border border-green-200'
-        : signupStatus === 'info'
-        ? 'bg-blue-100 text-blue-700 border border-blue-200'
-        : 'bg-red-100 text-red-700 border border-red-200'
-    }`}
-  >
-    {signupStatus === 'success' && 'Account created successfully! Redirecting to login...'}
-    {signupStatus === 'info' && 'This email is already registered. Please log in instead.'}
-    {signupStatus === 'error' && 'Failed to create account. Please try again.'}
-  </motion.div>
-)}
-
-
             {/* Submit Button */}
-            <motion.button
-              type="submit"
-              disabled={isLoading}
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+            <motion.div variants={itemVariants}>
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-black hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+              >
+                {isLoading ? (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Creating account...
+                  </div>
+                ) : (
+                  signupData.formData.submitButtonText
+                )}
+              </button>
+            </motion.div>
+
+            {/* Login Link */}
+            <motion.p
+              className="text-center text-sm text-gray-600"
               variants={itemVariants}
-              whileHover={!isLoading ? { scale: 1.02 } : {}}
-              whileTap={!isLoading ? { scale: 0.98 } : {}}
             >
-              {isLoading ? (
-                <div className="flex items-center">
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                  Creating account...
-                </div>
-              ) : (
-                signupData.formData.signupButtonText
-              )}
-            </motion.button>
+              Already have an account?{' '}
+              <Link href="/login" className="font-medium text-black hover:underline">
+                Sign in here
+              </Link>
+            </motion.p>
           </motion.form>
+        </motion.div>
+      </div>
 
-          {/* Login Link */}
-          {signupData.authConfig.showLoginLink && (
-            <motion.div
-              className="text-center"
-              variants={itemVariants}
-            >
-              <p className="text-sm text-gray-600">
-                {signupData.formData.hasAccountText}{' '}
-                <Link
-                  href={signupData.formData.loginLink}
-                  className="font-medium text-black hover:text-gray-700"
+      {/* Right Side - Benefits */}
+      <motion.div
+        className="hidden lg:flex flex-1 bg-gradient-to-br from-gray-50 to-gray-100 items-center justify-center p-12"
+        variants={slideInRight}
+        initial="hidden"
+        animate="visible"
+      >
+        <div className="max-w-lg text-center space-y-8">
+          <motion.h3
+            className="text-3xl font-bold text-gray-900"
+            variants={itemVariants}
+          >
+            {signupData.benefitsSection.title}
+          </motion.h3>
+          <motion.p
+            className="text-lg text-gray-600 leading-relaxed"
+            variants={itemVariants}
+          >
+            {signupData.benefitsSection.subtitle}
+          </motion.p>
+
+          <motion.div
+            className="grid grid-cols-2 gap-6"
+            variants={containerVariants}
+          >
+            {signupData.benefitsSection.benefits.map((benefit, index) => {
+              const IconComponent = getIcon(benefit.icon);
+              return (
+                <motion.div
+                  key={index}
+                  className="flex flex-col items-center text-center space-y-3 p-4 bg-white rounded-xl shadow-sm"
+                  variants={itemVariants}
                 >
-                  {signupData.formData.loginText}
-                </Link>
-              </p>
-            </motion.div>
-          )}
-        </motion.div>
-      </div>
+                  <div className="p-3 bg-gray-100 rounded-full">
+                    <IconComponent className="h-6 w-6 text-gray-700" />
+                  </div>
+                  <h4 className="font-semibold text-gray-900">{benefit.title}</h4>
+                  <p className="text-sm text-gray-600">{benefit.description}</p>
+                </motion.div>
+              );
+            })}
+          </motion.div>
 
-      {/* Right Side - Benefits & Background */}
-      <div className="hidden lg:flex flex-1 relative">
-        {/* Background Image */}
-        <div className="absolute inset-0">
-          <Image
-            src={signupData.backgroundImage}
-            alt="Fashion Background"
-            fill
-            className="object-cover"
-            priority
-          />
-          <div className="absolute inset-0 bg-black bg-opacity-60"></div>
+          <motion.div
+            className="pt-8"
+            variants={itemVariants}
+          >
+            <div className="flex items-center justify-center space-x-4 text-sm text-gray-500">
+              <span>Join {signupData.benefitsSection.stats.totalUsers}+ users</span>
+              <span>•</span>
+              <span>{signupData.benefitsSection.stats.rating} rating</span>
+            </div>
+          </motion.div>
         </div>
-
-        {/* Benefits Content */}
-        <motion.div
-          className="relative z-10 flex items-center justify-center p-12"
-          variants={slideInRight}
-          initial="hidden"
-          animate="visible"
-        >
-          <div className="max-w-md text-white">
-            <motion.h3
-              className="text-3xl font-bold mb-6"
-              variants={itemVariants}
-            >
-              {signupData.brandInfo.description}
-            </motion.h3>
-            
-            <motion.div
-              className="space-y-6"
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-            >
-              {signupData.benefits.map((benefit, index) => {
-                const IconComponent = getIcon(benefit.iconName);
-                return (
-                  <motion.div
-                    key={index}
-                    className="flex items-start space-x-4"
-                    variants={itemVariants}
-                  >
-                    <div className="flex-shrink-0">
-                      <div className="w-12 h-12 bg-white bg-opacity-20 rounded-lg flex items-center justify-center">
-                        <IconComponent className="w-6 h-6 text-white" />
-                      </div>
-                    </div>
-                    <div>
-                      <h4 className="text-lg font-semibold mb-1">
-                        {benefit.title}
-                      </h4>
-                      <p className="text-gray-300">
-                        {benefit.description}
-                      </p>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </motion.div>
-          </div>
-        </motion.div>
-      </div>
+      </motion.div>
     </div>
   );
 };

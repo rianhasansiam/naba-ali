@@ -6,10 +6,11 @@ import { useGetData } from '@/lib/hooks/useGetData';
 import { PageLoader } from '../shared/LoadingComponents';
 
 export default function FeaturedProducts() {
-  // Fetch real products from database
+  // ✅ Optimized: Use shared products data across components
   const { data: productsData, isLoading, error } = useGetData({
-    name: 'products',
-    api: '/api/products'
+    name: 'homepage-products', // Shared key for all homepage product queries
+    api: '/api/products',
+    cacheType: 'STATIC' // Same products data as Hero - will use cached version
   });
 
   // Select featured products from real data
@@ -39,8 +40,8 @@ export default function FeaturedProducts() {
       }));
   }, [productsData]);
 
-  // Loading state
-  if (isLoading) {
+  // Loading state - only show loader if we're actually loading and have no data
+  if (isLoading && !productsData) {
     return (
       <section className="pt-10 bg-white">
         <div className="container mx-auto px-4 xl:px-0 max-w-frame">

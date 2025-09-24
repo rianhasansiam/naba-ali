@@ -15,7 +15,8 @@ import {
   Menu,
   X,
   Bell,
-  Search
+  Search,
+  Shield
 } from 'lucide-react';
 
 // Import admin components
@@ -26,6 +27,7 @@ import OrderDetails from './adminComponents/orderDetails/OrderDetails';
 import AllReviews from './adminComponents/allReviews/AllReviews';
 import AllCupons from './adminComponents/allCupons/AllCupons';
 import AllCategory from './adminComponents/allCategory/AllCategory';
+import RoleManagement from './adminComponents/roleManagement/RoleManagement';
 
 
 const AdminPageClient = ({ adminData, navigationItems }) => {
@@ -40,7 +42,8 @@ const AdminPageClient = ({ adminData, navigationItems }) => {
     'orders': ShoppingCart,
     'reviews': Star,
     'categories': FolderOpen,
-    'coupons': Ticket
+    'coupons': Ticket,
+    'roles': Shield
   };
 
   // Component mapping for client-side use
@@ -51,7 +54,8 @@ const AdminPageClient = ({ adminData, navigationItems }) => {
     'orders': OrderDetails,
     'reviews': AllReviews,
     'categories': AllCategory,
-    'coupons': AllCupons
+    'coupons': AllCupons,
+    'roles': RoleManagement
   };
 
   const currentComponent = componentMap[activeTab] || Dashboard;

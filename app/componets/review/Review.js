@@ -6,29 +6,18 @@ import { useGetData } from '@/lib/hooks/useGetData';
 import { PageLoader } from '../shared/LoadingComponents';
 
 export default function Review() {
-  // Fetch real reviews from database
+  // ✅ Optimized: Use shared reviews data for homepage
   const { data: reviewsData, isLoading, error } = useGetData({
-    name: 'reviews',
-    api: '/api/reviews'
+    name: 'homepage-reviews', // Unique key for homepage reviews
+    api: '/api/reviews',
+    cacheType: 'DYNAMIC' // Reviews are added frequently but not real-time
   });
 
   // Process real reviews data
   const customerReviews = useMemo(() => {
     if (!Array.isArray(reviewsData) || reviewsData.length === 0) {
-      // Fallback to a minimal set of demo reviews if no real reviews exist
-      return [
-        {
-          id: 'demo-1',
-          name: "Happy Customer",
-          avatar: "https://ui-avatars.com/api/?name=Happy+Customer&size=150&background=f3f4f6&color=374151",
-          rating: 5,
-          title: "Great Experience!",
-          comment: "Excellent quality and service. Highly recommended!",
-          product: "Premium Product",
-          date: "Recently",
-          verified: true
-        }
-      ];
+      // Return empty array if no real reviews exist - component will handle empty state
+      return [];
     }
 
     // Map real reviews to expected format
@@ -93,8 +82,8 @@ export default function Review() {
     };
   }, [reviewsData]);
 
-  // Loading state
-  if (isLoading) {
+  // Loading state - only show loader if we're actually loading and have no data
+  if (isLoading && !reviewsData) {
     return (
       <section className="py-16 bg-gradient-to-br from-gray-50 to-white">
         <div className="container mx-auto px-4 xl:px-0 max-w-frame">

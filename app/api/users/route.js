@@ -16,7 +16,7 @@ import { getCollection } from '../../../lib/mongodb';
 // =======================
 export async function POST(request) {
   try {
-    const users = await getCollection('allUsers');
+    const users = await getCollection('users');
     const body = await request.json();
 
     // Check if user already exists
@@ -61,7 +61,7 @@ export async function POST(request) {
 // =======================
 export async function PUT(request) {
   try {
-    const users = await getCollection('allUsers');
+    const users = await getCollection('users');
     const body = await request.json();
     const { email, password } = body;
 
@@ -119,7 +119,7 @@ export async function PUT(request) {
 // =======================
 export async function GET() {
   try {
-    const users = await getCollection('allUsers');
+    const users = await getCollection('users');
     const allUsers = await users.find({}).toArray();
 
     return NextResponse.json(allUsers);

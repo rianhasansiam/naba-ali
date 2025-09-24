@@ -22,7 +22,7 @@ export async function DELETE(request, { params }) {
       );
     }
 
-    const users = await getCollection('allUsers');
+    const users = await getCollection('users');
     
     // Check if user exists
     const existingUser = await users.findOne({ _id: new ObjectId(id) });
@@ -78,7 +78,7 @@ export async function GET(request, { params }) {
       );
     }
 
-    const users = await getCollection('allUsers');
+    const users = await getCollection('users');
     const user = await users.findOne({ _id: new ObjectId(id) });
     
     if (!user) {

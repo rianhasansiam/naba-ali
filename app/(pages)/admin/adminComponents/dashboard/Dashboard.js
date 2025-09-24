@@ -1,40 +1,128 @@
+'use client';
+
+import { useMemo } from 'react';
 import DashboardClient from './DashboardClient';
+import { useGetData } from '../../../../../lib/hooks/useGetData';
 
-// Server Component - Handles data fetching
+// Client Component - Handles real data fetching from APIs
 const Dashboard = () => {
-  // Server-side analytics data (could come from database/API)
-  const analytics = {
-    overview: {
-      totalRevenue: { value: 124500, change: 12.5, trend: 'up' },
-      totalOrders: { value: 1250, change: 8.3, trend: 'up' },
-      totalCustomers: { value: 845, change: -2.1, trend: 'down' },
-      averageOrder: { value: 99.6, change: 15.2, trend: 'up' }
-    },
-    recentSales: [
-      { id: '#3210', customer: 'Sarah Johnson', amount: 156.90, status: 'completed', date: '2025-09-18' },
-      { id: '#3209', customer: 'Michael Chen', amount: 89.50, status: 'processing', date: '2025-09-18' },
-      { id: '#3208', customer: 'Emily Davis', amount: 234.80, status: 'completed', date: '2025-09-17' },
-      { id: '#3207', customer: 'David Wilson', amount: 67.25, status: 'shipped', date: '2025-09-17' },
-      { id: '#3206', customer: 'Lisa Brown', amount: 445.60, status: 'completed', date: '2025-09-16' }
-    ],
-    topProducts: [
-      { name: 'Premium Cotton T-Shirt', sales: 145, revenue: 7250, image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=100&h=100&fit=crop' },
-      { name: 'Designer Jeans', sales: 98, revenue: 9800, image: 'https://images.unsplash.com/photo-1542272604-787c3835535d?w=100&h=100&fit=crop' },
-      { name: 'Casual Sneakers', sales: 87, revenue: 8700, image: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=100&h=100&fit=crop' },
-      { name: 'Summer Dress', sales: 76, revenue: 6080, image: 'https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=100&h=100&fit=crop' },
-      { name: 'Leather Jacket', sales: 45, revenue: 11250, image: 'https://images.unsplash.com/photo-1551028719-00167b16eac5?w=100&h=100&fit=crop' }
-    ],
-    monthlyData: [
-      { month: 'Jan', revenue: 45000, orders: 450 },
-      { month: 'Feb', revenue: 52000, orders: 520 },
-      { month: 'Mar', revenue: 48000, orders: 480 },
-      { month: 'Apr', revenue: 61000, orders: 610 },
-      { month: 'May', revenue: 55000, orders: 550 },
-      { month: 'Jun', revenue: 67000, orders: 670 }
-    ]
-  };
+  // Fetch real data from all APIs
+  const { data: products } = useGetData({ name: 'products', api: '/api/products' });
+  const { data: users } = useGetData({ name: 'users', api: '/api/users' });
+  const { data: orders } = useGetData({ name: 'orders', api: '/api/orders' });
+  const { data: reviews } = useGetData({ name: 'reviews', api: '/api/reviews' });
 
-  // Pass data to client component
+  // Calculate real analytics from database data
+  const analytics = useMemo(() => {
+    const allProducts = Array.isArray(products) ? products : [];
+    const allUsers = Array.isArray(users) ? users : [];
+    const allOrders = Array.isArray(orders) ? orders : [];
+    const allReviews = Array.isArray(reviews) ? reviews : [];
+
+    // Calculate total revenue from orders
+    const totalRevenue = allOrders.reduce((sum, order) => {
+      const orderTotal = order.orderSummary?.total || order.total || 0;
+      return sum + parseFloat(orderTotal);
+    }, 0);
+
+    // Calculate average order value
+    const averageOrder = allOrders.length > 0 ? totalRevenue / allOrders.length : 0;
+
+    // Get recent orders (last 5)
+    const recentSales = allOrders
+      .sort((a, b) => new Date(b.createdAt || b.orderDate) - new Date(a.createdAt || a.orderDate))
+      .slice(0, 5)
+      .map(order => ({
+        id: order.orderId || order._id?.toString().substring(0, 8) || 'N/A',
+        customer: order.customerInfo?.name || order.customer?.name || 'Anonymous',
+        amount: parseFloat(order.orderSummary?.total || order.total || 0),
+        status: order.status || 'pending',
+        date: order.createdAt ? new Date(order.createdAt).toISOString().split('T')[0] : 'N/A'
+      }));
+
+    // Calculate top products from orders
+    const productSales = {};
+    allOrders.forEach(order => {
+      if (order.items && Array.isArray(order.items)) {
+        order.items.forEach(item => {
+          const productId = item.productId || item.id;
+          const productName = item.productName || item.name || 'Unknown Product';
+          const quantity = item.quantity || 0;
+          const price = item.price || 0;
+          
+          if (!productSales[productId]) {
+            productSales[productId] = {
+              name: productName,
+              sales: 0,
+              revenue: 0,
+              image: allProducts.find(p => p._id === productId)?.image || 
+                     allProducts.find(p => p._id === productId)?.images?.[0] ||
+                     'https://via.placeholder.com/100x100/f3f4f6/374151?text=Product'
+            };
+          }
+          productSales[productId].sales += quantity;
+          productSales[productId].revenue += quantity * price;
+        });
+      }
+    });
+
+    const topProducts = Object.values(productSales)
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 5);
+
+    // Calculate monthly data (simplified - using order creation dates)
+    const monthlyData = [];
+    const now = new Date();
+    for (let i = 5; i >= 0; i--) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthName = date.toLocaleDateString('en-US', { month: 'short' });
+      
+      const monthOrders = allOrders.filter(order => {
+        const orderDate = new Date(order.createdAt || order.orderDate);
+        return orderDate.getMonth() === date.getMonth() && 
+               orderDate.getFullYear() === date.getFullYear();
+      });
+      
+      const monthRevenue = monthOrders.reduce((sum, order) => 
+        sum + parseFloat(order.orderSummary?.total || order.total || 0), 0);
+      
+      monthlyData.push({
+        month: monthName,
+        revenue: monthRevenue,
+        orders: monthOrders.length
+      });
+    }
+
+    return {
+      overview: {
+        totalRevenue: { 
+          value: totalRevenue, 
+          change: 0, // Could calculate from previous period if needed
+          trend: 'up' 
+        },
+        totalOrders: { 
+          value: allOrders.length, 
+          change: 0,
+          trend: 'up' 
+        },
+        totalCustomers: { 
+          value: allUsers.length, 
+          change: 0,
+          trend: 'up' 
+        },
+        averageOrder: { 
+          value: averageOrder, 
+          change: 0,
+          trend: 'up' 
+        }
+      },
+      recentSales,
+      topProducts,
+      monthlyData
+    };
+  }, [products, users, orders, reviews]);
+
+  // Pass real data to client component
   return <DashboardClient analytics={analytics} />;
 };
 
