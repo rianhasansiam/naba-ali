@@ -6,23 +6,15 @@ import Cards from "../../componets/cards/Cards";
 import Filters from "./filters/Filters";
 import MobileFilters from "./filters/MobileFilters";
 import Pagination from "./Pagination";
-import { useGetData } from "@/lib/hooks/useGetData";
 
-const ProductsPageClient = () => {
+const ProductsPageClient = ({ productsData, categoriesData }) => {
   // ✅ Local state for pagination & sorting
   const [currentPage, setCurrentPage] = useState(1);
   const [sortBy, setSortBy] = useState("most-popular");
   const productsPerPage = 8;
-
-  // ✅ Optimized: Reuse cached products data
-  const { data, isLoading, error } = useGetData({ 
-    name: "products", 
-    api: "/api/products",
-    cacheType: 'STATIC' // Products data is cached and shared across components
-  });
   
   // ✅ Memoize products array to prevent unnecessary re-renders
-  const allProducts = useMemo(() => Array.isArray(data) ? data : [], [data]);
+  const allProducts = useMemo(() => Array.isArray(productsData) ? productsData : [], [productsData]);
 
   // ✅ Memoized handlers to prevent unnecessary re-renders
   const handlePageChange = useCallback((page) => {
@@ -50,36 +42,6 @@ const ProductsPageClient = () => {
     };
   }, [allProducts, currentPage, productsPerPage]);
 
-  // ✅ Handle loading & error states with better UI
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="text-gray-600">Loading products...</p>
-        </div>
-      </div>
-    );
-  }
-  
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center space-y-4">
-          <div className="text-red-500 text-6xl">⚠️</div>
-          <h3 className="text-lg font-semibold text-gray-900">Unable to load products</h3>
-          <p className="text-red-600 mb-4">{error.message}</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Try Again
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex md:space-x-5 items-start">
       {/* Desktop Filters */}
@@ -94,7 +56,7 @@ const ProductsPageClient = () => {
       {/* Products Section */}
       <div className="flex flex-col w-full space-y-5">
         {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:justify-between">
+        <div className="flex flex-col lg:flex-row lg:justify-between">{/* Rest of component continues... */}
           <div className="flex items-center justify-between">
             <h1 className="font-bold text-2xl md:text-[32px]">All Products</h1>
             <MobileFilters />

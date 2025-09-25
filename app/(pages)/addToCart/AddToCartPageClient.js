@@ -2,30 +2,23 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useGetData } from '@/lib/hooks/useGetData';
 import { useAppSelector, useAppDispatch } from '@/app/redux/reduxHooks';
 import { loadCartFromStorage, updateCartQuantity, removeFromCart } from '@/app/redux/slice';
 import { ShoppingBag, Minus, Plus, X, Truck, ArrowLeft, ShoppingCart, Tag } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
-const AddToCartPageClient = () => {
+const AddToCartPageClient = ({ productsData, couponsData }) => {
   // Redux state
   const dispatch = useAppDispatch();
   const cartItems = useAppSelector((state) => state.user.cart.items) || [];
   
-  // Get products data to check current stock and merge with cart
-  const { data: products, isLoading: productsLoading } = useGetData({
-    name: 'products',
-    api: '/api/products'
-  });
-
   // Merge cart items with fresh product data to fix undefined values
   const enrichedCartItems = cartItems.map(cartItem => {
     if (!cartItem || !cartItem.id) return cartItem;
     
     // Find the current product data using MongoDB _id
-    const currentProduct = products?.find(p => p._id === cartItem.id);
+    const currentProduct = productsData?.find(p => p._id === cartItem.id);
     
     if (currentProduct) {
       // Merge cart item with fresh product data, keeping cart-specific fields
@@ -49,19 +42,13 @@ const AddToCartPageClient = () => {
     return cartItem;
   });
 
-  // Get coupons data from database
-  const { data: coupons, isLoading: couponsLoading } = useGetData({
-    name: 'coupons',
-    api: '/api/coupons'
-  });
-
   // Coupon state
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponError, setCouponError] = useState('');
 
-  // Get available coupons from database (fallback to empty array if loading)
-  const availableCoupons = coupons || [];
+  // Get available coupons from props (passed from page level)
+  const availableCoupons = couponsData || [];
 
   // Load cart from localStorage when component mounts
   useEffect(() => {
@@ -84,12 +71,6 @@ const AddToCartPageClient = () => {
   const handleApplyCoupon = () => {
     setCouponError('');
     
-    // Check if coupons are still loading
-    if (couponsLoading) {
-      setCouponError('Loading coupons, please wait...');
-      return;
-    }
-
     // Check if coupon code is provided
     if (!couponCode.trim()) {
       setCouponError('Please enter a coupon code');
@@ -199,18 +180,6 @@ const AddToCartPageClient = () => {
       }));
     }
   };
-
-  // Loading state
-  if (productsLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading cart...</p>
-        </div>
-      </div>
-    );
-  }
 
   // Empty cart
   if (enrichedCartItems.length === 0) {
@@ -374,10 +343,10 @@ const AddToCartPageClient = () => {
                       />
                       <button
                         onClick={handleApplyCoupon}
-                        disabled={!couponCode || couponsLoading}
+                        disabled={!couponCode}
                         className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {couponsLoading ? 'Loading...' : 'Apply'}
+                        Apply
                       </button>
                     </div>
                     {couponError && (

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Send, Phone, Mail, MapPin, Clock, Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
+import LoadingSpinner from '../../componets/loading/LoadingSpinner';
 
 const ContactPageClient = ({ contactData }) => {
   const [formData, setFormData] = useState({
@@ -289,7 +290,7 @@ const ContactPageClient = ({ contactData }) => {
                 >
                   {isSubmitting ? (
                     <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <LoadingSpinner size="sm" color="white" />
                       <span>Sending...</span>
                     </>
                   ) : (

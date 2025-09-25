@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useGetData } from '@/lib/hooks/useGetData';
+import LoadingSpinner from '../componets/loading/LoadingSpinner';
 
 export default function DataFetchDiagnostic() {
   const { data: session, status: sessionStatus } = useSession();
@@ -68,7 +69,12 @@ export default function DataFetchDiagnostic() {
         <div className="p-6 border rounded-lg">
           <h3 className="text-lg font-semibold mb-3 flex items-center">
             Products API
-            {productsLoading && <span className="ml-2 text-blue-500 text-sm">(Loading...)</span>}
+            {productsLoading && (
+              <span className="ml-2 text-blue-500 text-sm flex items-center">
+                <LoadingSpinner size="sm" className="mr-1" />
+                Loading...
+              </span>
+            )}
             {productsError && <span className="ml-2 text-red-500 text-sm">(Error)</span>}
             {!productsLoading && !productsError && <span className="ml-2 text-green-500 text-sm">(✓)</span>}
           </h3>
@@ -91,7 +97,12 @@ export default function DataFetchDiagnostic() {
         <div className="p-6 border rounded-lg">
           <h3 className="text-lg font-semibold mb-3 flex items-center">
             Categories API
-            {categoriesLoading && <span className="ml-2 text-blue-500 text-sm">(Loading...)</span>}
+            {categoriesLoading && (
+              <span className="ml-2 text-blue-500 text-sm flex items-center">
+                <LoadingSpinner size="sm" className="mr-1" />
+                Loading...
+              </span>
+            )}
             {categoriesError && <span className="ml-2 text-red-500 text-sm">(Error)</span>}
             {!categoriesLoading && !categoriesError && <span className="ml-2 text-green-500 text-sm">(✓)</span>}
           </h3>
@@ -114,7 +125,12 @@ export default function DataFetchDiagnostic() {
         <div className="p-6 border rounded-lg">
           <h3 className="text-lg font-semibold mb-3 flex items-center">
             Reviews API
-            {reviewsLoading && <span className="ml-2 text-blue-500 text-sm">(Loading...)</span>}
+            {reviewsLoading && (
+              <span className="ml-2 text-blue-500 text-sm flex items-center">
+                <LoadingSpinner size="sm" className="mr-1" />
+                Loading...
+              </span>
+            )}
             {reviewsError && <span className="ml-2 text-red-500 text-sm">(Error)</span>}
             {!reviewsLoading && !reviewsError && <span className="ml-2 text-green-500 text-sm">(✓)</span>}
           </h3>
@@ -137,7 +153,12 @@ export default function DataFetchDiagnostic() {
         <div className="p-6 border rounded-lg">
           <h3 className="text-lg font-semibold mb-3 flex items-center">
             Users API
-            {usersLoading && <span className="ml-2 text-blue-500 text-sm">(Loading...)</span>}
+            {usersLoading && (
+              <span className="ml-2 text-blue-500 text-sm flex items-center">
+                <LoadingSpinner size="sm" className="mr-1" />
+                Loading...
+              </span>
+            )}
             {usersError && <span className="ml-2 text-red-500 text-sm">(Error)</span>}
             {!usersLoading && !usersError && <span className="ml-2 text-green-500 text-sm">(✓)</span>}
           </h3>

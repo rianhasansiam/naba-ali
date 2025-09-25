@@ -58,6 +58,79 @@ export async function DELETE(request, { params }) {
   }
 }
 
+// PATCH - Update user by ID
+export async function PATCH(request, { params }) {
+  try {
+    const { id } = params;
+    const updateData = await request.json();
+    
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: 'User ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Validate ObjectId format
+    if (!ObjectId.isValid(id)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid user ID format' },
+        { status: 400 }
+      );
+    }
+
+    const users = await getCollection('users');
+    
+    // Check if user exists
+    const existingUser = await users.findOne({ _id: new ObjectId(id) });
+    if (!existingUser) {
+      return NextResponse.json(
+        { success: false, error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    // Prepare update fields - only allow certain fields to be updated
+    const allowedUpdates = {};
+    if (updateData.name) allowedUpdates.name = updateData.name;
+    if (updateData.phone !== undefined) allowedUpdates.phone = updateData.phone;
+    if (updateData.image) allowedUpdates.image = updateData.image;
+    
+    // Add update timestamp
+    allowedUpdates.updatedAt = new Date();
+
+    // Update the user
+    const result = await users.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: allowedUpdates }
+    );
+    
+    if (result.matchedCount === 0) {
+      return NextResponse.json(
+        { success: false, error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    // Get updated user data
+    const updatedUser = await users.findOne({ _id: new ObjectId(id) });
+    const { password, ...userWithoutPassword } = updatedUser;
+
+    return NextResponse.json({
+      success: true,
+      message: 'User updated successfully',
+      user: userWithoutPassword
+    });
+    
+  } catch (error) {
+    console.error('Error updating user:', error);
+    return NextResponse.json(
+      { success: false, error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
 // GET - Get specific user by ID
 export async function GET(request, { params }) {
   try {

@@ -1,4 +1,4 @@
-import AddToCartPageClient from './AddToCartPageClient';
+import AddToCartPageWrapper from './AddToCartPageWrapper';
 
 // Metadata for SEO (Server-side)
 export async function generateMetadata() {
@@ -20,9 +20,5 @@ export async function generateMetadata() {
 }
 
 export default function AddToCartPage() {
-  return (
-    <main className="min-h-screen bg-gray-50">
-      <AddToCartPageClient />
-    </main>
-  );
+  return <AddToCartPageWrapper />;
 }

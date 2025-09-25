@@ -8,6 +8,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
 import { Star, StarIcon, ThumbsUp, ShieldCheck, Clock, User, MessageSquare, Heart, X } from 'lucide-react';
+import LoadingSpinner from '../../../componets/loading/LoadingSpinner';
+import { TextSkeleton } from '../../../componets/loading/SkeletonLoaders';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function ProductDetailPage({ params }) {
@@ -195,8 +197,8 @@ export default function ProductDetailPage({ params }) {
     return (
       <div className="container mx-auto px-4 py-16">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-black mb-4"></div>
-          <p className="text-gray-600">Loading product details...</p>
+          <LoadingSpinner size="lg" />
+          <p className="text-gray-600 mt-4">Loading product details...</p>
         </div>
       </div>
     );
@@ -767,8 +769,8 @@ export default function ProductDetailPage({ params }) {
           <div className="relative">
             {reviewsLoading ? (
               <div className="text-center py-16">
-                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-4 border-blue-600 mb-4"></div>
-                <p className="text-gray-600 text-lg">Loading reviews...</p>
+                <LoadingSpinner size="lg" />
+                <p className="text-gray-600 text-lg mt-4">Loading reviews...</p>
               </div>
             ) : productReviews.length > 0 ? (
               <motion.div 

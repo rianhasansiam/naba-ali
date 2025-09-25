@@ -24,6 +24,13 @@ const NavbarClient = ({ navItems, defaultShopCategories }) => {
     api: '/api/categories',
     cacheType: 'STATIC'
   });
+
+  // Fetch products to count items per category
+  const { data: productsData, isLoading: productsLoading } = useGetData({
+    name: 'navbar-products',
+    api: '/api/products',
+    cacheType: 'DYNAMIC'
+  });
   
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isShopDropdownOpen, setIsShopDropdownOpen] = useState(false);
@@ -56,28 +63,45 @@ const NavbarClient = ({ navItems, defaultShopCategories }) => {
   const shopCategories = useMemo(() => {
     const categories = [];
     
-    // Add default categories first
-    categories.push(...defaultShopCategories);
+    // Calculate total products count for "All Products"
+    const totalProductsCount = Array.isArray(productsData) ? productsData.length : 0;
+    
+    // Add default categories first with calculated counts
+    const updatedDefaultCategories = defaultShopCategories.map(category => {
+      if (category.name === 'All Products') {
+        return { ...category, count: totalProductsCount };
+      }
+      return category;
+    });
+    
+    categories.push(...updatedDefaultCategories);
     
     // Add real categories from API if available
-    if (Array.isArray(categoriesData)) {
+    if (Array.isArray(categoriesData) && Array.isArray(productsData)) {
       const realCategories = categoriesData
         .filter(category => category.status === 'active' || !category.status)
         .slice(0, 4) // Limit to 4 categories to fit in dropdown
-        .map(category => ({
-          name: category.name,
-          description: `${category.productCount || 0} items available`,
-          icon: getCategoryIcon(category.name),
-          count: category.productCount || 0,
-          href: `/allProducts?category=${encodeURIComponent(category.name)}`
-        }));
+        .map(category => {
+          // Count products that match this category name
+          const productCount = productsData.filter(product => 
+            product.category && product.category.toLowerCase() === category.name.toLowerCase()
+          ).length;
+          
+          return {
+            name: category.name,
+            description: `${productCount} items available`,
+            icon: getCategoryIcon(category.name),
+            count: productCount,
+            href: `/allProducts?category=${encodeURIComponent(category.name)}`
+          };
+        });
       
       // Replace default categories with real ones, keeping "All Products" at the top
       categories.splice(1, categories.length - 1, ...realCategories);
     }
     
     return categories.slice(0, 6); // Maximum 6 items in dropdown
-  }, [categoriesData, defaultShopCategories, getCategoryIcon]);
+  }, [categoriesData, productsData, defaultShopCategories, getCategoryIcon]);
 
   // Helper function to check if user is admin
   const isAdmin = useCallback(() => {
@@ -228,30 +252,49 @@ const NavbarClient = ({ navItems, defaultShopCategories }) => {
                       >
                         <div className="p-6">
                           <h3 className="text-lg font-semibold text-gray-800 mb-4">Shop Categories</h3>
-                          <div className="grid grid-cols-3 gap-3">
-                            {shopCategories.map((category) => (
-                              <Link 
-                                key={category.name} 
-                                href={category.href}
-                                className="group"
-                              >
-                                <motion.div 
-                                  whileHover={{ scale: 1.02, backgroundColor: '#f3f4f6' }}
-                                  className="p-3 rounded-xl border border-gray-100 transition-all duration-300"
-                                >
+                          
+                          {/* Loading State */}
+                          {(categoriesLoading || productsLoading) ? (
+                            <div className="grid grid-cols-3 gap-3">
+                              {Array.from({ length: 6 }).map((_, index) => (
+                                <div key={index} className="p-3 rounded-xl border border-gray-100">
                                   <div className="flex items-center space-x-3">
-                                    <span className="text-2xl">{category.icon}</span>
-                                    <div>
-                                      <h4 className="font-medium text-gray-800 group-hover:text-black transition-colors">
-                                        {category.name}
-                                      </h4>
-                                      <p className="text-xs text-gray-500">{category.count} items</p>
+                                    <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+                                    <div className="flex-1 space-y-2">
+                                      <div className="w-16 h-4 bg-gray-200 rounded animate-pulse"></div>
+                                      <div className="w-12 h-3 bg-gray-200 rounded animate-pulse"></div>
                                     </div>
                                   </div>
-                                </motion.div>
-                              </Link>
-                            ))}
-                          </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            /* Normal Categories */
+                            <div className="grid grid-cols-3 gap-3">
+                              {shopCategories.map((category) => (
+                                <Link 
+                                  key={category.name} 
+                                  href={category.href}
+                                  className="group"
+                                >
+                                  <motion.div 
+                                    whileHover={{ scale: 1.02, backgroundColor: '#f3f4f6' }}
+                                    className="p-3 rounded-xl border border-gray-100 transition-all duration-300"
+                                  >
+                                    <div className="flex items-center space-x-3">
+                                      <span className="text-2xl">{category.icon}</span>
+                                      <div>
+                                        <h4 className="font-medium text-gray-800 group-hover:text-black transition-colors">
+                                          {category.name}
+                                        </h4>
+                                        <p className="text-xs text-gray-500">{category.count} items</p>
+                                      </div>
+                                    </div>
+                                  </motion.div>
+                                </Link>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </motion.div>
                     )}

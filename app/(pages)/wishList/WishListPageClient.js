@@ -7,6 +7,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGetData } from '@/lib/hooks/useGetData';
 import { useAppSelector, useAppDispatch } from '@/app/redux/reduxHooks';
 import { loadWishlistFromStorage, removeFromWishlist, addToCart } from '@/app/redux/slice';
+import LoadingSpinner from '../../componets/loading/LoadingSpinner';
+import { ProductGridSkeleton } from '../../componets/loading/SkeletonLoaders';
 import { 
   FiHeart, 
   FiShoppingCart, 
@@ -344,8 +346,8 @@ export default function WishListPageClient() {
     return (
       <div className="pt-10">
         <div className="text-center py-16">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mb-4"></div>
-          <p className="text-gray-600">Loading your wishlist...</p>
+          <LoadingSpinner size="lg" />
+          <p className="text-gray-600 mt-4">Loading your wishlist...</p>
         </div>
       </div>
     );

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   User, Package, MapPin, CreditCard, Settings, Bell, 
@@ -10,31 +10,33 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 
-const ProfilePageClient = ({ profileData }) => {
+const ProfilePageClient = ({ profileData, onUpdateProfile }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState({
-    firstName: profileData?.user?.firstName || '',
-    lastName: profileData?.user?.lastName || '',
-    email: profileData?.user?.email || '',
-    phone: profileData?.user?.phone || ''
-  });
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState({ text: '', type: '' });
+  
+  // Refs for form inputs to avoid controlled component re-renders
+  const firstNameRef = useRef(null);
+  const lastNameRef = useRef(null);
+  const phoneRef = useRef(null);
 
-  // Show login prompt if no user data
-  if (!profileData?.user) {
+  // Remove all useEffect dependencies that could cause re-renders
+  // Edit data is now managed manually and only when needed
+
+  // Safety check for profileData
+  if (!profileData) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="bg-white rounded-2xl shadow-xl p-8 text-center max-w-md">
-          <User className="mx-auto text-gray-400 mb-4" size={64} />
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Please Sign In</h2>
-          <p className="text-gray-600 mb-6">You need to be logged in to view your profile.</p>
-          <button className="bg-black text-white px-6 py-3 rounded-lg hover:bg-gray-800 transition-colors">
-            Sign In
-          </button>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading profile...</p>
         </div>
       </div>
     );
   }
+
+  // Authentication is handled at the page level, so we can assume user is logged in
 
   // Icon mapping function
   const getIcon = (iconName) => {
@@ -65,22 +67,83 @@ const ProfilePageClient = ({ profileData }) => {
     };
     return icons[status] || Clock;
   };
+   console.log(profileData.user);
+  // Handle form submission with current edit data
+  const handleSave = async () => {
+    setSaving(true);
+    setMessage({ text: '', type: '' });
+    
+    // Get values directly from input refs (no re-render needed)
+    const currentEditData = {
+      firstName: firstNameRef.current?.value || '',
+      lastName: lastNameRef.current?.value || '',
+      email: profileData.user.email, // Email is readonly
+      phone: phoneRef.current?.value || ''
+    };
+ 
+    try {
+      // Validate required fields
+      if (!currentEditData.firstName.trim()) {
+        setMessage({ text: 'First name is required', type: 'error' });
+        setSaving(false);
+        return;
+      }
 
-  // Handle form submission
-  const handleSave = () => {
-    // Simulate API call
-    console.log('Saving user data:', editData);
-    setIsEditing(false);
+      // Prepare update data
+      const updateData = {
+        name: `${currentEditData.firstName} ${currentEditData.lastName}`.trim(),
+        phone: currentEditData.phone || null,
+      };
+
+      console.log('Saving user data:', updateData);
+      
+      // Make API call to update user
+      const response = await fetch(`/api/users/${profileData.user.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData),
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        setMessage({ text: 'Profile updated successfully!', type: 'success' });
+        setIsEditing(false);
+        
+        // Refetch user data to update the UI
+        if (onUpdateProfile) {
+          await onUpdateProfile();
+        }
+        
+        // Clear the success message after a few seconds
+        setTimeout(() => {
+          setMessage({ text: '', type: '' });
+        }, 3000);
+      } else {
+        setMessage({ text: result.error || 'Failed to update profile', type: 'error' });
+      }
+    } catch (error) {
+      console.error('Error saving user data:', error);
+      setMessage({ text: 'An error occurred while saving. Please try again.', type: 'error' });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleCancel = () => {
-    setEditData({
-      firstName: profileData?.user?.firstName || '',
-      lastName: profileData?.user?.lastName || '',
-      email: profileData?.user?.email || '',
-      phone: profileData?.user?.phone || ''
-    });
     setIsEditing(false);
+    setMessage({ text: '', type: '' });
+  };
+
+  const handleEditToggle = () => {
+    if (isEditing) {
+      handleCancel();
+    } else {
+      setIsEditing(true);
+      // No need to initialize edit data - we'll use input refs
+    }
   };
 
   // Animation variants
@@ -120,7 +183,7 @@ const ProfilePageClient = ({ profileData }) => {
         <div className="flex items-start justify-between mb-6">
           <h2 className="text-2xl font-bold text-gray-900">Profile Information</h2>
           <button
-            onClick={() => setIsEditing(!isEditing)}
+            onClick={handleEditToggle}
             className="flex items-center space-x-2 px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors duration-200"
           >
             <Edit3 className="w-4 h-4" />
@@ -147,6 +210,17 @@ const ProfilePageClient = ({ profileData }) => {
 
           {/* User Details */}
           <div className="flex-1 space-y-4">
+            {/* Message Display */}
+            {message.text && (
+              <div className={`p-3 rounded-lg border ${
+                message.type === 'success' 
+                  ? 'bg-green-50 border-green-200 text-green-800' 
+                  : 'bg-red-50 border-red-200 text-red-800'
+              }`}>
+                {message.text}
+              </div>
+            )}
+            
             {isEditing ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -154,9 +228,9 @@ const ProfilePageClient = ({ profileData }) => {
                     First Name
                   </label>
                   <input
+                    ref={firstNameRef}
                     type="text"
-                    value={editData.firstName}
-                    onChange={(e) => setEditData({...editData, firstName: e.target.value})}
+                    defaultValue={profileData.user.firstName}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
                   />
                 </div>
@@ -165,9 +239,9 @@ const ProfilePageClient = ({ profileData }) => {
                     Last Name
                   </label>
                   <input
+                    ref={lastNameRef}
                     type="text"
-                    value={editData.lastName}
-                    onChange={(e) => setEditData({...editData, lastName: e.target.value})}
+                    defaultValue={profileData.user.lastName}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
                   />
                 </div>
@@ -177,29 +251,36 @@ const ProfilePageClient = ({ profileData }) => {
                   </label>
                   <input
                     type="email"
-                    value={editData.email}
-                    onChange={(e) => setEditData({...editData, email: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
+                    value={profileData.user.email}
+                    readOnly
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
                   />
+                  <p className="text-xs text-gray-500 mt-1">Email cannot be changed from this form</p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Phone
                   </label>
                   <input
+                    ref={phoneRef}
                     type="tel"
-                    value={editData.phone}
-                    onChange={(e) => setEditData({...editData, phone: e.target.value})}
+                    placeholder="Enter your phone number"
+                    defaultValue={profileData.user.phone}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
                   />
                 </div>
                 <div className="md:col-span-2 flex space-x-3">
                   <button
                     onClick={handleSave}
-                    className="flex items-center space-x-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors duration-200"
+                    disabled={saving}
+                    className={`flex items-center space-x-2 px-4 py-2 text-white rounded-lg transition-colors duration-200 ${
+                      saving 
+                        ? 'bg-gray-400 cursor-not-allowed' 
+                        : 'bg-green-600 hover:bg-green-700'
+                    }`}
                   >
                     <Save className="w-4 h-4" />
-                    <span>Save Changes</span>
+                    <span>{saving ? 'Saving...' : 'Save Changes'}</span>
                   </button>
                   <button
                     onClick={handleCancel}
@@ -222,15 +303,17 @@ const ProfilePageClient = ({ profileData }) => {
                   )}
                   {!profileData.user.phone && (
                     <p className="text-gray-400 italic">Phone not provided</p>
-                  )}
+                  )}  
                 </div>
                 <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">
                   <Star className="w-4 h-4 mr-1" />
-                  {profileData.user.membershipTier} Member
+                  {profileData?.user?.role || 'User'}
                 </div>
               </div>
             )}
           </div>
+
+
         </div>
       </motion.div>
 
@@ -304,7 +387,7 @@ const ProfilePageClient = ({ profileData }) => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
                   <div className="flex -space-x-2">
-                    {order.items_detail.slice(0, 3).map((item, index) => (
+                    {(order.items_detail || order.items || []).slice(0, 3).map((item, index) => (
                       <div key={index} className="w-10 h-10 rounded-full border-2 border-white overflow-hidden">
                         <Image
                           src={item.image}
@@ -524,7 +607,7 @@ const ProfilePageClient = ({ profileData }) => {
         >
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Notifications</h3>
           <div className="space-y-4">
-            {Object.entries(profileData.preferences).slice(0, 5).map(([key, value]) => (
+            {Object.entries(profileData.preferences || {}).slice(0, 5).map(([key, value]) => (
               <div key={key} className="flex items-center justify-between">
                 <div>
                   <p className="font-medium text-gray-900 capitalize">
@@ -600,13 +683,13 @@ const ProfilePageClient = ({ profileData }) => {
                   <h3 className="font-semibold text-gray-900">
                     {profileData.user.firstName} {profileData.user.lastName}
                   </h3>
-                  <p className="text-sm text-gray-600">{profileData.user.membershipTier} Member</p>
+                  <p className="text-sm text-gray-600">{profileData?.user?.role || 'User'}</p>
                 </div>
               </div>
             </div>
 
             <nav className="space-y-1">
-              {profileData.navigation.map((item) => {
+              {profileData.tabs?.map((item) => {
                 const IconComponent = getIcon(item.iconName);
                 return (
                   <motion.button
@@ -648,4 +731,32 @@ const ProfilePageClient = ({ profileData }) => {
   );
 };
 
-export default ProfilePageClient;
+// Memoize the component to prevent unnecessary re-renders
+const MemoizedProfilePageClient = memo(ProfilePageClient, (prevProps, nextProps) => {
+  // Custom comparison function to prevent re-renders when profileData hasn't meaningfully changed
+  if (!prevProps.profileData && !nextProps.profileData) return true;
+  if (!prevProps.profileData || !nextProps.profileData) return false;
+  
+  // Compare user data specifically
+  const prevUser = prevProps.profileData.user;
+  const nextUser = nextProps.profileData.user;
+  
+  if (!prevUser && !nextUser) return true;
+  if (!prevUser || !nextUser) return false;
+  
+  // Compare the fields that matter for editing
+  const userFieldsMatch = (
+    prevUser.id === nextUser.id &&
+    prevUser.firstName === nextUser.firstName &&
+    prevUser.lastName === nextUser.lastName &&
+    prevUser.email === nextUser.email &&
+    prevUser.phone === nextUser.phone
+  );
+  
+  // If user data is the same, don't re-render
+  return userFieldsMatch;
+});
+
+MemoizedProfilePageClient.displayName = 'ProfilePageClient';
+
+export default MemoizedProfilePageClient;

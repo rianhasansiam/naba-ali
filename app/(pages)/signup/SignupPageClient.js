@@ -6,6 +6,7 @@ import { Eye, EyeOff, Mail, Lock, User, Crown, Percent, Gift, Zap, Check, X } fr
 import Link from 'next/link';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import LoadingSpinner from '../../componets/loading/LoadingSpinner';
 
 const SignupPageClient = ({ signupData }) => {
   const router = useRouter();
@@ -561,8 +562,8 @@ const SignupPageClient = ({ signupData }) => {
               >
                 {isLoading ? (
                   <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Creating account...
+                    <LoadingSpinner size="sm" color="white" />
+                    <span className="ml-2">Creating account...</span>
                   </div>
                 ) : (
                   signupData.formData.submitButtonText

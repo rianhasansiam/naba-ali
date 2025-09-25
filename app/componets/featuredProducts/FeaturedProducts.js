@@ -2,17 +2,8 @@
 
 import React, { useMemo } from 'react';
 import FeaturedProductsClient from './FeaturedProductsClient';
-import { useGetData } from '@/lib/hooks/useGetData';
-import { PageLoader } from '../shared/LoadingComponents';
 
-export default function FeaturedProducts() {
-  // ✅ Optimized: Use shared products data across components
-  const { data: productsData, isLoading, error } = useGetData({
-    name: 'homepage-products', // Shared key for all homepage product queries
-    api: '/api/products',
-    cacheType: 'STATIC' // Same products data as Hero - will use cached version
-  });
-
+export default function FeaturedProducts({ productsData }) {
   // Select featured products from real data
   const featuredProducts = useMemo(() => {
     if (!Array.isArray(productsData)) return [];
@@ -40,26 +31,13 @@ export default function FeaturedProducts() {
       }));
   }, [productsData]);
 
-  // Loading state - only show loader if we're actually loading and have no data
-  if (isLoading && !productsData) {
-    return (
-      <section className="pt-10 bg-white">
-        <div className="container mx-auto px-4 xl:px-0 max-w-frame">
-          <PageLoader message="Loading featured products..." />
-        </div>
-      </section>
-    );
-  }
-
-  // Error state
-  if (error || featuredProducts.length === 0) {
+  // Empty state
+  if (featuredProducts.length === 0) {
     return (
       <section className="pt-10 bg-white">
         <div className="container mx-auto px-4 xl:px-0 max-w-frame">
           <div className="text-center py-16">
-            <p className="text-gray-600">
-              {error ? 'Unable to load featured products.' : 'No featured products available.'}
-            </p>
+            <p className="text-gray-600">No featured products available.</p>
           </div>
         </div>
       </section>

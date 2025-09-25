@@ -2,14 +2,17 @@
 'use client';
 
 import { useAdminAuth } from '@/lib/hooks/useAdminAuth';
-import { Loader2, Shield } from 'lucide-react';
+import { Shield } from 'lucide-react';
+import LoadingSpinner from '../../../componets/loading/LoadingSpinner';
 
 const AdminLoadingScreen = () => (
   <div className="min-h-screen bg-gray-50 flex items-center justify-center">
     <div className="text-center">
       <div className="mb-4">
         <Shield className="w-12 h-12 text-blue-600 mx-auto mb-4" />
-        <Loader2 className="w-6 h-6 text-gray-600 animate-spin mx-auto" />
+        <div className="flex justify-center">
+          <LoadingSpinner size="md" color="text-gray-600" />
+        </div>
       </div>
       <h2 className="text-lg font-semibold text-gray-900 mb-2">
         Verifying Admin Access

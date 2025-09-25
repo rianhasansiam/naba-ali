@@ -7,6 +7,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { useLoadingState } from '@/lib/hooks/useLoadingHooks';
+import LoadingSpinner from '../../componets/loading/LoadingSpinner';
 
 const LoginPageClient = ({ loginData }) => {
   const [formData, setFormData] = useState({
@@ -19,6 +21,7 @@ const LoginPageClient = ({ loginData }) => {
   const [loginStatus, setLoginStatus] = useState(null);
   const [errors, setErrors] = useState({});
   const router = useRouter();
+  const { showLoading, hideLoading } = useLoadingState();
 
   // Icon mapping function
   const getIcon = (iconName) => {
@@ -76,6 +79,7 @@ const LoginPageClient = ({ loginData }) => {
     
     setIsLoading(true);
     setLoginStatus(null);
+    showLoading('Signing you in...', 'minimal');
 
     try {
       const result = await signIn('credentials', {
@@ -102,12 +106,14 @@ const LoginPageClient = ({ loginData }) => {
       setErrors(prev => ({ ...prev, api: 'Network error. Please try again.' }));
     } finally {
       setIsLoading(false);
+      hideLoading();
     }
   };
 
   // Handle Google login with NextAuth
   const handleGoogleLogin = async () => {
     setIsLoading(true);
+    showLoading('Connecting to Google...', 'minimal');
     
     try {
       const result = await signIn('google', {
@@ -119,6 +125,7 @@ const LoginPageClient = ({ loginData }) => {
         setLoginStatus('error');
         setErrors(prev => ({ ...prev, api: 'Google sign-in failed. Please try again.' }));
         setIsLoading(false);
+        hideLoading();
       } else if (result?.url) {
         setLoginStatus('success');
         window.location.href = result.url;
@@ -128,6 +135,7 @@ const LoginPageClient = ({ loginData }) => {
       setLoginStatus('error');
       setErrors(prev => ({ ...prev, api: 'Google sign-in failed. Please try again.' }));
       setIsLoading(false);
+      hideLoading();
     }
   };
 
@@ -371,8 +379,8 @@ const LoginPageClient = ({ loginData }) => {
             >
               {isLoading ? (
                 <div className="flex items-center">
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                  Signing in...
+                  <LoadingSpinner size="sm" color="white" />
+                  <span className="ml-2">Signing in...</span>
                 </div>
               ) : (
                 loginData.formData.loginButtonText

@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import axios from 'axios';
+import LoadingSpinner from '../componets/loading/LoadingSpinner';
 
 export default function SimpleQueryTest() {
   const { data, isLoading, error, isFetching } = useQuery({
@@ -19,7 +20,12 @@ export default function SimpleQueryTest() {
   console.log('Query State:', { isLoading, isFetching, hasData: !!data, error: !!error });
 
   if (isLoading) {
-    return <div className="p-8 text-center">Loading products...</div>;
+    return (
+      <div className="p-8 text-center">
+        <LoadingSpinner size="lg" />
+        <p className="mt-4 text-gray-600">Loading products...</p>
+      </div>
+    );
   }
 
   if (error) {

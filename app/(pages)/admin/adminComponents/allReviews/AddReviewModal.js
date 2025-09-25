@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { useAddData } from '../../../../../lib/hooks/useAddData';
 import { useGetData } from '../../../../../lib/hooks/useGetData';
 import { uploadToImageBB } from '@/lib/imagebb';
+import LoadingSpinner from '../../../../componets/loading/LoadingSpinner';
 
 const AddReviewModal = ({ isOpen, onClose, onReviewAdded, onSubmitStart, onSubmitError }) => {
   const [formData, setFormData] = useState({
@@ -511,7 +512,7 @@ const AddReviewModal = ({ isOpen, onClose, onReviewAdded, onSubmitStart, onSubmi
                 disabled={isSubmitting || imageUploading || isProcessing}
               >
                 {(isSubmitting || isProcessing) && (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <LoadingSpinner size="sm" color="white" />
                 )}
                 {imageUploading && !isSubmitting && !isProcessing && (
                   <Upload size={16} className="animate-bounce" />

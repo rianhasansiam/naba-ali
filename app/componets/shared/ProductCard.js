@@ -85,6 +85,7 @@ const ProductCard = memo(({
     try {
       const result = toggleUtils.cart(dispatch, product, cartItems);
       
+      // Show feedback animation for both add and remove actions
       if (result.action === 'added') {
         setJustAdded(prev => ({ ...prev, cart: true }));
         setTimeout(() => setJustAdded(prev => ({ ...prev, cart: false })), 2000);
@@ -102,6 +103,7 @@ const ProductCard = memo(({
     try {
       const result = toggleUtils.wishlist(dispatch, product, wishlistItems);
       
+      // Show feedback animation for both add and remove actions
       if (result.action === 'added') {
         setJustAdded(prev => ({ ...prev, wishlist: true }));
         setTimeout(() => setJustAdded(prev => ({ ...prev, wishlist: false })), 2000);
@@ -157,45 +159,45 @@ const ProductCard = memo(({
             whileTap={{ scale: 0.95 }}
             onClick={handleWishlistToggle}
             className={`
-              w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200
-              ${isInWishlist || justAdded.wishlist 
-                ? 'bg-red-500 text-white' 
-                : 'bg-white/80 backdrop-blur-sm text-gray-600 hover:bg-white'
+              w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 shadow-lg
+              ${isInWishlist 
+                ? 'bg-red-500 text-white hover:bg-red-600' 
+                : 'bg-white/90 backdrop-blur-sm text-gray-600 hover:bg-white hover:text-red-500'
               }
+              ${justAdded.wishlist ? 'animate-pulse' : ''}
             `}
+            title={isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
           >
-            <Heart size={18} fill={isInWishlist || justAdded.wishlist ? 'currentColor' : 'none'} />
-          </motion.button>
-          
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={handleQuickView}
-            className="w-10 h-10 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center text-gray-600 hover:bg-white transition-all duration-200"
-          >
-            <Eye size={18} />
+            <Heart 
+              size={18} 
+              fill={isInWishlist ? 'currentColor' : 'none'}
+              className="transition-all duration-200"
+            />
           </motion.button>
         </div>
 
-        {/* Quick Add to Cart Button */}
+        {/* Quick Add to Cart Button - Toggle Style */}
         <motion.button
-          whileHover={{ scale: 1.05 }}
+          whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}
           onClick={handleCartToggle}
           className={`
-            absolute bottom-3 left-1/2 transform -translate-x-1/2 px-4 py-2 rounded-full
-            flex items-center space-x-2 transition-all duration-200
+            absolute bottom-3 right-3 w-10 h-10 rounded-full
+            flex items-center justify-center transition-all duration-200 shadow-lg
             opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0
-            ${isInCart || justAdded.cart
-              ? 'bg-green-500 text-white' 
+            ${isInCart 
+              ? 'bg-green-500 text-white hover:bg-green-600' 
               : 'bg-black text-white hover:bg-gray-800'
             }
+            ${justAdded.cart ? 'animate-bounce' : ''}
           `}
+          title={isInCart ? 'Remove from Cart' : 'Add to Cart'}
         >
-          <ShoppingCart size={16} />
-          <span className="text-sm font-medium">
-            {isInCart ? 'In Cart' : justAdded.cart ? 'Added!' : 'Add to Cart'}
-          </span>
+          <ShoppingCart 
+            size={18} 
+            fill={isInCart ? 'currentColor' : 'none'}
+            className="transition-all duration-200"
+          />
         </motion.button>
       </div>
 

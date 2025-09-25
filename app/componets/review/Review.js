@@ -2,17 +2,8 @@
 
 import React, { useMemo } from 'react';
 import ReviewClient from './ReviewClient';
-import { useGetData } from '@/lib/hooks/useGetData';
-import { PageLoader } from '../shared/LoadingComponents';
 
-export default function Review() {
-  // ✅ Optimized: Use shared reviews data for homepage
-  const { data: reviewsData, isLoading, error } = useGetData({
-    name: 'homepage-reviews', // Unique key for homepage reviews
-    api: '/api/reviews',
-    cacheType: 'DYNAMIC' // Reviews are added frequently but not real-time
-  });
-
+export default function Review({ reviewsData }) {
   // Process real reviews data
   const customerReviews = useMemo(() => {
     if (!Array.isArray(reviewsData) || reviewsData.length === 0) {
@@ -82,24 +73,12 @@ export default function Review() {
     };
   }, [reviewsData]);
 
-  // Loading state - only show loader if we're actually loading and have no data
-  if (isLoading && !reviewsData) {
-    return (
-      <section className="py-16 bg-gradient-to-br from-gray-50 to-white">
-        <div className="container mx-auto px-4 xl:px-0 max-w-frame">
-          <PageLoader message="Loading customer reviews..." />
-        </div>
-      </section>
-    );
-  }
-
   return (
     <section className="py-16 bg-gradient-to-br from-gray-50 to-white">
       <div className="container mx-auto px-4 xl:px-0 max-w-frame">
         <ReviewClient 
           reviews={customerReviews} 
           stats={reviewStats}
-          error={error}
         />
       </div>
     </section>

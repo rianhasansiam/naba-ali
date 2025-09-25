@@ -6,6 +6,7 @@ import Footer from "./componets/footer/Footer";
 import ErrorBoundary from "./componets/shared/ErrorBoundary";
 import AuthProvider from "../lib/AuthProvider";
 import ReactQueryProvider from "@/lib/ReactQueryProvider";
+import { LoadingProvider } from "../lib/LoadingProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -57,12 +58,14 @@ export default function RootLayout({ children }) {
       >
         <AuthProvider>
           <StoreProvider>
-            <ReactQueryProvider >
-              <div className="bg-white min-h-screen text-black">
-                <Navbar />
-                {children}
-                <Footer />
-              </div>
+            <ReactQueryProvider>
+              <LoadingProvider>
+                <div className="bg-white min-h-screen text-black">
+                  <Navbar />
+                  {children}
+                  <Footer />
+                </div>
+              </LoadingProvider>
             </ReactQueryProvider>
           </StoreProvider>
         </AuthProvider>
