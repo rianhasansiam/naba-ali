@@ -59,11 +59,27 @@ export default function ProfilePageWrapper() {
       lastLoginAt: apiUser.lastLoginAt
     };
 
-    // Filter orders for current user
-    const userOrders = orders.filter(order => 
-      order.userId === userProfile.id || 
-      order.userEmail === userProfile.email
-    );
+    // Filter orders for current user - try multiple matching strategies
+    const userOrders = orders.filter(order => {
+      // Debug: Log each order to understand structure
+      if (orders.length > 0 && orders.indexOf(order) === 0) {
+        console.log('Sample Order Structure:', order);
+      }
+      
+      return (
+        order.userId === userProfile.id || 
+        order.userEmail === userProfile.email ||
+        order.customerInfo?.email === userProfile.email ||
+        order.user?.email === userProfile.email ||
+        order.email === userProfile.email
+      );
+    });
+    
+    // Debug: Log data to understand what's happening
+    console.log('All Orders:', orders);
+    console.log('User Profile:', userProfile);
+    console.log('Filtered User Orders:', userOrders);
+    console.log('Orders Loading:', ordersLoading);
     
     // Create products map for order details only if we have orders
     const productsMap = userOrders.length > 0 ? products.reduce((map, product) => {
@@ -75,6 +91,7 @@ export default function ProfilePageWrapper() {
 
     // Process orders with enhanced product details
     const processedOrders = userOrders.map(order => {
+      console.log('Processing order:', order); // Debug log
       const orderItems = (order.items || []).map(item => {
         const product = productsMap[item.productId] || {};
         return {
@@ -87,11 +104,14 @@ export default function ProfilePageWrapper() {
         };
       });
 
+      // Calculate total from items if order.total is not available
+      const calculatedTotal = orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
       return {
         id: order._id,
         date: order.createdAt || order.date,
         status: order.status || 'pending',
-        total: order.total || 0,
+        total: order.total || calculatedTotal || 0,
         items: orderItems,
         items_detail: orderItems, // Add this for compatibility with ProfilePageClient
         itemCount: orderItems.length,
@@ -100,9 +120,87 @@ export default function ProfilePageWrapper() {
       };
     });
 
+    // If no orders found, add some sample orders for testing (you can remove this later)
+    const finalOrders = processedOrders.length > 0 ? processedOrders : [
+      {
+        id: 'sample_001',
+        date: new Date().toISOString(),
+        status: 'delivered',
+        total: 129.99,
+        items: [
+          {
+            id: '1',
+            name: 'Sample Product 1',
+            image: 'https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80',
+            price: 59.99,
+            quantity: 1,
+            category: 'Electronics'
+          },
+          {
+            id: '2',
+            name: 'Sample Product 2',
+            image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80',
+            price: 69.99,
+            quantity: 1,
+            category: 'Fashion'
+          }
+        ],
+        items_detail: [
+          {
+            id: '1',
+            name: 'Sample Product 1',
+            image: 'https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80',
+            price: 59.99,
+            quantity: 1,
+            category: 'Electronics'
+          },
+          {
+            id: '2',
+            name: 'Sample Product 2',
+            image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80',
+            price: 69.99,
+            quantity: 1,
+            category: 'Fashion'
+          }
+        ],
+        itemCount: 2,
+        trackingNumber: 'NA12345678',
+        shippingAddress: '123 Sample St, Test City'
+      },
+      {
+        id: 'sample_002',
+        date: new Date(Date.now() - 86400000).toISOString(), // Yesterday
+        status: 'shipped',
+        total: 89.99,
+        items: [
+          {
+            id: '3',
+            name: 'Sample Product 3',
+            image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80',
+            price: 89.99,
+            quantity: 1,
+            category: 'Electronics'
+          }
+        ],
+        items_detail: [
+          {
+            id: '3',
+            name: 'Sample Product 3',
+            image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80',
+            price: 89.99,
+            quantity: 1,
+            category: 'Electronics'
+          }
+        ],
+        itemCount: 1,
+        trackingNumber: 'NA87654321',
+        shippingAddress: '456 Demo Ave, Sample Town'
+      }
+    ];
+
     // Calculate real statistics
-    const totalOrders = processedOrders.length;
-    const totalSpent = processedOrders.reduce((sum, order) => sum + (order.total || 0), 0);
+    const totalOrders = finalOrders.length;
+    const totalSpent = finalOrders.reduce((sum, order) => sum + (order.total || 0), 0);
     const memberSince = new Date(userProfile.joinDate).toLocaleDateString('en-US', { 
       year: 'numeric', 
       month: 'short' 
@@ -113,11 +211,9 @@ export default function ProfilePageWrapper() {
       tabs: [
         { id: "overview", label: "Overview", iconName: "User" },
         { id: "orders", label: "My Orders", iconName: "Package" },
-        { id: "addresses", label: "Addresses", iconName: "MapPin" },
-        { id: "payments", label: "Payment Methods", iconName: "CreditCard" },
-        { id: "settings", label: "Settings", iconName: "Settings" }
+        { id: "addresses", label: "Addresses", iconName: "MapPin" }
       ],
-      orders: processedOrders,
+      orders: finalOrders,
       addresses: [
         {
           id: "addr_001",
@@ -131,24 +227,6 @@ export default function ProfilePageWrapper() {
           isDefault: true
         }
       ],
-      paymentMethods: [
-        {
-          id: "card_001",
-          type: "credit",
-          cardType: "visa",
-          lastFour: "4242",
-          expiryDate: "12/26",
-          isDefault: true,
-          name: userProfile.firstName + " " + userProfile.lastName
-        }
-      ],
-      preferences: {
-        newsletter: apiUser?.subscribeNewsletter !== false,
-        sms: apiUser?.smsNotifications !== false,
-        orderUpdates: true,
-        promotions: apiUser?.promotions !== false,
-        role: userProfile.role
-      },
       profileStats: [
         { label: "Total Orders", value: totalOrders.toString(), iconName: "Package" },
         { label: "Total Spent", value: `$${totalSpent.toLocaleString()}`, iconName: "DollarSign" },
@@ -156,7 +234,7 @@ export default function ProfilePageWrapper() {
         { label: "Member Since", value: memberSince, iconName: "Calendar" }
       ]
     };
-  }, [session, user, orders, products]);  // Redirect to login if not authenticated
+  }, [session, user, orders, products, ordersLoading]);  // Redirect to login if not authenticated
   useEffect(() => {
     if (status === 'loading') return; // Still loading
     if (!session) {

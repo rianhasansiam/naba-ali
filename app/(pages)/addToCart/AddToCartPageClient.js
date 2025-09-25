@@ -46,6 +46,14 @@ const AddToCartPageClient = ({ productsData, couponsData }) => {
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [couponError, setCouponError] = useState('');
+  const [toast, setToast] = useState({ show: false, type: 'error', message: '' });
+
+  const showToast = (type, message) => {
+    setToast({ show: true, type, message });
+    setTimeout(() => {
+      setToast({ show: false, type: '', message: '' });
+    }, 3000);
+  };
 
   // Get available coupons from props (passed from page level)
   const availableCoupons = couponsData || [];
@@ -57,8 +65,8 @@ const AddToCartPageClient = ({ productsData, couponsData }) => {
 
   // Simple helper to get current product stock
   const getProductStock = (productId) => {
-    if (!products) return 10; // Default stock if products not loaded
-    const product = products.find(p => p._id === productId);
+    if (!productsData) return 10; // Default stock if products not loaded
+    const product = productsData.find(p => p._id === productId);
     return product?.stock || 0;
   };
 
@@ -154,7 +162,7 @@ const AddToCartPageClient = ({ productsData, couponsData }) => {
     
     const currentStock = getProductStock(itemId);
     if (newQuantity > currentStock) {
-      alert(`Only ${currentStock} items available in stock`);
+      showToast('error', `Only ${currentStock} items available in stock`);
       return;
     }
     
@@ -434,6 +442,35 @@ const AddToCartPageClient = ({ productsData, couponsData }) => {
           </div>
         </div>
       </div>
+
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {toast.show && (
+          <motion.div
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 50 }}
+            className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-lg shadow-lg flex items-center gap-2 ${
+              toast.type === 'success' 
+                ? 'bg-green-500 text-white' 
+                : 'bg-red-500 text-white'
+            }`}
+          >
+            {toast.type === 'success' ? (
+              <ShoppingCart className="w-5 h-5" />
+            ) : (
+              <X className="w-5 h-5" />
+            )}
+            <span>{toast.message}</span>
+            <button
+              onClick={() => setToast({ show: false, type: '', message: '' })}
+              className="ml-2 text-white hover:text-gray-200"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

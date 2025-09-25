@@ -115,13 +115,36 @@ export async function PUT(request) {
 }
 
 // =======================
-// GET (Fetch all users)
+// GET (Fetch all users or find user by email)
 // =======================
-export async function GET() {
+export async function GET(request) {
   try {
     const users = await getCollection('users');
-    const allUsers = await users.find({}).toArray();
+    const { searchParams } = new URL(request.url);
+    const email = searchParams.get('email');
 
+    // If email parameter is provided, search for specific user
+    if (email) {
+      const user = await users.findOne({ email: email });
+      
+      if (user) {
+        // Remove password before sending response
+        const { password: _, ...userData } = user;
+        return NextResponse.json({
+          success: true,
+          user: userData,
+          message: 'User found.'
+        });
+      } else {
+        return NextResponse.json({
+          success: false,
+          message: 'User not found.'
+        }, { status: 404 });
+      }
+    }
+
+    // Otherwise, fetch all users
+    const allUsers = await users.find({}).toArray();
     return NextResponse.json(allUsers);
   } catch (error) {
     console.error('Error fetching users:', error);
