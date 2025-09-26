@@ -18,6 +18,43 @@ const initialState = {
   }
 }
 
+// 🚀 OPTIMIZED: Helper function to save cart to localStorage with debouncing
+let saveCartTimeout;
+const saveCartToStorage = (cartItems) => {
+  if (typeof window !== 'undefined') {
+    // Debounce localStorage writes to improve performance
+    clearTimeout(saveCartTimeout);
+    saveCartTimeout = setTimeout(() => {
+      const cartForStorage = cartItems.map(item => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        image: item.image,
+        quantity: item.quantity,
+        size: item.size,
+        color: item.color,
+        stock: item.stock
+      }));
+      localStorage.setItem('cart', JSON.stringify(cartForStorage));
+    }, 100); // 100ms debounce
+  }
+};
+
+// 🚀 OPTIMIZED: Helper function to save wishlist to localStorage with debouncing
+let saveWishlistTimeout;
+const saveWishlistToStorage = (wishlistItems) => {
+  if (typeof window !== 'undefined') {
+    clearTimeout(saveWishlistTimeout);
+    saveWishlistTimeout = setTimeout(() => {
+      const wishlistForStorage = wishlistItems.map(item => ({
+        id: item.id,
+        addedAt: item.addedAt
+      }));
+      localStorage.setItem('wishlist', JSON.stringify(wishlistForStorage));
+    }, 100); // 100ms debounce
+  }
+};
+
 export const userSlice = createSlice({
   name: 'user',
   initialState,
@@ -72,20 +109,8 @@ export const userSlice = createSlice({
       state.cart.totalQuantity += itemToAdd.quantity;
       state.cart.totalAmount += itemToAdd.price * itemToAdd.quantity;
       
-      // Save to localStorage
-      if (typeof window !== 'undefined') {
-        const cartForStorage = state.cart.items.map(item => ({
-          id: item.id,
-          name: item.name,
-          price: item.price,
-          image: item.image,
-          quantity: item.quantity,
-          size: item.size,
-          color: item.color,
-          stock: item.stock
-        }));
-        localStorage.setItem('cart', JSON.stringify(cartForStorage));
-      }
+      // 🚀 OPTIMIZED: Use debounced localStorage save
+      saveCartToStorage(state.cart.items);
     },
     
     updateCartQuantity: (state, action) => {
@@ -100,17 +125,8 @@ export const userSlice = createSlice({
         state.cart.totalQuantity += quantityDiff;
         state.cart.totalAmount += item.price * quantityDiff;
         
-        // Save to localStorage
-        if (typeof window !== 'undefined') {
-          const cartForStorage = state.cart.items.map(item => ({
-            id: item.id,
-            quantity: item.quantity,
-            size: item.size,
-            color: item.color,
-            stock: item.stockCount
-          }));
-          localStorage.setItem('cart', JSON.stringify(cartForStorage));
-        }
+        // 🚀 OPTIMIZED: Use debounced localStorage save
+        saveCartToStorage(state.cart.items);
       }
     },
     
@@ -126,17 +142,8 @@ export const userSlice = createSlice({
         state.cart.totalAmount -= item.price * item.quantity;
         state.cart.items.splice(itemIndex, 1);
         
-        // Save to localStorage
-        if (typeof window !== 'undefined') {
-          const cartForStorage = state.cart.items.map(item => ({
-            id: item.id,
-            quantity: item.quantity,
-            size: item.size,
-            color: item.color,
-            stock: item.stockCount
-          }));
-          localStorage.setItem('cart', JSON.stringify(cartForStorage));
-        }
+        // 🚀 OPTIMIZED: Use debounced localStorage save
+        saveCartToStorage(state.cart.items);
       }
     },
     
@@ -145,7 +152,7 @@ export const userSlice = createSlice({
       state.cart.totalQuantity = 0;
       state.cart.totalAmount = 0;
       
-      // Clear localStorage
+      // Clear localStorage immediately for cart clearing
       if (typeof window !== 'undefined') {
         localStorage.removeItem('cart');
       }
@@ -209,14 +216,8 @@ export const userSlice = createSlice({
         state.wishlist.items.push(itemToAdd);
         state.wishlist.totalItems += 1;
         
-        // Save to localStorage
-        if (typeof window !== 'undefined') {
-          const wishlistForStorage = state.wishlist.items.map(item => ({
-            id: item.id,
-            addedAt: item.addedAt
-          }));
-          localStorage.setItem('wishlist', JSON.stringify(wishlistForStorage));
-        }
+        // 🚀 OPTIMIZED: Use debounced localStorage save
+        saveWishlistToStorage(state.wishlist.items);
       }
     },
     
@@ -228,14 +229,8 @@ export const userSlice = createSlice({
         state.wishlist.items.splice(itemIndex, 1);
         state.wishlist.totalItems -= 1;
         
-        // Save to localStorage
-        if (typeof window !== 'undefined') {
-          const wishlistForStorage = state.wishlist.items.map(item => ({
-            id: item.id,
-            addedAt: item.addedAt
-          }));
-          localStorage.setItem('wishlist', JSON.stringify(wishlistForStorage));
-        }
+        // 🚀 OPTIMIZED: Use debounced localStorage save
+        saveWishlistToStorage(state.wishlist.items);
       }
     },
     

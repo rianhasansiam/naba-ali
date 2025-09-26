@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import DashboardClient from './DashboardClient';
+import { PLACEHOLDER_IMAGES } from '@/lib/constants';
 
 // Client Component - Handles real data processing from props
 const Dashboard = ({ products = [], users = [], orders = [], reviews = [], isLoading }) => {
@@ -45,13 +46,23 @@ const Dashboard = ({ products = [], users = [], orders = [], reviews = [], isLoa
           const price = item.price || 0;
           
           if (!productSales[productId]) {
+            // Find product using normalized field names (id instead of _id)
+            const product = allProducts.find(p => p.id === productId || p._id === productId);
+            console.log('Debug - Product lookup for ID:', productId, 'Found product:', product);
+            console.log('Debug - Product image fields:', {
+              primaryImage: product?.primaryImage,
+              image: product?.image,
+              images: product?.images
+            });
+            
             productSales[productId] = {
               name: productName,
               sales: 0,
               revenue: 0,
-              image: allProducts.find(p => p._id === productId)?.image || 
-                     allProducts.find(p => p._id === productId)?.images?.[0] ||
-                     'https://via.placeholder.com/100x100/f3f4f6/374151?text=Product'
+              image: product?.primaryImage || 
+                     product?.image || 
+                     product?.images?.[0] ||
+                     PLACEHOLDER_IMAGES.PRODUCT_SMALL
             };
           }
           productSales[productId].sales += quantity;

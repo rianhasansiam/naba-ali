@@ -39,20 +39,21 @@ const AllCouponsClient = () => {
   const [deletingCouponId, setDeletingCouponId] = useState(null);
   const [toast, setToast] = useState({ show: false, type: 'success', message: '' });
 
-  // Fetch coupons data using hook
+  // 🚀 OPTIMIZED: Use standardized query keys for data deduplication
   const { data, isLoading, error } = useGetData({
-    name: 'allCoupons',
-    api: '/api/coupons'
+    name: 'coupons', // Standardized query key
+    api: '/api/coupons',
+    cacheType: 'DYNAMIC'
   });
 
-  // Initialize update and delete hooks
+  // 🚀 OPTIMIZED: Use standardized query keys for data deduplication
   const { updateData, isLoading: isUpdating } = useUpdateData({
-    name: 'allCoupons',
+    name: 'coupons', // Standardized query key
     api: '/api/coupons'
   });
 
   const { deleteData, isLoading: isDeleting } = useDeleteData({
-    name: 'allCoupons',
+    name: 'coupons', // Standardized query key
     api: '/api/coupons'
   });
 

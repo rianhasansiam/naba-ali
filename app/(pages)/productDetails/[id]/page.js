@@ -4,6 +4,7 @@ import React from 'react';
 import { useGetData } from '@/lib/hooks/useGetData';
 import { useAppDispatch } from '@/app/redux/reduxHooks';
 import { addToCart, addToWishlist, removeFromWishlist } from '@/app/redux/slice';
+import { PLACEHOLDER_IMAGES } from '@/lib/constants';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
@@ -246,11 +247,12 @@ export default function ProductDetailPage({ params }) {
           {/* Main Image */}
           <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
             <Image
-              src={product.images?.[selectedImageIndex] || product.image || 'https://via.placeholder.com/600x600/f3f4f6/374151?text=Product'}
+              src={product.images?.[selectedImageIndex] || product.image || PLACEHOLDER_IMAGES.PRODUCT_LARGE}
               alt={product.name}
               width={600}
               height={600}
               className="w-full h-full object-cover"
+              unoptimized={!product.images?.[selectedImageIndex] && !product.image}
             />
           </div>
           

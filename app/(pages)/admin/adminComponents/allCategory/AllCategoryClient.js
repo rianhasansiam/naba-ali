@@ -35,20 +35,21 @@ const AllCategoryClient = () => {
   const [deletingCategoryId, setDeletingCategoryId] = useState(null);
   const [toast, setToast] = useState({ show: false, type: 'success', message: '' });
 
-  // Fetch categories data using hook
+  // 🚀 OPTIMIZED: Use standardized query keys for data deduplication
   const { data, isLoading, error } = useGetData({
-    name: 'allCategories',
-    api: '/api/categories'
+    name: 'categories', // Standardized query key
+    api: '/api/categories',
+    cacheType: 'STATIC'
   });
 
-  // Initialize update and delete hooks
+  // 🚀 OPTIMIZED: Use standardized query keys for data deduplication
   const { updateData, isLoading: isUpdating } = useUpdateData({
-    name: 'allCategories',
+    name: 'categories', // Standardized query key
     api: '/api/categories'
   });
 
   const { deleteData, isLoading: isDeleting } = useDeleteData({
-    name: 'allCategories',
+    name: 'categories', // Standardized query key
     api: '/api/categories'
   });
 

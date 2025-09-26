@@ -9,10 +9,19 @@ export default function CategoryClient({ categories = [] }) {
     category.status === 'active' || !category.hasOwnProperty('status')
   );
 
+  // Debug: Check for missing IDs
+  if (process.env.NODE_ENV === 'development') {
+    activeCategories.forEach((category, index) => {
+      if (!category._id && !category.name) {
+        console.warn(`CategoryClient: Category at index ${index} is missing both _id and name:`, category);
+      }
+    });
+  }
+
   return (
     <div>
       {/* Section Header */}
-      <div className="text-center mb-12">
+      <div className="text-center my-12">
         <h2 className="text-3xl md:text-4xl font-bold text-black mb-4">
           SHOP BY CATEGORY
         </h2>
@@ -23,9 +32,9 @@ export default function CategoryClient({ categories = [] }) {
 
       {/* Categories Grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
-        {activeCategories.map((category) => (
+        {activeCategories.map((category, index) => (
           <Link 
-            key={category._id}
+            key={category.id || category.name || index}
             href={`/allProducts?category=${encodeURIComponent(category.name)}`}
             className="group text-center"
           >

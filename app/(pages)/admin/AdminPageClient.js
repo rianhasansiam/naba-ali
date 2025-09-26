@@ -35,13 +35,11 @@ const AdminPageClient = ({ adminData, navigationItems }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // Centralized data fetching for all admin components
-  const { data: products = [], isLoading: productsLoading } = useGetData({ name: 'products', api: '/api/products' });
-  const { data: users = [], isLoading: usersLoading } = useGetData({ name: 'users', api: '/api/users' });
-  const { data: orders = [], isLoading: ordersLoading } = useGetData({ name: 'orders', api: '/api/orders' });
-  const { data: reviews = [], isLoading: reviewsLoading } = useGetData({ name: 'reviews', api: '/api/reviews' });
-  
-  // Shared loading state
+// 🚀 OPTIMIZED: Use standardized query keys for data deduplication
+const { data: products = [], isLoading: productsLoading } = useGetData({ name: 'products', api: '/api/products', cacheType: 'STATIC' });
+const { data: users = [], isLoading: usersLoading } = useGetData({ name: 'users', api: '/api/users', cacheType: 'DYNAMIC' });
+const { data: orders = [], isLoading: ordersLoading } = useGetData({ name: 'orders', api: '/api/orders', cacheType: 'DYNAMIC' });
+const { data: reviews = [], isLoading: reviewsLoading } = useGetData({ name: 'reviews', api: '/api/reviews', cacheType: 'DYNAMIC' });  // Shared loading state
   const isLoading = productsLoading || usersLoading || ordersLoading || reviewsLoading;
   
   // Shared data object to pass to components
@@ -81,7 +79,7 @@ const AdminPageClient = ({ adminData, navigationItems }) => {
   const CurrentComponent = currentComponent;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen  bg-gray-50 flex">
       {/* Sidebar */}
       <AnimatePresence>
         {sidebarOpen && (

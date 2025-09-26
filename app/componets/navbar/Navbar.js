@@ -11,6 +11,12 @@ export default function Navbar() {
       icon: '🛍️'
     },
     { 
+      label: 'All Products', 
+      hasDropdown: false,
+      href: '/allProducts',
+      icon: ''
+    },
+    { 
       label: 'Contact', 
       hasDropdown: false,
       href: '/contact',

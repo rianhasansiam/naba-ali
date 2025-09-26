@@ -150,6 +150,7 @@ const DashboardClient = ({ analytics }) => {
                     alt={product.name}
                     fill
                     className="object-cover"
+                    unoptimized={product.image?.startsWith('data:')}
                   />
                 </div>
                 <div className="flex-1">

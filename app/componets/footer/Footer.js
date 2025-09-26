@@ -60,7 +60,7 @@ export default function Footer() {
             <p className="text-sm text-center sm:text-left text-white/60 mb-4 sm:mb-0 sm:mr-1">
               NABA ALI © {new Date().getFullYear()} Made by{" "}
               <Link
-                href="https://github.com/rianhasansiam"
+                href="https://rianhasansiam.me"
                 className="text-white font-medium hover:underline"
                 target="_blank"
                 rel="noopener noreferrer"

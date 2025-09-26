@@ -22,11 +22,11 @@ const ShippingTaxSettings = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
 
-  // Fetch current settings
+  // 🚀 OPTIMIZED: Use standardized query keys and appropriate cache type
   const { data: currentSettings, isLoading: fetchLoading, refetch } = useGetData({
-    name: "shipping-tax-settings",
+    name: "shipping-tax-settings", // Standardized query key
     api: "/api/shipping-tax-settings",
-    cacheType: 'NO_CACHE'
+    cacheType: 'USER_SPECIFIC' // Changed to USER_SPECIFIC since these are admin settings
   });
 
   // Load settings when fetched

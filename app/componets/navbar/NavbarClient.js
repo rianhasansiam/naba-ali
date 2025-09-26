@@ -18,18 +18,18 @@ const NavbarClient = ({ navItems, defaultShopCategories }) => {
   const cartTotalQuantity = useAppSelector((state) => state.user.cart.totalQuantity);
   const wishlistTotalItems = useAppSelector((state) => state.user.wishlist.totalItems);
   
-  // Fetch real categories from API
+  // 🚀 OPTIMIZED: Use standardized query keys for data deduplication
   const { data: categoriesData, isLoading: categoriesLoading } = useGetData({
-    name: 'navbar-categories',
+    name: 'categories', // Standardized query key
     api: '/api/categories',
     cacheType: 'STATIC'
   });
 
-  // Fetch products to count items per category
+  // 🚀 OPTIMIZED: Use standardized query keys for data deduplication  
   const { data: productsData, isLoading: productsLoading } = useGetData({
-    name: 'navbar-products',
+    name: 'products', // Standardized query key
     api: '/api/products',
-    cacheType: 'DYNAMIC'
+    cacheType: 'STATIC' // Changed to STATIC as navbar doesn't need frequent updates
   });
   
   const [isMenuOpen, setIsMenuOpen] = useState(false);

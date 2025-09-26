@@ -41,7 +41,7 @@ export default function AdminAuthWrapper({ children }) {
   return (
     <>
       {/* Admin Header with user info */}
-      <div className="bg-blue-600 text-white px-6 py-2 text-sm">
+      <div className="bg-gray-600 text-white px-6 py-2 text-sm">
         <div className="flex justify-between items-center max-w-7xl mx-auto">
           <div className="flex items-center">
             <Shield className="w-4 h-4 mr-2" />
@@ -49,7 +49,7 @@ export default function AdminAuthWrapper({ children }) {
           </div>
           <div className="flex items-center space-x-4">
             <span>Welcome, {user?.name}</span>
-            <span className="bg-blue-700 px-2 py-1 rounded text-xs">
+            <span className="bg-black px-2 py-1 rounded text-xs">
               {user?.role?.toUpperCase()}
             </span>
           </div>

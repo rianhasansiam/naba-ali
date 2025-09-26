@@ -5,15 +5,17 @@ import LoadingSpinner from '../../componets/loading/LoadingSpinner';
 import AddToCartPageClient from './AddToCartPageClient';
 
 export default function AddToCartPageWrapper() {
-  // Centralized data fetching for cart page
+  // 🚀 OPTIMIZED: Use standardized query keys for data deduplication
   const { data: productsData, isLoading: productsLoading, error: productsError } = useGetData({
-    name: 'products',
-    api: '/api/products'
+    name: 'products', // Standardized query key
+    api: '/api/products',
+    cacheType: 'STATIC'
   });
 
   const { data: couponsData, isLoading: couponsLoading } = useGetData({
-    name: 'coupons',
-    api: '/api/coupons'
+    name: 'coupons', // Standardized query key
+    api: '/api/coupons',
+    cacheType: 'DYNAMIC'
   });
 
   // Show loading state at page level

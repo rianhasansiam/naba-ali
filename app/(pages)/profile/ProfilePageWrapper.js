@@ -12,9 +12,9 @@ export default function ProfilePageWrapper() {
   const { data: session, status } = useSession();
   const router = useRouter();
 
-  // Data fetching hooks - must be called before any conditional returns
+  // 🚀 OPTIMIZED: Use standardized query keys for data deduplication
   const { data: orders = [], isLoading: ordersLoading } = useGetData({ 
-    name: 'orders', 
+    name: 'orders', // Standardized query key 
     api: '/api/orders',
     cacheType: 'USER_SPECIFIC'
   });
@@ -27,7 +27,7 @@ export default function ProfilePageWrapper() {
   });
 
   const { data: products = [], isLoading: productsLoading } = useGetData({ 
-    name: 'products', 
+    name: 'products', // Standardized query key
     api: '/api/products',
     cacheType: 'STATIC'
   });

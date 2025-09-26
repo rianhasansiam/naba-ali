@@ -25,13 +25,20 @@ Badge.displayName = 'Badge';
 
 // Optimized Image with fallback
 const OptimizedImage = memo(({ src, alt, className, ...props }) => {
-  const [imageSrc, setImageSrc] = useState(src);
-  const [imageError, setImageError] = useState(false);
+  // Use a data URL for placeholder to avoid optimization issues
+  const fallbackSrc = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjQwMCIgdmlld0JveD0iMCAwIDQwMCA0MDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iNDAwIiBmaWxsPSIjZjNmNGY2Ii8+CjxyZWN0IHg9IjE1MCIgeT0iMTUwIiB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgcng9IjEwIiBmaWxsPSIjOWNhM2FmIi8+Cjx0ZXh0IHg9IjIwMCIgeT0iMjQwIiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzM3NDE1MSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+UHJvZHVjdDwvdGV4dD4KPC9zdmc+';
+  const initialSrc = src && src.trim() ? src : fallbackSrc;
+  
+  const [imageSrc, setImageSrc] = useState(initialSrc);
+  const [imageError, setImageError] = useState(!src || !src.trim());
 
   const handleError = useCallback(() => {
     setImageError(true);
-    setImageSrc('https://via.placeholder.com/700x700/f3f4f6/374151?text=Product');
+    setImageSrc(fallbackSrc);
   }, []);
+
+  // If using fallback, disable Next.js optimization to avoid 500 errors
+  const isUsingFallback = imageSrc === fallbackSrc;
 
   return (
     <Image
@@ -41,6 +48,7 @@ const OptimizedImage = memo(({ src, alt, className, ...props }) => {
       height={400}
       className={className}
       onError={handleError}
+      unoptimized={isUsingFallback}
       {...props}
     />
   );
@@ -140,7 +148,7 @@ const ProductCard = memo(({
       {/* Image Section */}
       <div className="relative aspect-square overflow-hidden bg-gray-50">
         <OptimizedImage
-          src={product.imageUrl || product.image || ''}
+          src={product.primaryImage || product.imageUrl || product.image}
           alt={product.name || 'Product'}
           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
         />

@@ -2,6 +2,7 @@
 
 import React, { useMemo } from 'react';
 import FeaturedProductsClient from './FeaturedProductsClient';
+import { PLACEHOLDER_IMAGES } from '@/lib/constants';
 
 export default function FeaturedProducts({ productsData }) {
   // Select featured products from real data
@@ -20,7 +21,7 @@ export default function FeaturedProducts({ productsData }) {
         style: product.style || 'Casual',
         price: product.price || product.discountPrice || 99,
         originalPrice: product.originalPrice && product.originalPrice > product.price ? product.originalPrice : null,
-        image: product.image || product.images?.[0] || "https://via.placeholder.com/700x700/f3f4f6/374151?text=Product",
+        image: product.image || product.images?.[0] || PLACEHOLDER_IMAGES.PRODUCT_LARGE,
         rating: product.rating || 4.5,
         reviews: product.reviews || product.reviewCount || Math.floor(Math.random() * 50) + 10,
         isNew: product.isNew || false,

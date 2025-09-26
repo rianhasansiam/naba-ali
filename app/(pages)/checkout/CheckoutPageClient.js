@@ -7,6 +7,7 @@ import { useAddData } from '@/lib/hooks/useAddData';
 import { useAppSelector, useAppDispatch } from '@/app/redux/reduxHooks';
 import { loadCartFromStorage, clearCart } from '@/app/redux/slice';
 import { useShippingTaxSettings } from '@/lib/hooks/useShippingTaxSettings';
+import { PLACEHOLDER_IMAGES } from '@/lib/constants';
 import { 
   ShoppingBag, CreditCard, Lock, CheckCircle, AlertCircle, 
   ArrowLeft, User, MapPin, Phone, Mail, Truck, Star, X
@@ -697,11 +698,12 @@ const CheckoutPageClient = () => {
                   <div key={index} className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
                     <div className="relative w-16 h-16 rounded-lg overflow-hidden">
                       <Image
-                        src={item.image || 'https://via.placeholder.com/64x64/f3f4f6/374151?text=Product'}
+                        src={item.image || PLACEHOLDER_IMAGES.PRODUCT_MINI}
                         alt={item.name || 'Product'}
                         fill
                         sizes="64px"
                         className="object-cover"
+                        unoptimized={!item.image}
                       />
                     </div>
                     <div className="flex-1">

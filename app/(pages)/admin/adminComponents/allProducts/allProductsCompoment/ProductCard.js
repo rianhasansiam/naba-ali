@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { Star, MoreVertical, Tag, Loader, MessageSquare } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { PLACEHOLDER_IMAGES } from '@/lib/constants';
 
 const ProductCard = ({ product, onEdit, onDelete, onAddReview, isDeleting }) => (
   <motion.div
@@ -12,11 +13,12 @@ const ProductCard = ({ product, onEdit, onDelete, onAddReview, isDeleting }) => 
   >
     <div className="relative">
       <Image
-        src={product.image}
-        alt={product.name}
+        src={product.primaryImage || product.image || PLACEHOLDER_IMAGES.PRODUCT_LARGE}
+        alt={product.name || 'Product'}
         width={300}
         height={200}
         className="w-full h-48 object-cover"
+        unoptimized={!product.primaryImage && !product.image}
       />
       <div className="absolute top-3 right-3 flex flex-col gap-1">
         {product.isNew && (
@@ -62,8 +64,8 @@ const ProductCard = ({ product, onEdit, onDelete, onAddReview, isDeleting }) => 
         <div>
           <p className="text-gray-500 text-xs">Price</p>
           <div className="flex items-center space-x-2">
-            <span className="font-bold text-green-600">${product.price}</span>
-            {product.originalPrice > product.price && (
+            <span className="font-bold text-green-600">${product.price || 0}</span>
+            {(product.originalPrice || 0) > (product.price || 0) && (
               <span className="text-gray-400 line-through text-sm">${product.originalPrice}</span>
             )}
           </div>
@@ -71,8 +73,8 @@ const ProductCard = ({ product, onEdit, onDelete, onAddReview, isDeleting }) => 
         <div>
           <p className="text-gray-500 text-xs">Stock</p>
           <span className={`font-medium ${
-            product.stock > 50 ? 'text-green-600' :
-            product.stock > 0 ? 'text-yellow-600' : 'text-red-600'
+            (product.stock || 0) > 50 ? 'text-green-600' :
+            (product.stock || 0) > 0 ? 'text-yellow-600' : 'text-red-600'
           }`}>
             {product?.stock || 0} units
           </span>
@@ -80,8 +82,8 @@ const ProductCard = ({ product, onEdit, onDelete, onAddReview, isDeleting }) => 
         <div>
           <p className="text-gray-500 text-xs">Color</p>
           <div className="flex items-center">
-            <div className="w-4 h-4 rounded-full mr-2" style={{ backgroundColor: product.color.toLowerCase() }}></div>
-            <span className="font-medium text-gray-700">{product.color}</span>
+            <div className="w-4 h-4 rounded-full mr-2" style={{ backgroundColor: (product.color || 'gray').toLowerCase() }}></div>
+            <span className="font-medium text-gray-700">{product.color || 'N/A'}</span>
           </div>
         </div>
       </div>

@@ -6,15 +6,15 @@ import BreadcrumbShop from './filters/BreadcrumbShop';
 import ProductsPageClient from './ProductsPageClient';
 
 export default function AllProductsPageClient() {
-  // Centralized data fetching for products page
+  // 🚀 OPTIMIZED: Use standardized query keys for data deduplication
   const { data: productsData, isLoading, error } = useGetData({
-    name: "products",
+    name: "products", // Standardized query key
     api: "/api/products",
     cacheType: 'STATIC'
   });
 
   const { data: categoriesData, isLoading: categoriesLoading } = useGetData({
-    name: "categories",
+    name: "categories", // Standardized query key
     api: "/api/categories", 
     cacheType: 'STATIC'
   });

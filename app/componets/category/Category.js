@@ -2,6 +2,7 @@
 
 import React, { memo } from 'react';
 import CategoryClient from './CategoryClient';
+import { PLACEHOLDER_IMAGES } from '@/lib/constants';
 
 const Category = memo(({ categoriesData }) => {
   // Memoized categories processing - now with server-calculated product counts
@@ -19,7 +20,7 @@ const Category = memo(({ categoriesData }) => {
           _id: category._id,
           name: category.name,
           slug: category.name.toLowerCase().replace(/\s+/g, '-'),
-          image: category.image || `https://via.placeholder.com/500x500/f3f4f6/374151?text=${encodeURIComponent(category.name)}`,
+          image: category.image || PLACEHOLDER_IMAGES.PRODUCT_LARGE,
           productCount: category.productCount || 0,
           description: category.description || "Shop now",
           status: category.status

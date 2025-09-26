@@ -8,6 +8,7 @@ import { ShoppingBag, Minus, Plus, X, Truck, ArrowLeft, ShoppingCart, Tag, Recei
 import Image from 'next/image';
 import Link from 'next/link';
 import { useShippingTaxSettings } from '@/lib/hooks/useShippingTaxSettings';
+import { PLACEHOLDER_IMAGES } from '@/lib/constants';
 
 const AddToCartPageClient = ({ productsData, couponsData }) => {
   // Redux state
@@ -264,11 +265,12 @@ const AddToCartPageClient = ({ productsData, couponsData }) => {
                       {/* Product Image */}
                       <div className="relative">
                         <Image
-                          src={item.image || 'https://via.placeholder.com/80x80/f3f4f6/374151?text=Product'}
+                          src={item.image || PLACEHOLDER_IMAGES.PRODUCT_SMALL}
                           alt={item.name}
                           width={80}
                           height={80}
                           className="rounded-lg object-cover"
+                          unoptimized={!item.image}
                         />
                         {!itemInStock && (
                           <div className="absolute inset-0 bg-red-500 bg-opacity-75 rounded-lg flex items-center justify-center">

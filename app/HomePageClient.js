@@ -8,27 +8,27 @@ import FeaturedProducts from './componets/featuredProducts/FeaturedProducts';
 import Review from './componets/review/Review';
 
 export default function HomePageClient() {
-  // Centralized data fetching for all homepage components
+  // 🚀 OPTIMIZED: Use standardized query keys for data deduplication
   const { data: productsData, isLoading: productsLoading, error: productsError } = useGetData({
-    name: 'homepage-products',
+    name: 'products', // Standardized query key
     api: '/api/products',
     cacheType: 'STATIC'
   });
 
   const { data: categoriesData, isLoading: categoriesLoading, error: categoriesError } = useGetData({
-    name: 'homepage-categories',
+    name: 'categories', // Standardized query key  
     api: '/api/categories',
     cacheType: 'STATIC'
   });
 
   const { data: reviewsData, isLoading: reviewsLoading, error: reviewsError } = useGetData({
-    name: 'homepage-reviews',
+    name: 'reviews', // Standardized query key
     api: '/api/reviews',
     cacheType: 'DYNAMIC'
   });
 
   const { data: usersData, isLoading: usersLoading, error: usersError } = useGetData({
-    name: 'homepage-users',
+    name: 'users', // Standardized query key
     api: '/api/users',
     cacheType: 'DYNAMIC'
   });

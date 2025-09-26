@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { useState } from 'react';
+import { PLACEHOLDER_IMAGES } from '@/lib/constants';
 
 export default function OptimizedImage({ 
   src, 
@@ -9,7 +10,7 @@ export default function OptimizedImage({
   width, 
   height, 
   className = '',
-  fallbackSrc = 'https://via.placeholder.com/400x400/f3f4f6/374151?text=Image',
+  fallbackSrc = PLACEHOLDER_IMAGES.IMAGE_GENERIC,
   priority = false,
   quality = 75,
   ...props 

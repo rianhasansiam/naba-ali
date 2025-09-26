@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useGetData } from '@/lib/hooks/useGetData';
 import { useAppSelector, useAppDispatch } from '@/app/redux/reduxHooks';
 import { loadWishlistFromStorage, removeFromWishlist, addToCart } from '@/app/redux/slice';
+import { PLACEHOLDER_IMAGES } from '@/lib/constants';
 import LoadingSpinner from '../../componets/loading/LoadingSpinner';
 import { ProductGridSkeleton } from '../../componets/loading/SkeletonLoaders';
 import { 
@@ -113,11 +114,12 @@ const WishlistProductCard = ({ product, onRemove, onAddToCart, isSelected, onSel
       {/* Product Image */}
       <div className="relative aspect-square overflow-hidden bg-gray-50">
         <Image
-          src={product.image || 'https://via.placeholder.com/400x400/f3f4f6/374151?text=Product'}
+          src={product.image || PLACEHOLDER_IMAGES.PRODUCT_LARGE}
           alt={product.name}
           fill
           className="object-cover group-hover:scale-105 transition-transform duration-500"
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+          unoptimized={!product.image}
         />
       </div>
 
@@ -195,10 +197,11 @@ const WishlistProductCard = ({ product, onRemove, onAddToCart, isSelected, onSel
 };
 
 export default function WishListPageClient() {
-  // Fetch all products from API
+  // 🚀 OPTIMIZED: Use standardized query keys for data deduplication
   const { data: products, isLoading: productsLoading, error: productsError } = useGetData({
-    name: 'products',
-    api: '/api/products'
+    name: 'products', // Standardized query key
+    api: '/api/products',
+    cacheType: 'STATIC'
   });
 
   // Redux hooks

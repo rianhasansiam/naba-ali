@@ -34,26 +34,27 @@ const AllProductsClient = () => {
   const [deletingProductId, setDeletingProductId] = useState(null);
   const [toast, setToast] = useState({ show: false, type: 'success', message: '' });
 
-  // Fetch products data using hook
-  const { data, isLoading, error } = useGetData({
-    name: 'allProducts',
-    api: '/api/products'
-  });
+// 🚀 OPTIMIZED: Use standardized query keys for data deduplication
+const { data, isLoading, error } = useGetData({
+  name: 'products', // Standardized query key
+  api: '/api/products',
+  cacheType: 'STATIC'
+});
 
-  // Fetch categories data using hook
-  const { data: categoriesData, isLoading: categoriesLoading, error: categoriesError } = useGetData({
-    name: 'allCategories',
-    api: '/api/categories'
-  });
-
-  // Initialize update and delete hooks
+// 🚀 OPTIMIZED: Use standardized query keys for data deduplication
+const { data: categoriesData, isLoading: categoriesLoading, error: categoriesError } = useGetData({
+  name: 'categories', // Standardized query key
+  api: '/api/categories',
+  cacheType: 'STATIC'
+});  // Initialize update and delete hooks
+  // 🚀 OPTIMIZED: Use standardized query keys for data deduplication
   const { updateData, isLoading: isUpdating } = useUpdateData({
-    name: 'allProducts',
+    name: 'products', // Standardized query key
     api: '/api/products'
   });
 
   const { deleteData, isLoading: isDeleting } = useDeleteData({
-    name: 'allProducts',
+    name: 'products', // Standardized query key
     api: '/api/products'
   });
 
@@ -330,27 +331,27 @@ const AllProductsClient = () => {
           ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' 
           : 'space-y-4'
       }`}>
-        {filteredProducts?.map(product => 
-          viewMode === 'grid' ? (
-            <ProductCard 
-              key={product._id || product.id} 
-              product={product} 
-              onEdit={handleEditProduct}
-              onDelete={handleDeleteProduct}
-              onAddReview={handleAddReview}
-              isDeleting={deletingProductId === product._id}
-            />
-          ) : (
-            <ProductListItem 
-              key={product._id || product.id} 
-              product={product}
-              onEdit={handleEditProduct}
-              onDelete={handleDeleteProduct}
-              onAddReview={handleAddReview}
-              isDeleting={deletingProductId === product._id}
-            />
-          )
-        )}
+        {filteredProducts?.map(product => (
+          <div key={product._id || product.id}>
+            {viewMode === 'grid' ? (
+              <ProductCard 
+                product={product} 
+                onEdit={handleEditProduct}
+                onDelete={handleDeleteProduct}
+                onAddReview={handleAddReview}
+                isDeleting={deletingProductId === product._id}
+              />
+            ) : (
+              <ProductListItem 
+                product={product}
+                onEdit={handleEditProduct}
+                onDelete={handleDeleteProduct}
+                onAddReview={handleAddReview}
+                isDeleting={deletingProductId === product._id}
+              />
+            )}
+          </div>
+        ))}
       </div>
 
       {/* No Results */}
