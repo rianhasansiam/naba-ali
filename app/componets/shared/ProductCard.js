@@ -71,11 +71,12 @@ const ProductCard = memo(({
   const wishlistItems = useAppSelector((state) => state.user.wishlist.items);
   
   // Check if product is already in cart or wishlist - memoized for performance
+  const productId = product.id || product._id;
   const isInCart = React.useMemo(() => 
-    cartItems.some(item => item.id === product._id), [cartItems, product._id]
+    cartItems.some(item => item.id === productId), [cartItems, productId]
   );
   const isInWishlist = React.useMemo(() => 
-    wishlistItems.some(item => item.id === product._id), [wishlistItems, product._id]
+    wishlistItems.some(item => item.id === productId), [wishlistItems, productId]
   );
   
   const [justAdded, setJustAdded] = useState({ cart: false, wishlist: false });
@@ -123,8 +124,10 @@ const ProductCard = memo(({
 
   const handleProductClick = useCallback(() => {
     onProductClick?.();
-    router.push(`/productDetails/${product._id}`);
-  }, [onProductClick, router, product._id]);
+    // Use the correct ID field from normalized data
+    const productId = product.id || product._id;
+    router.push(`/productDetails/${productId}`);
+  }, [onProductClick, router, product.id, product._id]);
 
   const handleQuickView = useCallback((e) => {
     e.stopPropagation();

@@ -7,11 +7,69 @@ import { addToCart, addToWishlist, removeFromWishlist } from '@/app/redux/slice'
 import { PLACEHOLDER_IMAGES } from '@/lib/constants';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Star, StarIcon, ThumbsUp, ShieldCheck, Clock, User, MessageSquare, Heart, X } from 'lucide-react';
 import LoadingSpinner from '../../../componets/loading/LoadingSpinner';
 import { TextSkeleton } from '../../../componets/loading/SkeletonLoaders';
 import { motion, AnimatePresence } from 'framer-motion';
+
+// Optimized Image component with error handling
+const OptimizedImage = ({ src, alt, className, width, height, ...props }) => {
+  const fallbackSrc = PLACEHOLDER_IMAGES.PRODUCT_LARGE;
+  
+  // Validate and clean the image URL
+  const getValidImageUrl = (url) => {
+    if (!url || typeof url !== 'string' || !url.trim()) return fallbackSrc;
+    
+    let cleanUrl = url.trim();
+    
+    // Fix common i.ibb.co URL issues
+    if (cleanUrl.includes('i.ibb.co') && !cleanUrl.startsWith('http')) {
+      cleanUrl = `https://${cleanUrl}`;
+    }
+    
+    // Check if it's a valid URL
+    try {
+      const urlObj = new URL(cleanUrl);
+      // Additional validation for i.ibb.co URLs
+      if (urlObj.hostname === 'i.ibb.co') {
+        // Ensure the path looks correct for i.ibb.co
+        if (!urlObj.pathname || urlObj.pathname === '/') {
+          return fallbackSrc;
+        }
+      }
+      return cleanUrl;
+    } catch {
+      // If not a valid URL, return fallback
+      return fallbackSrc;
+    }
+  };
+
+  const initialSrc = getValidImageUrl(src);
+  const [imageSrc, setImageSrc] = useState(initialSrc);
+  const [imageError, setImageError] = useState(initialSrc === fallbackSrc);
+
+  const handleError = useCallback(() => {
+    setImageError(true);
+    setImageSrc(fallbackSrc);
+  }, [fallbackSrc]);
+
+  // If using fallback, disable Next.js optimization to avoid 500 errors
+  const isUsingFallback = imageSrc === fallbackSrc;
+
+  return (
+    <Image
+      src={imageSrc}
+      alt={alt}
+      width={width}
+      height={height}
+      className={className}
+      onError={handleError}
+      unoptimized={isUsingFallback}
+      {...props}
+    />
+  );
+};
 
 export default function ProductDetailPage({ params }) {
   // Unwrap params using React.use() for Next.js 15 compatibility
@@ -43,8 +101,8 @@ export default function ProductDetailPage({ params }) {
     api: '/api/reviews'
   });
 
-  // Find the specific product by ID from real database
-  const product = products?.find(p => p._id === productId);
+  // Find the specific product by ID from real database (handle both _id and id)
+  const product = products?.find(p => p._id === productId || p.id === productId);
   
   // Filter reviews for this specific product
   const productReviews = allReviews?.filter(review => review.productId === productId) || [];
@@ -196,7 +254,7 @@ export default function ProductDetailPage({ params }) {
   // Handle loading state
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-16">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <LoadingSpinner size="lg" />
           <p className="text-gray-600 mt-4">Loading product details...</p>
@@ -246,13 +304,12 @@ export default function ProductDetailPage({ params }) {
         <div className="space-y-4">
           {/* Main Image */}
           <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
-            <Image
-              src={product.images?.[selectedImageIndex] || product.image || PLACEHOLDER_IMAGES.PRODUCT_LARGE}
+            <OptimizedImage
+              src={product.images?.[selectedImageIndex] || product.primaryImage || product.image}
               alt={product.name}
               width={600}
               height={600}
               className="w-full h-full object-cover"
-              unoptimized={!product.images?.[selectedImageIndex] && !product.image}
             />
           </div>
           
@@ -267,7 +324,7 @@ export default function ProductDetailPage({ params }) {
                     selectedImageIndex === index ? 'border-black' : 'border-gray-200'
                   }`}
                 >
-                  <Image
+                  <OptimizedImage
                     src={image}
                     alt={`${product.name} ${index + 1}`}
                     width={80}

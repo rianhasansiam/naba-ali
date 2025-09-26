@@ -14,13 +14,14 @@ export default function FeaturedProducts({ productsData }) {
       .filter(product => product.featured === true || productsData.indexOf(product) < 4)
       .slice(0, 4)
       .map(product => ({
-        _id: product._id,
-        id: product._id,
-        name: product.name || product.title || `Product ${product._id}`,
+        _id: product.id || product._id,
+        id: product.id || product._id,
+        name: product.name || product.title || `Product ${product.id || product._id}`,
         category: product.category || 'Fashion',
         style: product.style || 'Casual',
         price: product.price || product.discountPrice || 99,
         originalPrice: product.originalPrice && product.originalPrice > product.price ? product.originalPrice : null,
+        primaryImage: product.primaryImage || product.image || product.images?.[0] || PLACEHOLDER_IMAGES.PRODUCT_LARGE,
         image: product.image || product.images?.[0] || PLACEHOLDER_IMAGES.PRODUCT_LARGE,
         rating: product.rating || 4.5,
         reviews: product.reviews || product.reviewCount || Math.floor(Math.random() * 50) + 10,
