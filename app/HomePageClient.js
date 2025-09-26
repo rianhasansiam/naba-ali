@@ -57,7 +57,7 @@ export default function HomePageClient() {
           <p className="text-gray-600 mb-6">Please try refreshing the page</p>
           <button 
             onClick={() => window.location.reload()} 
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="px-6 py-3 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
           >
             Refresh Page
           </button>

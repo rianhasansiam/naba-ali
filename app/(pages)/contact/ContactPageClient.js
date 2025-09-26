@@ -126,8 +126,8 @@ const ContactPageClient = ({ contactData }) => {
                     transition={{ duration: 0.2 }}
                   >
                     <div className="flex-shrink-0">
-                      <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <IconComponent className="w-6 h-6 text-blue-600" />
+                      <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                        <IconComponent className="w-6 h-6 text-black" />
                       </div>
                     </div>
                     <div>
@@ -150,7 +150,7 @@ const ContactPageClient = ({ contactData }) => {
               variants={itemVariants}
             >
               <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                <Clock className="w-5 h-5 mr-2 text-blue-600" />
+                <Clock className="w-5 h-5 mr-2 text-black" />
                 Business Hours
               </h3>
               <div className="space-y-2">
@@ -176,11 +176,11 @@ const ContactPageClient = ({ contactData }) => {
                     <motion.a
                       key={index}
                       href={social.url}
-                      className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center hover:bg-blue-100 transition-colors duration-300"
+                      className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center hover:bg-gray-200 transition-colors duration-300"
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.95 }}
                     >
-                      <IconComponent className="w-5 h-5 text-gray-600 hover:text-blue-600" />
+                      <IconComponent className="w-5 h-5 text-gray-600 hover:text-black" />
                     </motion.a>
                   );
                 })}

@@ -9,7 +9,8 @@ import {
   Ticket, 
   FolderOpen,
   History,
-  Shield
+  Shield,
+  Settings
 } from 'lucide-react';
 
 // Import admin components directly (no wrapper layers)
@@ -20,6 +21,7 @@ import OrderDetails from './adminComponents/orderDetails/OrderDetails';
 import AllReviews from './adminComponents/allReviews/AllReviews';
 import AllCuponsClient from './adminComponents/allCupons/AllCuponsClient';
 import AllCategoryClient from './adminComponents/allCategory/AllCategoryClient';
+import ShippingTaxSettings from './adminComponents/shippingTax/ShippingTaxSettings';
 
 
 // Metadata for SEO - Admin Panel
@@ -121,6 +123,13 @@ export default function AdminPage() {
       icon: Ticket,
       component: AllCuponsClient,
       description: 'Discount Coupons'
+    },
+    {
+      id: 'shipping-tax',
+      name: 'Shipping & Tax',
+      icon: Settings,
+      component: ShippingTaxSettings,
+      description: 'Configure Shipping & Tax Settings'
     },
     
   ];

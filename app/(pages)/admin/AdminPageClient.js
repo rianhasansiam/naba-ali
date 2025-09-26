@@ -28,6 +28,7 @@ import OrderDetails from './adminComponents/orderDetails/OrderDetails';
 import AllReviews from './adminComponents/allReviews/AllReviews';
 import AllCuponsClient from './adminComponents/allCupons/AllCuponsClient';
 import AllCategoryClient from './adminComponents/allCategory/AllCategoryClient';
+import ShippingTaxSettings from './adminComponents/shippingTax/ShippingTaxSettings';
 
 
 const AdminPageClient = ({ adminData, navigationItems }) => {
@@ -61,7 +62,7 @@ const AdminPageClient = ({ adminData, navigationItems }) => {
     'reviews': Star,
     'categories': FolderOpen,
     'coupons': Ticket,
-
+    'shipping-tax': Settings,
   };
 
   // Component mapping for client-side use (direct client components)
@@ -73,6 +74,7 @@ const AdminPageClient = ({ adminData, navigationItems }) => {
     'reviews': AllReviews,
     'categories': AllCategoryClient,
     'coupons': AllCuponsClient,
+    'shipping-tax': ShippingTaxSettings,
   };
 
   const currentComponent = componentMap[activeTab] || Dashboard;

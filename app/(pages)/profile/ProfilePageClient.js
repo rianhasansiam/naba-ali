@@ -574,7 +574,7 @@ const ProfilePageClient = ({ profileData, onUpdateProfile }) => {
                         </button>
                       )}
                       {order.status === 'delivered' && (
-                        <button className="flex items-center space-x-2 px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                        <button className="flex items-center space-x-2 px-4 py-2 text-sm bg-black text-white rounded-lg hover:bg-gray-800 transition-colors">
                           <Star className="w-4 h-4" />
                           <span>Leave Review</span>
                         </button>

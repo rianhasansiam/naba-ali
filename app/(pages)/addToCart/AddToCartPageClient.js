@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAppSelector, useAppDispatch } from '@/app/redux/reduxHooks';
 import { loadCartFromStorage, updateCartQuantity, removeFromCart } from '@/app/redux/slice';
-import { ShoppingBag, Minus, Plus, X, Truck, ArrowLeft, ShoppingCart, Tag } from 'lucide-react';
+import { ShoppingBag, Minus, Plus, X, Truck, ArrowLeft, ShoppingCart, Tag, Receipt } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useShippingTaxSettings } from '@/lib/hooks/useShippingTaxSettings';
 
 const AddToCartPageClient = ({ productsData, couponsData }) => {
   // Redux state
@@ -41,6 +42,9 @@ const AddToCartPageClient = ({ productsData, couponsData }) => {
     // If product not found in database, return cart item as is
     return cartItem;
   });
+
+  // Shipping and tax settings
+  const { calculateTotals: calculateDynamicTotals, freeShippingThreshold, taxEnabled, taxName, isLoading: settingsLoading } = useShippingTaxSettings();
 
   // Coupon state
   const [couponCode, setCouponCode] = useState('');
@@ -128,10 +132,9 @@ const AddToCartPageClient = ({ productsData, couponsData }) => {
     setCouponError('');
   };
 
-  // Calculate totals with coupon
+  // Calculate totals with coupon and dynamic shipping/tax
   const calculateTotals = () => {
     const subtotal = enrichedCartItems.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0);
-    const shipping = subtotal > 500 ? 0 : 15.99;
     
     let discount = 0;
     if (appliedCoupon) {
@@ -144,13 +147,23 @@ const AddToCartPageClient = ({ productsData, couponsData }) => {
       }
     }
     
+    // Use dynamic calculation if settings are loaded, otherwise fallback
+    if (!settingsLoading && calculateDynamicTotals) {
+      return calculateDynamicTotals(subtotal, discount);
+    }
+    
+    // Fallback to static calculation while loading
+    const shipping = subtotal > 500 ? 0 : 15.99;
     const total = subtotal + shipping - discount;
     
     return {
       subtotal: subtotal.toFixed(2),
       shipping: shipping.toFixed(2),
       discount: discount.toFixed(2),
-      total: total.toFixed(2)
+      tax: '0.00',
+      total: total.toFixed(2),
+      taxName: 'Tax',
+      freeShippingThreshold: 500
     };
   };
 
@@ -395,6 +408,13 @@ const AddToCartPageClient = ({ productsData, couponsData }) => {
                   </span>
                 </div>
                 
+                {taxEnabled && parseFloat(totals.tax) > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">{totals.taxName || 'Tax'}</span>
+                    <span className="font-medium">${totals.tax}</span>
+                  </div>
+                )}
+                
                 {appliedCoupon && parseFloat(totals.discount) > 0 && (
                   <div className="flex justify-between">
                     <span className="text-green-600">Discount ({appliedCoupon.discount}%)</span>
@@ -402,11 +422,7 @@ const AddToCartPageClient = ({ productsData, couponsData }) => {
                   </div>
                 )}
                 
-                {parseFloat(totals.subtotal) < 500 && (
-                  <div className="text-sm text-blue-600">
-                    Add ${(500 - parseFloat(totals.subtotal)).toFixed(2)} more for free shipping!
-                  </div>
-                )}
+               
                 
                 <div className="border-t border-gray-200 pt-4">
                   <div className="flex justify-between">
@@ -420,7 +436,7 @@ const AddToCartPageClient = ({ productsData, couponsData }) => {
               <div className="bg-gray-50 rounded-lg p-4 mb-6">
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                   <Truck className="w-4 h-4" />
-                  <span>Free shipping on orders over $500</span>
+                  <span>Safe Delivery</span>
                 </div>
               </div>
 

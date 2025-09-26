@@ -13,7 +13,7 @@ const LoadingSpinner = memo(({ size = 'md', color = 'blue' }) => {
   };
 
   const colorClasses = {
-    blue: 'border-blue-600',
+    blue: 'border-black',
     gray: 'border-gray-600',
     white: 'border-white',
     red: 'border-red-600'

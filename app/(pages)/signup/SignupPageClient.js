@@ -279,7 +279,7 @@ const SignupPageClient = ({ signupData }) => {
             <motion.div
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg"
+              className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg"
             >
               Account created successfully! Redirecting to login...
             </motion.div>

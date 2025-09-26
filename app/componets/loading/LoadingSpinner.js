@@ -16,7 +16,7 @@ const LoadingSpinner = ({
   };
 
   const colorClasses = {
-    primary: 'border-blue-600',
+    primary: 'border-black',
     secondary: 'border-gray-600',
     success: 'border-green-600',
     warning: 'border-yellow-600',
@@ -30,7 +30,7 @@ const LoadingSpinner = ({
         {[0, 1, 2].map((index) => (
           <motion.div
             key={index}
-            className={`w-2 h-2 rounded-full bg-blue-600`}
+            className={`w-2 h-2 rounded-full bg-black`}
             animate={{
               scale: [1, 1.2, 1],
               opacity: [0.7, 1, 0.7]
@@ -49,7 +49,7 @@ const LoadingSpinner = ({
   if (variant === 'pulse') {
     return (
       <motion.div
-        className={`${sizeClasses[size]} rounded-full bg-blue-600 ${className}`}
+        className={`${sizeClasses[size]} rounded-full bg-black ${className}`}
         animate={{
           scale: [1, 1.2, 1],
           opacity: [0.7, 1, 0.7]

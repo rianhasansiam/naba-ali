@@ -6,6 +6,7 @@ import { useGetData } from '@/lib/hooks/useGetData';
 import { useAddData } from '@/lib/hooks/useAddData';
 import { useAppSelector, useAppDispatch } from '@/app/redux/reduxHooks';
 import { loadCartFromStorage, clearCart } from '@/app/redux/slice';
+import { useShippingTaxSettings } from '@/lib/hooks/useShippingTaxSettings';
 import { 
   ShoppingBag, CreditCard, Lock, CheckCircle, AlertCircle, 
   ArrowLeft, User, MapPin, Phone, Mail, Truck, Star, X
@@ -18,6 +19,9 @@ import LoadingSpinner from '../../componets/loading/LoadingSpinner';
 const CheckoutPageClient = () => {
   // Hooks
   const router = useRouter();
+  
+  // Shipping and tax settings
+  const { calculateTotals: calculateDynamicTotals, taxName, taxEnabled, isLoading: settingsLoading } = useShippingTaxSettings();
   
   // Redux hooks
   const dispatch = useAppDispatch();
@@ -129,9 +133,16 @@ const CheckoutPageClient = () => {
     }
   }, [products, dispatch]);
 
-  // Calculate totals
+  // Calculate totals with dynamic shipping and tax
   const calculateTotals = () => {
     const subtotal = enrichedCartItems.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0);
+    
+    // Use dynamic calculation if settings are loaded, otherwise fallback
+    if (!settingsLoading && calculateDynamicTotals) {
+      return calculateDynamicTotals(subtotal, 0); // No coupon discount in checkout
+    }
+    
+    // Fallback to static calculation while loading
     const shipping = subtotal >= 500 ? 0 : 15.99;
     const tax = subtotal * 0.08;
     const total = subtotal + shipping + tax;
@@ -140,7 +151,8 @@ const CheckoutPageClient = () => {
       subtotal: subtotal.toFixed(2),
       shipping: shipping.toFixed(2),
       tax: tax.toFixed(2),
-      total: total.toFixed(2)
+      total: total.toFixed(2),
+      taxName: 'Tax'
     };
   };
 
@@ -722,10 +734,12 @@ const CheckoutPageClient = () => {
                   <span>Shipping</span>
                   <span>${totals.shipping}</span>
                 </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>Tax</span>
-                  <span>${totals.tax}</span>
-                </div>
+                {taxEnabled && parseFloat(totals.tax) > 0 && (
+                  <div className="flex justify-between text-gray-600">
+                    <span>{totals.taxName || 'Tax'}</span>
+                    <span>${totals.tax}</span>
+                  </div>
+                )}
                 <div className="border-t pt-3 flex justify-between text-xl font-bold text-gray-900">
                   <span>Total</span>
                   <span>${totals.total}</span>

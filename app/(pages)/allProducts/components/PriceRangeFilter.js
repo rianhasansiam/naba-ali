@@ -75,9 +75,9 @@ const PriceRangeFilter = ({ products = [] }) => {
           </div>
           
           {/* Price Inputs */}
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-3 ">
             <div className="flex-1">
-              <label className="block text-sm text-gray-600 mb-1">Min</label>
+              <label className="block text-sm text-gray-600 mb-1 mt-5 ml-2">Min</label>
               <input
                 type="number"
                 value={filters.priceRange.min}
@@ -87,7 +87,7 @@ const PriceRangeFilter = ({ products = [] }) => {
               />
             </div>
             <div className="flex-1">
-              <label className="block text-sm text-gray-600 mb-1">Max</label>
+              <label className="block text-sm text-gray-600 mb-1 mt-5 ml-2">Max</label>
               <input
                 type="number"
                 value={filters.priceRange.max}

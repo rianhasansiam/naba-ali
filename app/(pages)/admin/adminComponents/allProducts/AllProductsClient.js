@@ -232,7 +232,7 @@ const AllProductsClient = () => {
         <div className="flex items-center space-x-3">
           <button 
             onClick={() => setShowAddReviewModal(true)}
-            className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center space-x-2 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
           >
             <MessageSquare size={16} />
             <span>Add Review</span>
