@@ -4,13 +4,33 @@ import { getCollection } from '../../../lib/mongodb';
 // GET - Get all categories
 export async function GET(request) {
   try {
-    // Get the categories collection
+    // Get both categories and products collections
     const categories = await getCollection('allCategories');
+    const products = await getCollection('allProducts');
     
-    // Find all categories
+    // Find all categories and products
     const allCategories = await categories.find({}).toArray();
+    const allProducts = await products.find({}).toArray();
     
-    return NextResponse.json(allCategories);
+    // Calculate product count for each category
+    const categoriesWithCount = allCategories.map(category => {
+      const productCount = allProducts.filter(product => {
+        const categoryName = category.name?.toLowerCase()?.trim();
+        const productCategory = product?.category?.toLowerCase()?.trim();
+        
+        // Flexible matching
+        return productCategory === categoryName || 
+               productCategory?.includes(categoryName) ||
+               categoryName?.includes(productCategory);
+      }).length;
+      
+      return {
+        ...category,
+        productCount: productCount
+      };
+    });
+    
+    return NextResponse.json(categoriesWithCount);
 
   } catch (error) {
     console.error("Error fetching categories:", error); 

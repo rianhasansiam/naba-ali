@@ -15,15 +15,16 @@ const CardsClient = memo(({ products = [] }) => {
 
   return (
     <div className="w-full">
-      {/* Products Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      {/* Products Grid with improved responsive layout */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
         {products.map((product, index) => (
           <motion.div
             key={product._id || product.id || `product-card-${index}`}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: index * 0.1 }}
-            whileHover={{ y: -5 }}
+            transition={{ duration: 0.4, delay: index * 0.05 }}
+            whileHover={{ y: -3 }}
+            className="group"
           >
             <ProductCard product={product} />
           </motion.div>
