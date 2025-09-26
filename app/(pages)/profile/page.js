@@ -1,4 +1,4 @@
-import ProfilePageWrapper from './ProfilePageWrapper';
+import SimpleProfilePageWrapper from './SimpleProfilePageWrapper';
 
 export const metadata = {
   title: 'My Profile - NABA ALI | Account Dashboard',
@@ -12,5 +12,5 @@ export const metadata = {
 };
 
 export default function ProfilePage() {
-  return <ProfilePageWrapper />;
+  return <SimpleProfilePageWrapper />;
 }

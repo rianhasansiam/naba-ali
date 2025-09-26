@@ -93,7 +93,10 @@ export async function PATCH(request, { params }) {
     // Prepare update fields - only allow certain fields to be updated
     const allowedUpdates = {};
     if (updateData.name) allowedUpdates.name = updateData.name;
-    if (updateData.phone !== undefined) allowedUpdates.phone = updateData.phone;
+    if (updateData.phone !== undefined) {
+      // Allow empty string or valid phone number
+      allowedUpdates.phone = updateData.phone === "" ? null : updateData.phone;
+    }
     if (updateData.image) allowedUpdates.image = updateData.image;
     
     // Add update timestamp

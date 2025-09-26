@@ -4,6 +4,7 @@ import StoreProvider from "./redux/provider";
 import Navbar from "./componets/navbar/Navbar";
 import Footer from "./componets/footer/Footer";
 import ErrorBoundary from "./componets/shared/ErrorBoundary";
+import ErrorSuppression from "./componets/shared/ErrorSuppression";
 import AuthProvider from "../lib/AuthProvider";
 import ReactQueryProvider from "@/lib/ReactQueryProvider";
 import { LoadingProvider } from "../lib/LoadingProvider";
@@ -56,6 +57,7 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <ErrorSuppression />
         <AuthProvider>
           <StoreProvider>
             <ReactQueryProvider>
