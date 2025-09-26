@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { FiSliders } from "react-icons/fi";
-import Cards from "../../componets/cards/Cards";
+import CardsClient from "../../componets/cards/CardsClient";
 import Filters from "./filters/Filters";
 import MobileFilters from "./filters/MobileFilters";
 import Pagination from "./Pagination";
@@ -83,7 +83,7 @@ const ProductsPageClient = ({ productsData, categoriesData }) => {
 
         {/* Products Grid */}
         <div className="w-full">
-          <Cards products={currentProducts} />
+          <CardsClient products={currentProducts} />
         </div>
 
         {/* Pagination */}

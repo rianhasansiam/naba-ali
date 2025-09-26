@@ -2,27 +2,13 @@
 
 import { useMemo } from 'react';
 import OrderDetailsClient from './OrderDetailsClient';
-import { useGetData } from '@/lib/hooks/useGetData';
 
-// Server Component - Handles data fetching
-const OrderDetails = () => {
-  // Fetch real data from APIs
-  const { data: orders = [], isLoading, error } = useGetData({ 
-    name: 'orders', 
-    api: '/api/orders' 
-  });
-  const { data: users = [] } = useGetData({ 
-    name: 'users', 
-    api: '/api/users' 
-  });
-  const { data: products = [] } = useGetData({ 
-    name: 'products', 
-    api: '/api/products' 
-  });
+// Server Component - Handles data processing from props
+const OrderDetails = ({ orders = [], users = [], products = [], isLoading = false }) => {
 
   // Process orders data to match expected format - must be called before early returns
   const ordersData = useMemo(() => {
-    if (isLoading || error) {
+    if (isLoading) {
       return {
         orders: [],
         stats: {
@@ -96,7 +82,7 @@ const OrderDetails = () => {
         totalRevenue
       }
     };
-  }, [orders, isLoading, error]);
+  }, [orders, isLoading]);
 
   // Show loading spinner at page level
   if (isLoading) {
@@ -107,16 +93,7 @@ const OrderDetails = () => {
     );
   }
 
-  // Show error at page level
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <p className="text-red-500">Error loading orders: {error.message}</p>
-      </div>
-    );
-  }
-
-  // Pass data to client component - remove loading and error props since handled at page level
+  // Pass data to client component
   return <OrderDetailsClient ordersData={ordersData} />;
 };
 

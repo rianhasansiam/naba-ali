@@ -24,7 +24,7 @@ import {
 import { useGetData } from '@/lib/hooks/useGetData';
 import { useDeleteData } from '@/lib/hooks/useDeleteData';
 
-const AllUsers = () => {
+const AllUsersClient = ({ users: userData = [], orders: ordersDataProp = [], isLoading: isLoadingProp = false }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [allUsers, setAllUsers] = useState([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -34,16 +34,14 @@ const AllUsers = () => {
   const [deletingUserId, setDeletingUserId] = useState(null);
   const [toast, setToast] = useState({ show: false, type: 'success', message: '' });
 
-  const { data, isLoading, error } = useGetData({ name: 'users', api: '/api/users' });
-  const { data: ordersData } = useGetData({ name: 'orders', api: '/api/orders' });
   const { deleteData, isLoading: isDeleting } = useDeleteData({ name: 'users', api: '/api/users' });
 
   useEffect(() => {
-    if (data) {
+    if (userData) {
       // Ensure data is always an array
-      setAllUsers(Array.isArray(data) ? data : [data]);
+      setAllUsers(Array.isArray(userData) ? userData : [userData]);
     }
-  }, [data]);
+  }, [userData]);
 
   // Search filter
   const filteredUsers = allUsers.filter((user) =>
@@ -76,10 +74,13 @@ const AllUsers = () => {
   // Handler functions
   const handleViewOrders = (user) => {
     setSelectedUser(user);
-    // Filter orders for this user
-    const userOrderHistory = Array.isArray(ordersData) ? ordersData.filter(order => 
-      order.userEmail === user.email || order.userId === user._id
-    ) : [];
+    // Filter orders for this user - orders store customer info in 'customerInfo' field
+    const userOrderHistory = Array.isArray(ordersDataProp) ? ordersDataProp.filter(order => {
+      if (!order || !order.customerInfo) return false;
+      
+      // Match by email (primary identifier)
+      return order.customerInfo.email === user.email;
+    }) : [];
     setUserOrders(userOrderHistory);
     setShowOrderModal(true);
   };
@@ -287,16 +288,16 @@ const AllUsers = () => {
                               <Package size={16} />
                             </div>
                             <div>
-                              <h4 className="font-medium text-gray-900">Order #{order._id?.slice(-8) || 'Unknown'}</h4>
+                              <h4 className="font-medium text-gray-900">Order #{order.orderId || order._id?.slice(-8) || 'Unknown'}</h4>
                               <div className="flex items-center text-sm text-gray-600">
                                 <Clock size={12} className="mr-1" />
-                                {new Date(order.createdAt).toLocaleDateString()}
+                                {new Date(order.orderDate || order.createdAt).toLocaleDateString()}
                               </div>
                             </div>
                           </div>
                           <div className="text-right">
                             <div className="text-lg font-bold text-gray-900">
-                              ${order.totalAmount || order.total || 0}
+                              ${order.orderSummary?.total || order.total || order.totalAmount || 0}
                             </div>
                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                               order.status === 'completed' 
@@ -472,4 +473,4 @@ const AllUsers = () => {
   );
 };
 
-export default AllUsers;
+export default AllUsersClient;

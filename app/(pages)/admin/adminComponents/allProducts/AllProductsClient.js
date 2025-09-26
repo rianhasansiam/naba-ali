@@ -4,13 +4,9 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { 
   Plus, 
   Search, 
-  TrendingUp,
   Package,
-  DollarSign,
   Grid,
   List,
-  Download,
-  Upload,
   AlertCircle,
   MessageSquare
 } from 'lucide-react';

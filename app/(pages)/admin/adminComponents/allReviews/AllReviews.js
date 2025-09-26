@@ -2,23 +2,13 @@
 
 import { useMemo } from 'react';
 import AllReviewsClient from './AllReviewsClient';
-import { useGetData } from '@/lib/hooks/useGetData';
 
-// Server Component - Handles data fetching
-const AllReviews = () => {
-  // Fetch real review data from API
-  const { data: reviews = [], isLoading, error } = useGetData({ 
-    name: 'reviews', 
-    api: '/api/reviews' 
-  });
-  const { data: products = [] } = useGetData({ 
-    name: 'products', 
-    api: '/api/products' 
-  });
+// Server Component - Handles data processing from props
+const AllReviews = ({ reviews = [], products = [], isLoading = false }) => {
 
   // Process review data to match expected format
   const reviewsData = useMemo(() => {
-    if (isLoading || error || !reviews.length) {
+    if (isLoading || !reviews.length) {
       return {
         reviews: [],
         stats: {
@@ -61,9 +51,9 @@ const AllReviews = () => {
         approvedReviews
       }
     };
-  }, [reviews, products, isLoading, error]);
+  }, [reviews, products, isLoading]);
 
-  return <AllReviewsClient reviewsData={reviewsData} isLoading={isLoading} error={error} />;
+  return <AllReviewsClient reviewsData={reviewsData} isLoading={isLoading} />;
 };
 
 export default AllReviews;

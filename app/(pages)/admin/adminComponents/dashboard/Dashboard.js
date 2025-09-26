@@ -2,15 +2,9 @@
 
 import { useMemo } from 'react';
 import DashboardClient from './DashboardClient';
-import { useGetData } from '../../../../../lib/hooks/useGetData';
 
-// Client Component - Handles real data fetching from APIs
-const Dashboard = () => {
-  // Fetch real data from all APIs
-  const { data: products } = useGetData({ name: 'products', api: '/api/products' });
-  const { data: users } = useGetData({ name: 'users', api: '/api/users' });
-  const { data: orders } = useGetData({ name: 'orders', api: '/api/orders' });
-  const { data: reviews } = useGetData({ name: 'reviews', api: '/api/reviews' });
+// Client Component - Handles real data processing from props
+const Dashboard = ({ products = [], users = [], orders = [], reviews = [], isLoading }) => {
 
   // Calculate real analytics from database data
   const analytics = useMemo(() => {

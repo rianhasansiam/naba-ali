@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useGetData } from '../../../lib/hooks/useGetData';
 import { 
   LayoutDashboard, 
   Package, 
@@ -19,19 +20,37 @@ import {
   Shield
 } from 'lucide-react';
 
-// Import admin components
+// Import admin components directly (no wrapper layers)
 import Dashboard from './adminComponents/dashboard/Dashboard';
-import AllProducts from './adminComponents/allProducts/AllProducts';
-import AllUsers from './adminComponents/allUsers/AllUsers';
+import AllProductsClient from './adminComponents/allProducts/AllProductsClient';
+import AllUsersClient from './adminComponents/allUsers/AllUsersClient';
 import OrderDetails from './adminComponents/orderDetails/OrderDetails';
 import AllReviews from './adminComponents/allReviews/AllReviews';
-import AllCupons from './adminComponents/allCupons/AllCupons';
-import AllCategory from './adminComponents/allCategory/AllCategory';
+import AllCuponsClient from './adminComponents/allCupons/AllCuponsClient';
+import AllCategoryClient from './adminComponents/allCategory/AllCategoryClient';
 
 
 const AdminPageClient = ({ adminData, navigationItems }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  // Centralized data fetching for all admin components
+  const { data: products = [], isLoading: productsLoading } = useGetData({ name: 'products', api: '/api/products' });
+  const { data: users = [], isLoading: usersLoading } = useGetData({ name: 'users', api: '/api/users' });
+  const { data: orders = [], isLoading: ordersLoading } = useGetData({ name: 'orders', api: '/api/orders' });
+  const { data: reviews = [], isLoading: reviewsLoading } = useGetData({ name: 'reviews', api: '/api/reviews' });
+  
+  // Shared loading state
+  const isLoading = productsLoading || usersLoading || ordersLoading || reviewsLoading;
+  
+  // Shared data object to pass to components
+  const sharedData = {
+    products,
+    users, 
+    orders,
+    reviews,
+    isLoading
+  };
 
   // Icon mapping for client-side use
   const iconMap = {
@@ -45,16 +64,15 @@ const AdminPageClient = ({ adminData, navigationItems }) => {
 
   };
 
-  // Component mapping for client-side use
+  // Component mapping for client-side use (direct client components)
   const componentMap = {
     'dashboard': Dashboard,
-    'products': AllProducts,
-    'users': AllUsers,
+    'products': AllProductsClient,
+    'users': AllUsersClient,
     'orders': OrderDetails,
     'reviews': AllReviews,
-    'categories': AllCategory,
-    'coupons': AllCupons,
-
+    'categories': AllCategoryClient,
+    'coupons': AllCuponsClient,
   };
 
   const currentComponent = componentMap[activeTab] || Dashboard;
@@ -164,7 +182,7 @@ const AdminPageClient = ({ adminData, navigationItems }) => {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.2 }}
           >
-            <CurrentComponent />
+            <CurrentComponent {...sharedData} />
           </motion.div>
         </main>
       </div>

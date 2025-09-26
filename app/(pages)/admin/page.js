@@ -12,14 +12,14 @@ import {
   Shield
 } from 'lucide-react';
 
-// Import admin components
+// Import admin components directly (no wrapper layers)
 import Dashboard from './adminComponents/dashboard/Dashboard';
-import AllProducts from './adminComponents/allProducts/AllProducts';
-import AllUsers from './adminComponents/allUsers/AllUsers';
+import AllProductsClient from './adminComponents/allProducts/AllProductsClient';
+import AllUsersClient from './adminComponents/allUsers/AllUsersClient';
 import OrderDetails from './adminComponents/orderDetails/OrderDetails';
 import AllReviews from './adminComponents/allReviews/AllReviews';
-import AllCupons from './adminComponents/allCupons/AllCupons';
-import AllCategory from './adminComponents/allCategory/AllCategory';
+import AllCuponsClient from './adminComponents/allCupons/AllCuponsClient';
+import AllCategoryClient from './adminComponents/allCategory/AllCategoryClient';
 
 
 // Metadata for SEO - Admin Panel
@@ -84,14 +84,14 @@ export default function AdminPage() {
       id: 'products',
       name: 'All Products',
       icon: Package,
-      component: AllProducts,
+      component: AllProductsClient,
       description: 'Manage Products'
     },
     {
       id: 'users',
       name: 'All Users',
       icon: Users,
-      component: AllUsers,
+      component: AllUsersClient,
       description: 'Customer Management'
     },
     {
@@ -112,14 +112,14 @@ export default function AdminPage() {
       id: 'categories',
       name: 'Categories',
       icon: FolderOpen,
-      component: AllCategory,
+      component: AllCategoryClient,
       description: 'Product Categories'
     },
     {
       id: 'coupons',
       name: 'Coupons',
       icon: Ticket,
-      component: AllCupons,
+      component: AllCuponsClient,
       description: 'Discount Coupons'
     },
     

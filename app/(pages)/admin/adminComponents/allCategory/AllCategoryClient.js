@@ -13,17 +13,7 @@ import {
   List,
   TrendingUp,
   AlertCircle,
-  Eye,
-  Loader,
   Image as ImageIcon,
-  Filter,
-  SlidersHorizontal,
-  BarChart3,
-  Users,
-  Activity,
-  Star,
-  Calendar,
-  Tag,
   X
 } from 'lucide-react';
 import { useGetData } from '../../../../../lib/hooks/useGetData';
