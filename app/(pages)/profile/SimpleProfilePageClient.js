@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSession } from 'next-auth/react';
 import { 
-  User, Package, MapPin, Edit3, Save, X, Phone, Mail, Calendar,
+  User, Package, Edit3, Save, X, Phone, Mail, Calendar,
   Truck, CheckCircle, Clock, AlertCircle, DollarSign, Star, Camera, Upload
 } from 'lucide-react';
 import Image from 'next/image';
@@ -230,8 +230,7 @@ const SimpleProfilePageClient = () => {
 
   const tabs = [
     { id: "overview", label: "Overview", icon: User },
-    { id: "orders", label: "My Orders", icon: Package },
-    { id: "addresses", label: "Addresses", icon: MapPin }
+    { id: "orders", label: "My Orders", icon: Package }
   ];
 
   return (
@@ -607,16 +606,6 @@ const SimpleProfilePageClient = () => {
                   </div>
                 )}
 
-                {/* Addresses Tab */}
-                {activeTab === 'addresses' && (
-                  <div className="bg-white rounded-xl shadow-lg p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Addresses</h3>
-                    <div className="text-center py-8">
-                      <MapPin className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-                      <p className="text-gray-500">Address management coming soon</p>
-                    </div>
-                  </div>
-                )}
               </motion.div>
             </AnimatePresence>
           </div>
