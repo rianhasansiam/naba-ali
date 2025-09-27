@@ -305,11 +305,12 @@ export default function ProductDetailPage({ params }) {
           {/* Main Image */}
           <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
             <OptimizedImage
-              src={product.images?.[selectedImageIndex] || product.primaryImage || product.image}
+              src={product.images?.[selectedImageIndex] || product.primaryImage || product.image || product.images?.[0]}
               alt={product.name}
               width={600}
               height={600}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover transition-opacity duration-300"
+              key={selectedImageIndex}
             />
           </div>
           
@@ -319,10 +320,14 @@ export default function ProductDetailPage({ params }) {
               {product.images.map((image, index) => (
                 <button
                   key={index}
-                  onClick={() => setSelectedImageIndex(index)}
-                  className={`flex-shrink-0 w-20 h-20 rounded-md overflow-hidden border-2 ${
+                  onClick={() => {
+                    console.log('Clicked thumbnail:', index);
+                    setSelectedImageIndex(index);
+                  }}
+                  className={`flex-shrink-0 w-20 h-20 rounded-md overflow-hidden border-2 transition-all duration-200 hover:border-gray-400 ${
                     selectedImageIndex === index ? 'border-black' : 'border-gray-200'
                   }`}
+                  type="button"
                 >
                   <OptimizedImage
                     src={image}
@@ -342,6 +347,13 @@ export default function ProductDetailPage({ params }) {
           <div>
             <p className="text-sm text-gray-500 uppercase tracking-wide mb-2">{product.category}</p>
             <h1 className="text-3xl font-bold text-gray-900 mb-4">{product.name}</h1>
+            
+            {/* Short Description */}
+            {product.shortDescription && (
+              <p className="text-lg text-gray-600 mb-6 font-medium leading-relaxed">
+                {product.shortDescription}
+              </p>
+            )}
             
             {/* Price */}
             <div className="flex items-center gap-4 mb-4">
@@ -405,11 +417,6 @@ export default function ProductDetailPage({ params }) {
                 </span>
               </div>
             )}
-
-            {/* Description */}
-            <div className="prose prose-sm text-gray-600 mb-8">
-              <p>{product.description || 'High quality product with excellent features and comfortable design.'}</p>
-            </div>
           </div>
 
           <div className="space-y-6">
@@ -575,6 +582,24 @@ export default function ProductDetailPage({ params }) {
         </div>
       </div>
       </div>
+
+   {/* Product Description Section */}
+              <div className="bg-white border border-gray-200 rounded-xl p-8 mb-8 container mx-auto">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                    <span className="text-gray-600 text-lg">📝</span>
+                  </div>
+                  <div>
+                    <h4 className="text-xl font-bold text-gray-900">Product Description</h4>
+                    <p className="text-gray-600 text-sm">Detailed information about this product</p>
+                  </div>
+                </div>
+                <div className="prose prose-lg text-gray-700 leading-relaxed">
+                  <p>{product.description || 'High quality product with excellent features and comfortable design. Made with premium materials and attention to detail, this product offers exceptional value and durability for everyday use.'}</p>
+                </div>
+              </div>
+
+
  {/* Product Information */}
             <div className="border-t border-gray-200 pt-8 container mx-auto px-4">
               <div className="flex items-center gap-3 mb-8">
@@ -697,6 +722,8 @@ export default function ProductDetailPage({ params }) {
                   </div>
                 )}
               </div>
+
+           
 
               {/* Premium Features Section */}
               <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-2xl p-8 border border-blue-100">

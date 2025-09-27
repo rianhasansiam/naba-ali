@@ -165,6 +165,7 @@ export const useFilteredProducts = (products) => {
         const searchTerm = filters.search.toLowerCase();
         const matchesSearch = 
           product.name?.toLowerCase().includes(searchTerm) ||
+          product.shortDescription?.toLowerCase().includes(searchTerm) ||
           product.description?.toLowerCase().includes(searchTerm) ||
           product.category?.toLowerCase().includes(searchTerm);
         if (!matchesSearch) return false;

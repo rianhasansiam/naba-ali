@@ -227,7 +227,7 @@ const ProductCard = memo(({
         </div>
         
         <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-          {product.description}
+          {product.shortDescription || product.description}
         </p>
         
         <div className="flex items-center justify-between">

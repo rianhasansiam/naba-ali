@@ -54,7 +54,7 @@ const CheckoutPageClient = () => {
         stock: currentProduct.stock,
         colors: currentProduct.colors,
         sizes: currentProduct.sizes,
-        description: currentProduct.description,
+        description: currentProduct.shortDescription || currentProduct.description,
         category: currentProduct.category,
         style: currentProduct.style
       };

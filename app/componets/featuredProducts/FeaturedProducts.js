@@ -29,7 +29,7 @@ export default function FeaturedProducts({ productsData }) {
         isOnSale: product.originalPrice > product.price,
         color: product.color || product.colors?.[0] || 'Black',
         sizes: product.sizes || ['S', 'M', 'L', 'XL'],
-        description: product.description || `High-quality ${product.category || 'product'} with premium materials.`
+        description: product.shortDescription || product.description || `High-quality ${product.category || 'product'} with premium materials.`
       }));
   }, [productsData]);
 

@@ -15,6 +15,7 @@ const AddProductModal = ({ isOpen, onClose, categories }) => {
     price: '',
     originalPrice: '',
     stock: '',
+    shortDescription: '',
     description: '',
     images: [],
     colors: [],
@@ -59,6 +60,7 @@ const AddProductModal = ({ isOpen, onClose, categories }) => {
         price: '',
         originalPrice: '',
         stock: '',
+        shortDescription: '',
         description: '',
         images: [],
         colors: [],
@@ -83,6 +85,7 @@ const AddProductModal = ({ isOpen, onClose, categories }) => {
     if (!formData.stock) errors.stock = 'Stock quantity is required';
     if (formData.colors.length === 0) errors.colors = 'At least one color is required';
     if (formData.sizes.length === 0) errors.sizes = 'At least one size is required';
+    if (!formData.shortDescription.trim()) errors.shortDescription = 'Short description is required';
     if (!formData.description.trim()) errors.description = 'Description is required';
     if (formData.images.length === 0 && selectedFiles.length === 0) errors.images = 'At least one product image is required';
     
@@ -545,6 +548,31 @@ const AddProductModal = ({ isOpen, onClose, categories }) => {
               <h3 className="text-lg font-semibold text-gray-800 mb-4">
                 Product Details
               </h3>
+              
+              {/* Short Description */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Short Description*
+                </label>
+                <input
+                  type="text"
+                  name="shortDescription"
+                  value={formData.shortDescription}
+                  onChange={handleChange}
+                  className={`w-full px-4 py-3 rounded-lg border ${formErrors.shortDescription ? 'border-red-300 focus:border-red-500 focus:ring-red-500/20' : 'border-amber-200/60 focus:border-amber-500 focus:ring-amber-500/20'} focus:outline-none focus:ring-2 transition-all duration-200 text-sm bg-white/80 backdrop-blur-sm`}
+                  placeholder="Brief one-line description of the product..."
+                  maxLength="100"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  {formData.shortDescription.length}/100 characters
+                </p>
+                {formErrors.shortDescription && submitAttempted && (
+                  <p className="mt-1 text-sm text-red-600 flex items-center">
+                    <AlertCircle className="w-4 h-4 mr-1" />
+                    {formErrors.shortDescription}
+                  </p>
+                )}
+              </div>
               
               {/* Description */}
               <div className="mb-6">

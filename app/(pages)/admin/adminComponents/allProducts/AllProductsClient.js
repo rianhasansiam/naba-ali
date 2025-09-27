@@ -286,7 +286,7 @@ const { data: categoriesData, isLoading: categoriesLoading, error: categoriesErr
               onChange={(e) => setFilterCategory(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent"
             >
-              {categoryOptions.map(category => {
+              {categoryOptions.map((category, index) => {
                 if (category.name === 'all') {
                   return (
                     <option key="all" value="all">
@@ -295,7 +295,7 @@ const { data: categoriesData, isLoading: categoriesLoading, error: categoriesErr
                   );
                 }
                 return (
-                  <option key={category._id} value={category.name}>
+                  <option key={category._id || `category-${index}`} value={category.name}>
                     {category.name} ({category.productCount || 0} products)
                   </option>
                 );

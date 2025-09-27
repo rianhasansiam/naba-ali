@@ -250,7 +250,7 @@ export default function WishListPageClient() {
               sizes: fullProduct.sizes || ['S', 'M', 'L', 'XL'],
               inStock: (fullProduct.stock || 0) > 0,
               addedDate: new Date().toISOString(), // Current date as added date
-              description: fullProduct.description || `High-quality ${fullProduct.category?.toLowerCase()} perfect for any occasion.`
+              description: fullProduct.shortDescription || fullProduct.description || `High-quality ${fullProduct.category?.toLowerCase()} perfect for any occasion.`
             };
           }
           return null;
@@ -298,6 +298,7 @@ export default function WishListPageClient() {
 
     return new Promise(resolve => {
       setTimeout(() => {
+        // Add to cart
         dispatch(addToCart({
           id: item.id,
           name: item.name,
@@ -309,7 +310,15 @@ export default function WishListPageClient() {
           stock: item.inStock ? 10 : 0
         }));
         
-        console.log('Added to cart:', itemId);
+        // Remove from wishlist after adding to cart
+        dispatch(removeFromWishlist(item.id));
+        
+        // Update local state
+        const updatedItems = items.filter(wishlistItem => wishlistItem.id !== itemId);
+        setItems(updatedItems);
+        setSelectedItems(selectedItems.filter(id => id !== itemId));
+        
+        console.log('Added to cart and removed from wishlist:', itemId);
         resolve();
       }, 500);
     });
@@ -341,6 +350,7 @@ export default function WishListPageClient() {
     selectedItems.forEach(itemId => {
       handleAddToCart(itemId);
     });
+    // Clear selected items since they will be removed from wishlist
     setSelectedItems([]);
   };
 

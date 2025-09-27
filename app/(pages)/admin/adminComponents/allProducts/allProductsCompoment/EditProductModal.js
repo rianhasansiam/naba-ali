@@ -15,6 +15,7 @@ const EditProductModal = ({ isOpen, onClose, categories, product }) => {
     price: '',
     originalPrice: '',
     stock: '',
+    shortDescription: '',
     description: '',
     images: [],
     colors: [],
@@ -59,6 +60,7 @@ const EditProductModal = ({ isOpen, onClose, categories, product }) => {
         price: product.price?.toString() || '',
         originalPrice: product.originalPrice?.toString() || '',
         stock: product.stock?.toString() || '',
+        shortDescription: product.shortDescription || '',
         description: product.description || '',
         images: product.images || [product.image] || [],
         colors: product.colors || [product.color] || [],
@@ -84,6 +86,7 @@ const EditProductModal = ({ isOpen, onClose, categories, product }) => {
         price: '',
         originalPrice: '',
         stock: '',
+        shortDescription: '',
         description: '',
         images: [],
         colors: [],
@@ -108,6 +111,7 @@ const EditProductModal = ({ isOpen, onClose, categories, product }) => {
     if (!formData.stock) errors.stock = 'Stock quantity is required';
     if (formData.colors.length === 0) errors.colors = 'At least one color is required';
     if (formData.sizes.length === 0) errors.sizes = 'At least one size is required';
+    if (!formData.shortDescription.trim()) errors.shortDescription = 'Short description is required';
     if (!formData.description.trim()) errors.description = 'Description is required';
     if (formData.images.length === 0 && selectedFiles.length === 0 && imagePreviews.length === 0) {
       errors.images = 'At least one product image is required';
@@ -470,6 +474,33 @@ const EditProductModal = ({ isOpen, onClose, categories, product }) => {
                 </div>
                 <div></div>
                 <div></div>
+              </div>
+
+              {/* Short Description */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Short Description *
+                </label>
+                <input
+                  type="text"
+                  name="shortDescription"
+                  value={formData.shortDescription}
+                  onChange={handleChange}
+                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all ${
+                    formErrors.shortDescription ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                  }`}
+                  placeholder="Brief one-line description of the product..."
+                  maxLength="100"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  {formData.shortDescription.length}/100 characters
+                </p>
+                {formErrors.shortDescription && (
+                  <p className="text-red-500 text-sm mt-1 flex items-center gap-1">
+                    <AlertCircle size={14} />
+                    {formErrors.shortDescription}
+                  </p>
+                )}
               </div>
 
               {/* Description */}

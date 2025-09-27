@@ -58,7 +58,7 @@ const ProductCard = ({ product, onEdit, onDelete, onAddReview, isDeleting }) => 
         </div>
       </div>
       
-      <p className="text-gray-600 text-sm mb-4">{product.description}</p>
+      <p className="text-gray-600 text-sm mb-4">{product.shortDescription || product.description}</p>
       
       <div className="grid grid-cols-3 gap-4 mb-4">
         <div>
