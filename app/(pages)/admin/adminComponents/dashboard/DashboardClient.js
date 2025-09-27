@@ -52,7 +52,7 @@ const DashboardClient = ({ analytics }) => {
         animate={{ opacity: 1, y: 0 }}
         className="bg-gradient-to-r from-gray-800 to-black rounded-2xl p-8 text-white"
       >
-        <h1 className="text-3xl font-bold mb-2">Welcome to NABA ALI Admin Dashboard</h1>
+        <h1 className="text-3xl font-bold mb-2">Welcome to SkyZonee Admin Dashboard</h1>
         <p className="text-gray-300 text-lg">Here&apos;s what&apos;s happening with your fashion business today.</p>
         <div className="flex items-center mt-4 space-x-4">
           <div className="flex items-center text-gray-300">
@@ -150,6 +150,7 @@ const DashboardClient = ({ analytics }) => {
                     alt={product.name}
                     fill
                     className="object-cover"
+                    sizes="48px"
                     unoptimized={product.image?.startsWith('data:')}
                   />
                 </div>

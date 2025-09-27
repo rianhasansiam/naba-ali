@@ -1,7 +1,7 @@
-# NABA ALI - Website Routes & API Endpoints Documentation
+# SkyZonee - Website Routes & API Endpoints Documentation
 
 ## 📋 Project Overview
-**NABA ALI** is a premium fashion e-commerce website built with **Next.js 15** using the App Router. This document provides a comprehensive list of all frontend routes and required API endpoints for backend development.
+**SkyZonee** is a premium fashion e-commerce website built with **Next.js 15** using the App Router. This document provides a comprehensive list of all frontend routes and required API endpoints for backend development.
 
 ---
 

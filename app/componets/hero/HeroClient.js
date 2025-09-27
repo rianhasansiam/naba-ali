@@ -4,6 +4,7 @@ import { motion, animate } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 
 // Counter component for animated numbers
 const Counter = ({ from = 0, to, duration = 2, suffix = "" }) => {
@@ -79,18 +80,22 @@ const HeroClient = ({
               transition={{ delay: 0.6 }}
               className="flex flex-col sm:flex-row gap-4"
             >
-              <button 
-                className="inline-flex items-center justify-center h-11 px-8 py-2 text-base bg-white text-black hover:bg-gray-100 group rounded-md font-medium transition-colors"
-              >
-                Shop Collection
-                <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </button>
-              
-              <button 
-                className="inline-flex items-center justify-center h-11 px-8 py-2 text-base border border-white text-white hover:bg-white hover:text-black rounded-md font-medium transition-colors"
-              >
-                View All Products
-              </button>
+              <Link href="/allProducts">
+                <button 
+                  className="inline-flex items-center justify-center h-11 px-8 py-2 text-base bg-white text-black hover:bg-gray-100 group rounded-md font-medium transition-colors"
+                >
+                  Shop Collection
+                  <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </button>
+              </Link>
+
+              <Link  href="/allProducts">
+                <button 
+                  className="inline-flex cursor-pointer items-center justify-center h-11 px-8 py-2 text-base border border-white text-white hover:bg-white hover:text-black rounded-md font-medium transition-colors"
+                >
+                  View All Products
+                </button>
+              </Link>
             </motion.div>
 
             {/* Stats */}

@@ -418,6 +418,7 @@ const LoginPageClient = ({ loginData }) => {
             fill
             className="object-cover"
             priority
+            sizes="50vw"
           />
           <div className="absolute inset-0 bg-black bg-opacity-60"></div>
         </div>

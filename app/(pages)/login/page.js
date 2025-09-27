@@ -2,8 +2,8 @@ import LoginPageClient from './LoginPageClient';
 
 // Metadata for SEO
 export const metadata = {
-  title: "Login - NABA ALI | Access Your Account",
-  description: "Sign in to your NABA ALI account to access exclusive fashion collections.",
+  title: "Login - SkyZonee | Access Your Account",
+  description: "Sign in to your SkyZonee account to access exclusive fashion collections.",
 };
 
 // Simple login page
@@ -11,7 +11,7 @@ export default function LoginPage() {
   // Login page data (server-side)
   const loginData = {
     brandInfo: {
-      name: "NABA ALI",
+      name: "SkyZonee",
       tagline: "Premium Fashion Destination",
       description: "Welcome back to your premium fashion experience"
     },

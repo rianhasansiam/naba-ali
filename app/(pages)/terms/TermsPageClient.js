@@ -22,9 +22,9 @@ const TermsPageClient = () => {
       title: 'Acceptance of Terms',
       icon: UserCheck,
       content: [
-        'By accessing and using the NABA ALI website and services, you accept and agree to be bound by the terms and provision of this agreement.',
+        'By accessing and using the SkyZonee website and services, you accept and agree to be bound by the terms and provision of this agreement.',
         'If you do not agree to abide by the above, please do not use this service.',
-        'These terms constitute a legally binding agreement between you and NABA ALI.'
+        'These terms constitute a legally binding agreement between you and SkyZonee.'
       ]
     },
     {
@@ -32,7 +32,7 @@ const TermsPageClient = () => {
       title: 'Definitions',
       icon: FileText,
       content: [
-        '"We", "us", "our" refers to NABA ALI and its affiliates.',
+        '"We", "us", "our" refers to SkyZonee and its affiliates.',
         '"You", "your" refers to the user or customer accessing our services.',
         '"Products" refers to all items available for purchase on our platform.',
         '"Services" refers to all services provided through our website and platform.'
@@ -55,7 +55,7 @@ const TermsPageClient = () => {
       title: 'Orders and Purchases',
       icon: CreditCard,
       content: [
-        'All orders are subject to acceptance by NABA ALI.',
+        'All orders are subject to acceptance by SkyZonee.',
         'We reserve the right to refuse or cancel any order for any reason.',
         'Prices are subject to change without notice until order confirmation.',
         'Payment must be received before order processing begins.',
@@ -91,7 +91,7 @@ const TermsPageClient = () => {
       title: 'Intellectual Property',
       icon: Scale,
       content: [
-        'All content on this website is the property of NABA ALI or its licensors.',
+        'All content on this website is the property of SkyZonee or its licensors.',
         'You may not reproduce, distribute, or create derivative works without permission.',
         'Product names, logos, and brands are trademarks of their respective owners.',
         'Unauthorized use of our intellectual property may result in legal action.'
@@ -114,7 +114,7 @@ const TermsPageClient = () => {
       title: 'Limitation of Liability',
       icon: Shield,
       content: [
-        'NABA ALI shall not be liable for any indirect, incidental, or consequential damages.',
+        'SkyZonee shall not be liable for any indirect, incidental, or consequential damages.',
         'Our total liability shall not exceed the amount paid by you for the specific product or service.',
         'We do not warrant that our service will be uninterrupted or error-free.',
         'Some jurisdictions do not allow the exclusion of certain warranties or limitations of liability.'

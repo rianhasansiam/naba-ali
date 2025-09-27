@@ -2,12 +2,12 @@ import ContactPageClient from './ContactPageClient';
 
 // Metadata for SEO
 export const metadata = {
-  title: "Contact Us - NABA ALI | Customer Support & Help",
-  description: "Get in touch with NABA ALI for questions about our premium fashion collections. Email, phone, and visit us in New York.",
-  keywords: "contact NABA ALI, customer support, fashion help, customer service, contact information",
+  title: "Contact Us - SkyZonee | Customer Support & Help",
+  description: "Get in touch with SkyZonee for questions about our premium fashion collections. Email, phone, and visit us in New York.",
+  keywords: "contact SkyZonee, customer support, fashion help, customer service, contact information",
   openGraph: {
-    title: "Contact Us - NABA ALI | Customer Support",
-    description: "Get in touch with NABA ALI for any questions about our premium fashion collections.",
+    title: "Contact Us - SkyZonee | Customer Support",
+    description: "Get in touch with SkyZonee for any questions about our premium fashion collections.",
     type: "website",
   },
   alternates: {

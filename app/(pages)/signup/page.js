@@ -2,8 +2,8 @@ import SignupPageClient from './SignupPageClient';
 
 // Metadata for SEO
 export const metadata = {
-  title: "Sign Up - NABA ALI | Join Our Fashion Community",
-  description: "Create your NABA ALI account to access exclusive fashion collections.",
+  title: "Sign Up - SkyZonee | Join Our Fashion Community",
+  description: "Create your SkyZonee account to access exclusive fashion collections.",
 };
 
 // Simple signup page
@@ -11,11 +11,11 @@ export default function SignupPage() {
   // Signup page data (server-side)
   const signupData = {
     brandInfo: {
-      name: "NABA ALI",
+      name: "SkyZonee",
       tagline: "Premium Fashion Community"
     },
     formData: {
-      title: "Join NABA ALI",
+      title: "Join SkyZonee",
       subtitle: "Create your account",
       firstNamePlaceholder: "Enter your first name",
       lastNamePlaceholder: "Enter your last name",

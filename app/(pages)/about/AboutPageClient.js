@@ -76,10 +76,11 @@ const AboutPageClient = ({ aboutData }) => {
         <div className="absolute inset-0 z-0">
           <Image
             src={aboutData.hero.backgroundImage}
-            alt="NABA ALI Fashion"
+            alt="SkyZonee Fashion"
             fill
             className="object-cover"
             priority
+            sizes="100vw"
           />
           <div className="absolute inset-0 bg-black bg-opacity-50"></div>
         </div>
@@ -178,6 +179,7 @@ const AboutPageClient = ({ aboutData }) => {
                 alt="Our Story"
                 fill
                 className="object-cover"
+                sizes="(max-width: 768px) 100vw, 50vw"
               />
             </motion.div>
           </div>
@@ -242,98 +244,99 @@ const AboutPageClient = ({ aboutData }) => {
   };
 
   // Team Section Component
-  const TeamSection = () => {
-    const ref = useRef(null);
-    const isInView = useInView(ref, { once: true });
+  // const TeamSection = () => {
+  //   const ref = useRef(null);
+  //   const isInView = useInView(ref, { once: true });
 
-    return (
-      <section ref={ref} className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            className="text-center mb-16"
-            initial={{ opacity: 0, y: 20 }}
-            animate={isInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6 }}
-          >
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-              {aboutData.team.title}
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              {aboutData.team.subtitle}
-            </p>
-          </motion.div>
+  //   return (
+  //     <section ref={ref} className="py-20 bg-white">
+  //       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+  //         <motion.div
+  //           className="text-center mb-16"
+  //           initial={{ opacity: 0, y: 20 }}
+  //           animate={isInView ? { opacity: 1, y: 0 } : {}}
+  //           transition={{ duration: 0.6 }}
+  //         >
+  //           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+  //             {aboutData.team.title}
+  //           </h2>
+  //           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+  //             {aboutData.team.subtitle}
+  //           </p>
+  //         </motion.div>
 
-          <motion.div
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
-            variants={containerVariants}
-            initial="hidden"
-            animate={isInView ? "visible" : "hidden"}
-          >
-            {aboutData.team.members.map((member, index) => (
-              <motion.div
-                key={index}
-                className="group cursor-pointer"
-                variants={itemVariants}
-                whileHover={{ y: -10 }}
-              >
-                <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300">
-                  <div className="relative h-64 overflow-hidden">
-                    <Image
-                      src={member.image}
-                      alt={member.name}
-                      fill
-                      className="object-cover group-hover:scale-110 transition-transform duration-300"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+  //         <motion.div
+  //           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
+  //           variants={containerVariants}
+  //           initial="hidden"
+  //           animate={isInView ? "visible" : "hidden"}
+  //         >
+  //           {aboutData.team.members.map((member, index) => (
+  //             <motion.div
+  //               key={index}
+  //               className="group cursor-pointer"
+  //               variants={itemVariants}
+  //               whileHover={{ y: -10 }}
+  //             >
+  //               <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300">
+  //                 <div className="relative h-64 overflow-hidden">
+  //                   <Image
+  //                     src={member.image}
+  //                     alt={member.name}
+  //                     fill
+  //                     className="object-cover group-hover:scale-110 transition-transform duration-300"
+  //                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+  //                   />
+  //                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     
-                    {/* Social Links */}
-                    <div className="absolute bottom-4 left-4 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      {member.social.linkedin && (
-                        <a
-                          href={member.social.linkedin}
-                          className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-colors duration-200"
-                        >
-                          <Linkedin className="w-4 h-4 text-white" />
-                        </a>
-                      )}
-                      {member.social.instagram && (
-                        <a
-                          href={member.social.instagram}
-                          className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-colors duration-200"
-                        >
-                          <Instagram className="w-4 h-4 text-white" />
-                        </a>
-                      )}
-                      {member.social.twitter && (
-                        <a
-                          href={member.social.twitter}
-                          className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-colors duration-200"
-                        >
-                          <Twitter className="w-4 h-4 text-white" />
-                        </a>
-                      )}
-                    </div>
-                  </div>
+  //                   {/* Social Links */}
+  //                   <div className="absolute bottom-4 left-4 flex space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+  //                     {member.social.linkedin && (
+  //                       <a
+  //                         href={member.social.linkedin}
+  //                         className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-colors duration-200"
+  //                       >
+  //                         <Linkedin className="w-4 h-4 text-white" />
+  //                       </a>
+  //                     )}
+  //                     {member.social.instagram && (
+  //                       <a
+  //                         href={member.social.instagram}
+  //                         className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-colors duration-200"
+  //                       >
+  //                         <Instagram className="w-4 h-4 text-white" />
+  //                       </a>
+  //                     )}
+  //                     {member.social.twitter && (
+  //                       <a
+  //                         href={member.social.twitter}
+  //                         className="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-colors duration-200"
+  //                       >
+  //                         <Twitter className="w-4 h-4 text-white" />
+  //                       </a>
+  //                     )}
+  //                   </div>
+  //                 </div>
                   
-                  <div className="p-6">
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                      {member.name}
-                    </h3>
-                    <p className="text-blue-600 font-medium mb-3">
-                      {member.role}
-                    </p>
-                    <p className="text-gray-600 text-sm leading-relaxed">
-                      {member.bio}
-                    </p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
-    );
-  };
+  //                 <div className="p-6">
+  //                   <h3 className="text-xl font-semibold text-gray-900 mb-2">
+  //                     {member.name}
+  //                   </h3>
+  //                   <p className="text-blue-600 font-medium mb-3">
+  //                     {member.role}
+  //                   </p>
+  //                   <p className="text-gray-600 text-sm leading-relaxed">
+  //                     {member.bio}
+  //                   </p>
+  //                 </div>
+  //               </div>
+  //             </motion.div>
+  //           ))}
+  //         </motion.div>
+  //       </div>
+  //     </section>
+  //   );
+  // };
 
   // Stats Section Component
   const StatsSection = () => {
@@ -499,7 +502,7 @@ const AboutPageClient = ({ aboutData }) => {
       <HeroSection />
       <StorySection />
       <ValuesSection />
-      <TeamSection />
+      {/* <TeamSection /> */}
       <StatsSection />
       <AwardsSection />
       <CTASection />

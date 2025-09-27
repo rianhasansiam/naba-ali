@@ -26,13 +26,13 @@ import ShippingTaxSettings from './adminComponents/shippingTax/ShippingTaxSettin
 
 // Metadata for SEO - Admin Panel
 export const metadata = {
-  title: "Admin Panel - NABA ALI | Manage Your Fashion Business",
-  description: "Comprehensive admin dashboard for managing products, orders, customers, and analytics for NABA ALI premium fashion store.",
+  title: "Admin Panel - SkyZonee | Manage Your Fashion Business",
+  description: "Comprehensive admin dashboard for managing products, orders, customers, and analytics for SkyZonee premium fashion store.",
   keywords: "admin panel, dashboard, fashion management, inventory, orders, customers, analytics",
   robots: "noindex, nofollow", // Admin panel should not be indexed
   openGraph: {
-    title: "Admin Panel - NABA ALI",
-    description: "Business management dashboard for NABA ALI fashion store",
+    title: "Admin Panel - SkyZonee",
+    description: "Business management dashboard for SkyZonee fashion store",
     type: "website",
   },
 };
@@ -42,7 +42,7 @@ export default function AdminPage() {
   // Server-side admin data (could come from database/API)
   const adminData = {
     brandInfo: {
-      name: "NABA ALI",
+      name: "SkyZonee",
       tagline: "Admin Panel",
       description: "Manage your premium fashion business"
     },

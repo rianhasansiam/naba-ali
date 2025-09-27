@@ -622,7 +622,7 @@ export default function ProductDetailPage({ params }) {
                     <span className="bg-purple-100 text-purple-700 px-2 py-1 rounded-md text-xs font-medium">Brand</span>
                   </div>
                   <h4 className="font-semibold text-gray-900 mb-1">Brand</h4>
-                  <p className="text-purple-600 font-medium">NABA ALI</p>
+                  <p className="text-purple-600 font-medium">SkyZonee</p>
                 </div>
 
                 {/* Stock Status Card */}

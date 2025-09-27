@@ -34,6 +34,7 @@ const WishlistProductCard = ({ product, onRemove, onAddToCart, isSelected, onSel
     : 0;
 
   const handleAddToCart = async (e) => {
+    e.preventDefault();
     e.stopPropagation();
     setIsAddingToCart(true);
     await onAddToCart(product.id);
@@ -41,30 +42,28 @@ const WishlistProductCard = ({ product, onRemove, onAddToCart, isSelected, onSel
   };
 
   const handleRemove = (e) => {
+    e.preventDefault();
     e.stopPropagation();
-    if (showRemoveConfirm) {
-      onRemove(product.id);
-    } else {
-      setShowRemoveConfirm(true);
-      setTimeout(() => setShowRemoveConfirm(false), 3000);
-    }
+    onRemove(product.id);
   };
 
   const handleSelect = (e) => {
+    e.preventDefault();
     e.stopPropagation();
     onSelect(product.id);
   };
 
   console.log(product);
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.8 }}
-      whileHover={{ y: -5 }}
-      className="group relative bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl border border-gray-100 transition-all duration-300"
-    >
+    <Link href={`/productDetails/${product.id}`}>
+      <motion.div
+        layout
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.8 }}
+        whileHover={{ y: -5 }}
+        className="group relative bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl border border-gray-100 transition-all duration-300 cursor-pointer"
+      >
       {/* Selection Checkbox */}
       <div className="absolute top-4 left-4 z-10">
         <motion.button
@@ -89,10 +88,16 @@ const WishlistProductCard = ({ product, onRemove, onAddToCart, isSelected, onSel
       )}
 
       {/* Actions */}
-      <div className="absolute top-4 right-4 z-10 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+      <div className={`absolute z-20 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${
+        discount > 0 ? 'top-12 right-4' : 'top-4 right-4'
+      }`}>
         <motion.button
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
           className="p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition-colors text-gray-700"
         >
           <FiEye size={16} />
@@ -101,11 +106,7 @@ const WishlistProductCard = ({ product, onRemove, onAddToCart, isSelected, onSel
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           onClick={handleRemove}
-          className={`p-2 backdrop-blur-sm rounded-full shadow-md transition-colors ${
-            showRemoveConfirm 
-              ? 'bg-red-500 text-white' 
-              : 'bg-white/90 text-gray-700 hover:bg-white'
-          }`}
+          className="p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-red-500 hover:text-white transition-colors text-gray-700"
         >
           <FiTrash2 size={16} />
         </motion.button>
@@ -119,7 +120,10 @@ const WishlistProductCard = ({ product, onRemove, onAddToCart, isSelected, onSel
           fill
           className="object-cover group-hover:scale-105 transition-transform duration-500"
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-          unoptimized={!product.image}
+          unoptimized={!product.image || product.image.startsWith('data:')}
+          onError={(e) => {
+            e.target.src = PLACEHOLDER_IMAGES.PRODUCT_LARGE;
+          }}
         />
       </div>
 
@@ -192,7 +196,8 @@ const WishlistProductCard = ({ product, onRemove, onAddToCart, isSelected, onSel
           )}
         </motion.button>
       </div>
-    </motion.div>
+      </motion.div>
+    </Link>
   );
 };
 
@@ -236,7 +241,7 @@ export default function WishListPageClient() {
               style: fullProduct.style || 'Casual',
               price: fullProduct.price,
               originalPrice: fullProduct.originalPrice,
-              image: fullProduct.image,
+              image: fullProduct.primaryImage || fullProduct.image || fullProduct.images?.[0] || PLACEHOLDER_IMAGES.PRODUCT_LARGE,
               rating: fullProduct.rating || wishlistItem.rating || 4.0,
               reviews: fullProduct.reviews?.length || 0,
               isNew: false, // Could be calculated based on createdAt
@@ -347,10 +352,10 @@ export default function WishListPageClient() {
   // Loading state
   if (productsLoading) {
     return (
-      <div className="pt-10">
-        <div className="text-center py-16">
+      <div className="fixed inset-0 flex items-center justify-center bg-white/80 backdrop-blur-sm">
+        <div className="text-center">
           <LoadingSpinner size="lg" />
-          <p className="text-gray-600 mt-4">Loading your wishlist...</p>
+          {/* <p className="text-gray-600 mt-4">Loading your wishlist...</p> */}
         </div>
       </div>
     );

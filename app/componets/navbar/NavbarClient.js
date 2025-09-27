@@ -183,15 +183,16 @@ const NavbarClient = ({ navItems, defaultShopCategories }) => {
             >
               <Image
                 src="/logo1.png"
-                alt="NABA ALI"
+                alt="SkyZonee"
                 width={50}
                 height={50}
                 className="rounded-lg"
                 priority
+                style={{ height: "auto" }}
               />
               <div className="hidden sm:block">
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-black bg-clip-text text-transparent">
-                  NABA ALI
+                  SkyZonee
                 </h1>
                 <p className="text-xs text-gray-500 -mt-1">Premium Fashion</p>
               </div>

@@ -26,7 +26,7 @@ export default function AllProductsPageClient() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
         <div className="text-black text-center mb-8">
-          <h1 className="text-6xl font-bold mb-4">NABA ALI</h1>
+          <h1 className="text-6xl font-bold mb-4">SkyZonee</h1>
           <p className="text-xl mb-6">Loading products...</p>
         </div>
         <LoadingSpinner size="lg" color="black" />

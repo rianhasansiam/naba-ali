@@ -2,19 +2,19 @@ import AboutPageClient from './AboutPageClient';
 
 // Metadata for SEO
 export const metadata = {
-  title: "About Us - NABA ALI | Premium Fashion Brand Story",
-  description: "Discover the story behind NABA ALI and our commitment to premium fashion. Learn about our journey, values, and team since 2018.",
-  keywords: "about NABA ALI, fashion brand story, premium clothing company, fashion team, company history",
+  title: "About Us - SkyZonee | Premium Fashion Brand Story",
+  description: "Discover the story behind SkyZonee and our commitment to premium fashion. Learn about our journey, values, and team since 2018.",
+  keywords: "about SkyZonee, fashion brand story, premium clothing company, fashion team, company history",
   openGraph: {
-    title: "About Us - NABA ALI | Premium Fashion Brand",
-    description: "Discover the story behind NABA ALI and our commitment to premium fashion.",
+    title: "About Us - SkyZonee | Premium Fashion Brand",
+    description: "Discover the story behind SkyZonee and our commitment to premium fashion.",
     type: "website",
     images: [
       {
         url: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
         width: 1200,
         height: 630,
-        alt: "NABA ALI About Us"
+        alt: "SkyZonee About Us"
       }
     ]
   },
@@ -28,7 +28,7 @@ export default function AboutPage() {
   // Company information (server-side data)
   const aboutData = {
     hero: {
-      title: "About NABA ALI",
+      title: "About SkyZonee",
       subtitle: "Premium Fashion Since 2018",
       description: "We create fashion that empowers individuals to express their unique style with confidence.",
       backgroundImage: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
@@ -38,7 +38,7 @@ export default function AboutPage() {
       title: "Our Story",
       subtitle: "A Journey of Fashion Excellence",
       content: [
-        "NABA ALI was founded in 2018 with a vision to create premium fashion that's accessible to everyone. We believe that quality clothing should empower confidence and self-expression.",
+        "SkyZonee was founded in 2018 with a vision to create premium fashion that's accessible to everyone. We believe that quality clothing should empower confidence and self-expression.",
         "Our journey began with a simple idea: fashion should be both beautiful and meaningful. Every piece we create tells a story of craftsmanship, attention to detail, and dedication to excellence.",
         "Today, we continue to push boundaries in fashion while staying true to our core values of quality, sustainability, and customer satisfaction."
       ],
@@ -69,12 +69,12 @@ export default function AboutPage() {
     
     team: {
       title: "Meet Our Team",
-      subtitle: "The Creative Minds Behind NABA ALI",
+      subtitle: "The Creative Minds Behind SkyZonee",
       members: [
         {
           name: "Sarah Johnson",
           role: "Founder & CEO",
-          bio: "Leading NABA ALI with vision and passion for premium fashion.",
+          bio: "Leading SkyZonee with vision and passion for premium fashion.",
           image: "https://images.unsplash.com/photo-1494790108755-2616b612b17c?w=400&h=400&fit=crop&auto=format",
           social: {
             linkedin: "https://linkedin.com/in/sarah-johnson",
@@ -160,7 +160,7 @@ export default function AboutPage() {
     },
 
     cta: {
-      title: "Ready to Experience NABA ALI?",
+      title: "Ready to Experience SkyZonee?",
       subtitle: "Join thousands of satisfied customers who trust our premium fashion",
       buttonText: "Shop Now",
       buttonLink: "/allProducts",

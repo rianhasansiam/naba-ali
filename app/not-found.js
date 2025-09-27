@@ -3,8 +3,8 @@ import Image from 'next/image';
 
 // Metadata for 404 page
 export const metadata = {
-  title: "Page Not Found - NABA ALI | Premium Fashion Store",
-  description: "The page you're looking for doesn't exist. Continue shopping at NABA ALI for premium fashion and accessories.",
+  title: "Page Not Found - SkyZonee | Premium Fashion Store",
+  description: "The page you're looking for doesn't exist. Continue shopping at SkyZonee for premium fashion and accessories.",
   robots: "noindex, nofollow",
 };
 

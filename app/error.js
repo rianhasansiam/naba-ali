@@ -22,7 +22,7 @@ export default function Error({
               <span className="text-white font-bold text-lg">NA</span>
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">NABA ALI</h1>
+              <h1 className="text-xl font-bold text-gray-900">SkyZonee</h1>
               <p className="text-xs text-gray-600">Premium Fashion</p>
             </div>
           </Link>
@@ -167,7 +167,7 @@ export default function Error({
             <Link href="/profile" className="hover:text-gray-700 transition-colors">My Account</Link>
           </div>
           <p className="text-xs text-gray-400 mt-4">
-            © 2025 NABA ALI. Premium Fashion Store.
+            © 2025 SkyZonee. Premium Fashion Store.
           </p>
         </div>
       </footer>

@@ -27,7 +27,7 @@ const PrivacyPageClient = () => {
       title: 'Privacy Policy Overview',
       icon: Shield,
       content: [
-        'At NABA ALI, we are committed to protecting your privacy and ensuring the security of your personal information.',
+        'At SkyZonee, we are committed to protecting your privacy and ensuring the security of your personal information.',
         'This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website or make a purchase.',
         'By using our services, you agree to the collection and use of information in accordance with this policy.',
         'We encourage you to read this policy carefully and contact us if you have any questions.'

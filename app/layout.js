@@ -20,12 +20,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "NABA ALI - Premium Fashion Store",
-  description: "Discover premium fashion and accessories at NABA ALI. Quality clothing and style for everyone.",
-  keywords: "fashion, clothing, premium fashion, accessories, online shopping, NABA ALI",
-  authors: [{ name: "NABA ALI" }],
-  creator: "NABA ALI",
-  publisher: "NABA ALI",
+  title: "SkyZonee - Premium Fashion Store",
+  description: "Discover premium fashion and accessories at SkyZonee. Quality clothing and style for everyone.",
+  keywords: "fashion, clothing, premium fashion, accessories, online shopping, SkyZonee",
+  authors: [{ name: "SkyZonee" }],
+  creator: "SkyZonee",
+  publisher: "SkyZonee",
   formatDetection: {
     email: false,
     address: false,

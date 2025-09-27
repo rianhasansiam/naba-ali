@@ -4,7 +4,7 @@ export default function StructuredData() {
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    "name": "NABA ALI",
+    "name": "SkyZonee",
     "url": "https://nabaali.com",
     "logo": "https://nabaali.com/logo.png",
     "description": "Premium fashion store offering quality clothing and accessories for everyone.",
@@ -29,7 +29,7 @@ export default function StructuredData() {
     },
     "hasOfferCatalog": {
       "@type": "OfferCatalog",
-      "name": "NABA ALI Fashion Collection",
+      "name": "SkyZonee Fashion Collection",
       "itemListElement": [
         {
           "@type": "Offer",

@@ -146,7 +146,7 @@ export default function ReviewClient({ reviews = [], stats, error }) {
         </h2>
         <p className="text-black/60 text-lg md:text-xl max-w-2xl mx-auto">
           Don&apos;t just take our word for it. See what our customers have to say 
-          about their experience with NABA ALI.
+          about their experience with SkyZonee.
         </p>
       </motion.div>
 
