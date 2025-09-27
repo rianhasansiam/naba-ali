@@ -389,7 +389,7 @@ const OrderDetails = ({ ordersData }) => {
                   <p className="text-sm text-gray-600 mb-2">Items ({order.products.length})</p>
                   <div className="space-y-2">
                     {order.products.map((item, itemIndex) => (
-                      <div key={itemIndex} className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
+                      <div key={`${order.id}-product-${itemIndex}-${item.name}`} className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
                         <div>
                           <p className="font-medium text-gray-900">{item.name}</p>
                           <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
@@ -529,7 +529,7 @@ const OrderDetails = ({ ordersData }) => {
                   <div className="space-y-3">
                     {selectedOrder.products && selectedOrder.products.length > 0 ? (
                       selectedOrder.products.map((item, index) => (
-                        <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div key={`modal-product-${index}-${item.name}-${item.quantity}`} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
                           <div className="flex-1">
                             <h4 className="font-medium text-gray-900">{item.name}</h4>
                             <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>

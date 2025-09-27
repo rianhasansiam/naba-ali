@@ -17,7 +17,8 @@ import {
   X,
   Bell,
   Search,
-  Shield
+  Shield,
+  Mail
 } from 'lucide-react';
 
 // Import admin components directly (no wrapper layers)
@@ -29,6 +30,7 @@ import AllReviews from './adminComponents/allReviews/AllReviews';
 import AllCuponsClient from './adminComponents/allCupons/AllCuponsClient';
 import AllCategoryClient from './adminComponents/allCategory/AllCategoryClient';
 import ShippingTaxSettings from './adminComponents/shippingTax/ShippingTaxSettings';
+import AllMessages from './adminComponents/allMessages/AllMessages';
 
 
 const AdminPageClient = ({ adminData, navigationItems }) => {
@@ -61,6 +63,7 @@ const { data: reviews = [], isLoading: reviewsLoading } = useGetData({ name: 're
     'categories': FolderOpen,
     'coupons': Ticket,
     'shipping-tax': Settings,
+    'messages': Mail,
   };
 
   // Component mapping for client-side use (direct client components)
@@ -73,6 +76,7 @@ const { data: reviews = [], isLoading: reviewsLoading } = useGetData({ name: 're
     'categories': AllCategoryClient,
     'coupons': AllCuponsClient,
     'shipping-tax': ShippingTaxSettings,
+    'messages': AllMessages,
   };
 
   const currentComponent = componentMap[activeTab] || Dashboard;

@@ -27,20 +27,20 @@ export default function ContactPage() {
       {
         iconName: "Mail",
         label: "Email Us",
-        value: "contact@nabaali.com",
+        value: "engnazrulislam2025@gmail.com",
         description: "We'll respond within 24 hours"
       },
       {
         iconName: "Phone",
         label: "Call Us",
-        value: "+1 (555) 123-4567",
-        description: "Mon-Fri from 9am to 6pm"
+        value: "+965 6577 8584",
+        description: "Mon-Fri "
       },
       {
         iconName: "MapPin",
         label: "Visit Us",
-        value: "123 Fashion Street",
-        description: "New York, NY 10001"
+        value: "Paduar Bazar Bishwa Road Cumilla",
+        description: "Cumilla, Bangladesh"
       }
     ],
     businessHours: [
@@ -51,15 +51,15 @@ export default function ContactPage() {
     socialLinks: [
       { 
         iconName: "Facebook",
-        url: "https://facebook.com/nabaali"
+        url: "https://www.facebook.com/profile.php?id=61580873192277&rdid=kWv2f0UwQSaKnsOq&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F1TT28ZZv4Q%2F#"
       },
       { 
-        iconName: "Twitter",
-        url: "https://twitter.com/nabaali"
+        iconName: "Whatsapp",
+        url: "https://wa.me/qr/XIGA4XU3GM37K1"
       },
       { 
         iconName: "Instagram",
-        url: "https://instagram.com/nabaali"
+        url: "https://www.instagram.com/eng_nazrulislam"
       }
     ],
     formConfig: {

@@ -352,7 +352,7 @@ const CheckoutPageClient = () => {
     <AnimatePresence>
       {showTransactionForm && (
         <motion.div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
+          className="fixed inset-0 backdrop-blur-sm flex items-center justify-center p-4 z-50"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -521,7 +521,7 @@ const CheckoutPageClient = () => {
                     processOrderWithPayment(transactionData);
                   }}
                   disabled={isProcessing}
-                  className="flex-1 bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition-colors font-medium disabled:bg-indigo-400"
+                  className="flex-1 bg-gray-600 text-white py-3 rounded-lg hover:bg-gray-700 transition-colors font-medium disabled:bg-gray-400"
                 >
                   {isProcessing ? 'Processing...' : 'Confirm Payment'}
                 </button>
@@ -547,7 +547,7 @@ const CheckoutPageClient = () => {
           <p className="text-gray-600 mb-8">Add some items to your cart to proceed with checkout.</p>
           <Link
             href="/allProducts"
-            className="inline-flex items-center space-x-2 bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors"
+            className="inline-flex items-center space-x-2 bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>Continue Shopping</span>
@@ -754,7 +754,7 @@ const CheckoutPageClient = () => {
                 disabled={!isFormValid() || isProcessing}
                 className={`w-full mt-6 py-4 rounded-lg font-medium text-white transition-colors ${
                   isFormValid() && !isProcessing
-                    ? 'bg-indigo-600 hover:bg-indigo-700'
+                    ? 'bg-gray-600 hover:bg-gray-700'
                     : 'bg-gray-400 cursor-not-allowed'
                 }`}
                 whileHover={isFormValid() && !isProcessing ? { scale: 1.02 } : {}}

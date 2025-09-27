@@ -255,7 +255,7 @@ const OrderSummaryPageClient = ({ orderData }) => {
         >
           <Link
             href="/allProducts"
-            className="flex-1 bg-indigo-600 text-white py-4 px-6 rounded-lg hover:bg-indigo-700 transition-colors text-center font-medium flex items-center justify-center space-x-2"
+            className="flex-1 bg-gray-600 text-white py-4 px-6 rounded-lg hover:bg-gray-700 transition-colors text-center font-medium flex items-center justify-center space-x-2"
           >
             <ArrowLeft className="w-5 h-5" />
             <span>Continue Shopping</span>

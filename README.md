@@ -2,7 +2,15 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+First, copy the environment variables template:
+
+```bash
+copy .env.local.example .env.local
+```
+
+Then configure your EmailJS credentials in `.env.local` (see EMAILJS_SETUP_GUIDE.md for detailed setup instructions).
+
+Run the development server:
 
 ```bash
 npm run dev

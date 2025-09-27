@@ -10,7 +10,8 @@ import {
   FolderOpen,
   History,
   Shield,
-  Settings
+  Settings,
+  Mail
 } from 'lucide-react';
 
 // Import admin components directly (no wrapper layers)
@@ -22,6 +23,7 @@ import AllReviews from './adminComponents/allReviews/AllReviews';
 import AllCuponsClient from './adminComponents/allCupons/AllCuponsClient';
 import AllCategoryClient from './adminComponents/allCategory/AllCategoryClient';
 import ShippingTaxSettings from './adminComponents/shippingTax/ShippingTaxSettings';
+import AllMessages from './adminComponents/allMessages/AllMessages';
 
 
 // Metadata for SEO - Admin Panel
@@ -130,6 +132,13 @@ export default function AdminPage() {
       icon: Settings,
       component: ShippingTaxSettings,
       description: 'Configure Shipping & Tax Settings'
+    },
+    {
+      id: 'messages',
+      name: 'Messages',
+      icon: Mail,
+      component: AllMessages,
+      description: 'Customer Messages'
     },
     
   ];

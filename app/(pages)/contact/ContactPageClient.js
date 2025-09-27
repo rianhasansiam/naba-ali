@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Send, Phone, Mail, MapPin, Clock, Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
+import { Send, Phone, Mail, MapPin, Clock, Facebook, Twitter, Instagram, Linkedin, MessageCircle } from 'lucide-react';
+import emailjs from '@emailjs/browser';
 import LoadingSpinner from '../../componets/loading/LoadingSpinner';
 
 const ContactPageClient = ({ contactData }) => {
@@ -25,7 +26,9 @@ const ContactPageClient = ({ contactData }) => {
       Facebook,
       Twitter,
       Instagram,
-      Linkedin
+      Linkedin,
+      Whatsapp: MessageCircle,
+  
     };
     return icons[iconName] || Mail;
   };
@@ -43,18 +46,62 @@ const ContactPageClient = ({ contactData }) => {
     setIsSubmitting(true);
     setSubmitStatus(null);
 
+    // Validate form data
+    if (!formData.name || !formData.email || !formData.subject || !formData.message) {
+      setSubmitStatus('error');
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
-      // Simulate form submission
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // 1. Save message to database first
+      const dbResponse = await fetch('/api/contacts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          subject: formData.subject,
+          message: formData.message,
+        }),
+      });
       
+      const dbResult = await dbResponse.json();
+      
+      if (!dbResult.success) {
+        throw new Error('Failed to save message to database');
+      }
+      
+      console.log('Message saved to database:', dbResult.message);
+
+      // 2. Send email using EmailJS
+      const emailResult = await emailjs.send(
+        process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID || 'your_service_id',
+        process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID || 'your_template_id',
+        {
+          'Full name': formData.name,
+          email: formData.email,
+          subject: formData.subject,
+          message: formData.message,
+        },
+        process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY || 'your_public_key'
+      );
+      
+      console.log('Email sent successfully:', emailResult.text);
       setSubmitStatus('success');
+      
+      // Reset form on success
       setFormData({
         name: '',
         email: '',
         subject: '',
         message: ''
       });
+      
     } catch (error) {
+      console.error('EmailJS Error:', error);
       setSubmitStatus('error');
     } finally {
       setIsSubmitting(false);
@@ -271,8 +318,8 @@ const ContactPageClient = ({ contactData }) => {
                     }`}
                   >
                     {submitStatus === 'success'
-                      ? 'Thank you! Your message has been sent successfully. We\'ll get back to you soon.'
-                      : 'Sorry, there was an error sending your message. Please try again later.'
+                      ? '🎉 Thank you! Your message has been sent successfully. We\'ll get back to you within 24 hours.'
+                      : '❌ Sorry, there was an error sending your message. Please check your internet connection and try again, or contact us directly via phone/email.'  
                     }
                   </motion.div>
                 )}
