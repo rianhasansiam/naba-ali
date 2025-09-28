@@ -29,8 +29,9 @@ const SimpleProfilePageClient = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
-  const [toast, setToast] = useState({ show: false, type: 'success', message: '' });
+  const [orderFilter, setOrderFilter] = useState('all'); // all, pending, processing, shipped, delivered
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [toast, setToast] = useState({ show: false, type: 'success', message: '' });
   
   // Review form states
   const [showReviewModal, setShowReviewModal] = useState(false);
@@ -337,6 +338,12 @@ const SimpleProfilePageClient = () => {
     });
     return reviewableProducts;
   };
+
+  // Filter orders based on selected filter
+  const filteredOrders = data.orders.filter(order => {
+    if (orderFilter === 'all') return true;
+    return order.status === orderFilter;
+  });
 
   // Calculate user statistics
   const userStats = {
@@ -715,20 +722,59 @@ const SimpleProfilePageClient = () => {
                 {/* Orders Tab */}
                 {activeTab === 'orders' && (
                   <div className="bg-white rounded-xl shadow-lg p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">My Orders</h3>
-                    {data.orders.length === 0 ? (
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4 sm:mb-0">My Orders</h3>
+                      
+                      {/* Order Filter */}
+                      <div className="flex items-center gap-2">
+                        <label className="text-sm font-medium text-gray-700">Filter:</label>
+                        <select
+                          value={orderFilter}
+                          onChange={(e) => setOrderFilter(e.target.value)}
+                          className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent text-sm"
+                        >
+                          <option value="all">All Orders</option>
+                          <option value="confirmed">Confirmed</option>
+                          <option value="pending">Pending</option>
+                          <option value="processing">Processing</option>
+                          <option value="shipped">Shipped</option>
+                          <option value="delivered">Delivered</option>
+                          <option value="cancelled">Cancelled</option>
+                        </select>
+                      </div>
+                    </div>
+                    
+                    {filteredOrders.length === 0 ? (
                       <div className="text-center py-8">
                         <Package className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-                        <p className="text-gray-500">No orders found</p>
+                        <p className="text-gray-500">
+                          {orderFilter === 'all' ? 'No orders found' : `No ${orderFilter} orders found`}
+                        </p>
+                        {orderFilter !== 'all' && (
+                          <button
+                            onClick={() => setOrderFilter('all')}
+                            className="mt-2 text-sm text-blue-600 hover:text-blue-800"
+                          >
+                            View all orders
+                          </button>
+                        )}
                       </div>
                     ) : (
                       <div className="space-y-4">
-                        {data.orders.map((order, index) => {
+                        <div className="text-sm text-gray-600 mb-4">
+                          Showing {filteredOrders.length} of {data.orders.length} orders
+                          {orderFilter !== 'all' && (
+                            <span className="ml-1 text-blue-600 font-medium">({orderFilter} orders)</span>
+                          )}
+                        </div>
+                        {filteredOrders.map((order, index) => {
                           const statusIcons = {
+                            confirmed: CheckCircle,
                             delivered: CheckCircle,
                             shipped: Truck,
                             processing: Clock,
-                            pending: AlertCircle
+                            pending: AlertCircle,
+                            cancelled: X
                           };
                           const StatusIcon = statusIcons[order.status] || AlertCircle;
                           
@@ -753,8 +799,10 @@ const SimpleProfilePageClient = () => {
                                   <p className="text-sm">
                                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                                       order.status === 'delivered' ? 'bg-green-100 text-green-800' :
+                                      order.status === 'confirmed' ? 'bg-green-100 text-green-800' :
                                       order.status === 'shipped' ? 'bg-blue-100 text-blue-800' :
                                       order.status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
+                                      order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
                                       'bg-gray-100 text-gray-800'
                                     }`}>
                                       {order.status?.charAt(0).toUpperCase() + order.status?.slice(1) || 'Pending'}

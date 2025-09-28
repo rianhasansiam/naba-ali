@@ -487,7 +487,7 @@ const OrderDetails = ({ ordersData }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            className="fixed inset-0 backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50 p-4"
             onClick={() => setShowOrderModal(false)}
           >
             <motion.div
@@ -541,13 +541,13 @@ const OrderDetails = ({ ordersData }) => {
                     <div>
                       <label className="text-sm font-medium text-gray-600">Shipping Address</label>
                       <div className="text-gray-900">
-                        {selectedOrder.customerInfo?.address ? (
+                        {selectedOrder.customerInfo?.address && typeof selectedOrder.customerInfo.address === 'object' ? (
                           <div>
-                            <p>{selectedOrder.customerInfo.address.street}</p>
-                            <p>{selectedOrder.customerInfo.address.city}, {selectedOrder.customerInfo.address.zipCode}</p>
+                            <p>{selectedOrder.customerInfo.address.street || selectedOrder.customerInfo.address.address}</p>
+                            <p>{selectedOrder.customerInfo.address.city}, {selectedOrder.customerInfo.address.zipCode || selectedOrder.customerInfo.address.zip}</p>
                           </div>
                         ) : (
-                          <p>{selectedOrder.shippingAddress || 'Not provided'}</p>
+                          <p>{selectedOrder.shippingAddress || selectedOrder.customerInfo?.address || 'Not provided'}</p>
                         )}
                       </div>
                     </div>

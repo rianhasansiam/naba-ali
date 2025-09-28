@@ -54,6 +54,7 @@ const UserHistory = ({ userHistoryData = {} }) => {
           width={60}
           height={60}
           className="w-15 h-15 rounded-full object-cover"
+          unoptimized={true}
         />
         
         <div className="flex-1">
@@ -159,6 +160,7 @@ const UserHistory = ({ userHistoryData = {} }) => {
                 width={60}
                 height={60}
                 className="w-15 h-15 rounded-full object-cover"
+                unoptimized={true}
               />
               <div>
                 <h2 className="text-2xl font-bold text-gray-900">{user.name}</h2>
@@ -208,6 +210,7 @@ const UserHistory = ({ userHistoryData = {} }) => {
                           width={40}
                           height={40}
                           className="w-10 h-10 rounded-lg object-cover"
+                          unoptimized={true}
                         />
                         <div className="flex-1">
                           <p className="font-medium text-gray-900">{item.name}</p>

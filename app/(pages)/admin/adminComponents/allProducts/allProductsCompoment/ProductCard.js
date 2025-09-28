@@ -110,14 +110,14 @@ const ProductCard = ({ product, onEdit, onDelete, onAddReview, isDeleting }) => 
         >
           Edit
         </button>
-        <button 
+        {/* <button 
           onClick={() => onAddReview?.(product)}
           disabled={isDeleting}
           className="flex-1 bg-green-50 hover:bg-green-100 text-green-600 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1"
         >
           <MessageSquare size={14} />
           <span>Review</span>
-        </button>
+        </button> */}
         <button 
           onClick={() => onDelete?.(product)}
           disabled={isDeleting}

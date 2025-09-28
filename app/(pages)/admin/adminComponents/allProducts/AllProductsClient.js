@@ -15,7 +15,7 @@ import ProductListItem from './allProductsCompoment/ProductListItem';
 import AddProductModal from './allProductsCompoment/AddProductModal';
 import EditProductModal from './allProductsCompoment/EditProductModal';
 import DeleteConfirmationDialog from './allProductsCompoment/DeleteConfirmationDialog';
-import AddReviewModal from './allProductsCompoment/AddReviewModal';
+// import AddReviewModal from './allProductsCompoment/AddReviewModal';
 import Toast from './allProductsCompoment/Toast';
 import { useGetData } from '../../../../../lib/hooks/useGetData';
 import { useUpdateData } from '../../../../../lib/hooks/useUpdateData';
@@ -28,9 +28,9 @@ const AllProductsClient = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [showAddReviewModal, setShowAddReviewModal] = useState(false);
+  // const [showAddReviewModal, setShowAddReviewModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
-  const [selectedProductForReview, setSelectedProductForReview] = useState(null);
+  // const [selectedProductForReview, setSelectedProductForReview] = useState(null);
   const [deletingProductId, setDeletingProductId] = useState(null);
   const [toast, setToast] = useState({ show: false, type: 'success', message: '' });
 
@@ -97,10 +97,10 @@ const { data: categoriesData, isLoading: categoriesLoading, error: categoriesErr
     setShowDeleteModal(true);
   }, []);
 
-  const handleAddReview = useCallback((product) => {
-    setSelectedProductForReview(product);
-    setShowAddReviewModal(true);
-  }, []);
+  // const handleAddReview = useCallback((product) => {
+  //   setSelectedProductForReview(product);
+  //   setShowAddReviewModal(true);
+  // }, []);
 
   const handleConfirmDelete = async () => {
     if (selectedProduct) {
@@ -139,57 +139,57 @@ const { data: categoriesData, isLoading: categoriesLoading, error: categoriesErr
     }
   };
 
-  const handleCloseAddReviewModal = () => {
-    setShowAddReviewModal(false);
-    setSelectedProductForReview(null);
-  };
+  // const handleCloseAddReviewModal = () => {
+  //   setShowAddReviewModal(false);
+  //   setSelectedProductForReview(null);
+  // };
 
-  const handleSubmitReview = async (reviewData) => {
-    try {
-      const { productId, review } = reviewData;
+  // const handleSubmitReview = async (reviewData) => {
+  //   try {
+  //     const { productId, review } = reviewData;
       
-      console.log('Review data received:', reviewData);
-      console.log('Product ID:', productId);
+  //     console.log('Review data received:', reviewData);
+  //     console.log('Product ID:', productId);
       
-      // Validate productId
-      if (!productId) {
-        throw new Error('Product ID is required');
-      }
+  //     // Validate productId
+  //     if (!productId) {
+  //       throw new Error('Product ID is required');
+  //     }
       
-      // Find the product to update
-      const productToUpdate = data?.find(product => product._id === productId);
-      if (!productToUpdate) {
-        throw new Error(`Product with ID ${productId} not found`);
-      }
+  //     // Find the product to update
+  //     const productToUpdate = data?.find(product => product._id === productId);
+  //     if (!productToUpdate) {
+  //       throw new Error(`Product with ID ${productId} not found`);
+  //     }
 
-      console.log('Product to update:', productToUpdate);
+  //     console.log('Product to update:', productToUpdate);
 
-      // Add the new review to the product's reviews array
-      const updatedProduct = {
-        ...productToUpdate,
-        reviews: [...(productToUpdate.reviews || []), review]
-      };
+  //     // Add the new review to the product's reviews array
+  //     const updatedProduct = {
+  //       ...productToUpdate,
+  //       reviews: [...(productToUpdate.reviews || []), review]
+  //     };
 
-      console.log('Updated product:', updatedProduct);
+  //     console.log('Updated product:', updatedProduct);
 
-      // Update the product using the updateData hook with correct format
-      await updateData({ id: productId, data: updatedProduct });
+  //     // Update the product using the updateData hook with correct format
+  //     await updateData({ id: productId, data: updatedProduct });
       
-      setToast({
-        show: true,
-        type: 'success',
-        message: 'Review added successfully!'
-      });
-    } catch (error) {
-      console.error('Error submitting review:', error);
-      setToast({
-        show: true,
-        type: 'error',
-        message: `Failed to add review: ${error.message}`
-      });
-      throw error;
-    }
-  };
+  //     setToast({
+  //       show: true,
+  //       type: 'success',
+  //       message: 'Review added successfully!'
+  //     });
+  //   } catch (error) {
+  //     console.error('Error submitting review:', error);
+  //     setToast({
+  //       show: true,
+  //       type: 'error',
+  //       message: `Failed to add review: ${error.message}`
+  //     });
+  //     throw error;
+  //   }
+  // };
 
   // Handle loading and error states
   if (isLoading || categoriesLoading) {
@@ -231,13 +231,13 @@ const { data: categoriesData, isLoading: categoriesLoading, error: categoriesErr
         </div>
         
         <div className="flex items-center space-x-3">
-          <button 
+          {/* <button 
             onClick={() => setShowAddReviewModal(true)}
             className="flex items-center space-x-2 bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
           >
             <MessageSquare size={16} />
             <span>Add Review</span>
-          </button>
+          </button> */}
           
           <button 
             onClick={() => setShowAddModal(true)}
@@ -338,7 +338,7 @@ const { data: categoriesData, isLoading: categoriesLoading, error: categoriesErr
                 product={product} 
                 onEdit={handleEditProduct}
                 onDelete={handleDeleteProduct}
-                onAddReview={handleAddReview}
+                // onAddReview={handleAddReview}
                 isDeleting={deletingProductId === product._id}
               />
             ) : (
@@ -346,7 +346,7 @@ const { data: categoriesData, isLoading: categoriesLoading, error: categoriesErr
                 product={product}
                 onEdit={handleEditProduct}
                 onDelete={handleDeleteProduct}
-                onAddReview={handleAddReview}
+                // onAddReview={handleAddReview}
                 isDeleting={deletingProductId === product._id}
               />
             )}
@@ -388,12 +388,12 @@ const { data: categoriesData, isLoading: categoriesLoading, error: categoriesErr
       />
 
       {/* Add Review Modal */}
-      <AddReviewModal 
+      {/* <AddReviewModal 
         isOpen={showAddReviewModal}
         onClose={handleCloseAddReviewModal}
         products={data}
         onSubmitReview={handleSubmitReview}
-      />
+      /> */}
 
       {/* Toast Notification */}
       <Toast

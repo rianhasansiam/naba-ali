@@ -76,15 +76,28 @@ const AllCouponsClient = () => {
   };
 
   const handleDeleteCoupon = (coupon) => {
+    console.log('Deleting coupon:', coupon);
+    console.log('Coupon ID:', coupon._id || coupon.id);
     setSelectedCoupon(coupon);
     setShowDeleteModal(true);
   };
 
   const handleConfirmDelete = async () => {
     if (selectedCoupon) {
-      setDeletingCouponId(selectedCoupon._id);
+      const couponId = selectedCoupon._id || selectedCoupon.id;
+      console.log('Confirming delete for coupon ID:', couponId);
+      if (!couponId) {
+        console.error('No valid ID found for coupon:', selectedCoupon);
+        setToast({
+          show: true,
+          type: 'error',
+          message: 'Cannot delete coupon: Invalid ID'
+        });
+        return;
+      }
+      setDeletingCouponId(couponId);
       try {
-        await deleteData(selectedCoupon._id);
+        await deleteData(couponId);
         setShowDeleteModal(false);
         setSelectedCoupon(null);
         setToast({
@@ -333,10 +346,10 @@ const AllCouponsClient = () => {
                 </button>
                 <button 
                   onClick={() => handleDeleteCoupon(coupon)}
-                  disabled={deletingCouponId === coupon._id}
+                  disabled={deletingCouponId === (coupon._id || coupon.id)}
                   className="bg-red-600 text-white p-2 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
                 >
-                  {deletingCouponId === coupon._id ? (
+                  {deletingCouponId === (coupon._id || coupon.id) ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   ) : (
                     <Trash2 size={16} />

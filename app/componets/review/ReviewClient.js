@@ -21,6 +21,7 @@ const ReviewCard = ({ review }) => {
             fill
             className="object-cover rounded-full"
             sizes="48px"
+            unoptimized={review.avatar?.startsWith('http')}
           />
         </div>
         <div className="flex-1">

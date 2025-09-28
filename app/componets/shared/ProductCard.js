@@ -37,8 +37,10 @@ const OptimizedImage = memo(({ src, alt, className, ...props }) => {
     setImageSrc(fallbackSrc);
   }, []);
 
-  // If using fallback, disable Next.js optimization to avoid 500 errors
+  // Check if image is external (ImageBB, etc.) or using fallback
+  const isExternalImage = imageSrc.startsWith('http') && (imageSrc.includes('ibb.co') || imageSrc.includes('imagebb'));
   const isUsingFallback = imageSrc === fallbackSrc;
+  const shouldUnoptimize = isUsingFallback || isExternalImage;
 
   return (
     <Image
@@ -48,7 +50,7 @@ const OptimizedImage = memo(({ src, alt, className, ...props }) => {
       height={400}
       className={className}
       onError={handleError}
-      unoptimized={isUsingFallback}
+      unoptimized={shouldUnoptimize}
       {...props}
     />
   );

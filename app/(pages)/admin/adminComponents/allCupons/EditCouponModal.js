@@ -119,16 +119,24 @@ const EditCouponModal = ({ isOpen, onClose, coupon }) => {
     if (Object.keys(errors).length === 0) {
       try {
         const couponData = {
-          _id: coupon._id,
           ...formData,
           code: formData.code.toUpperCase(),
           discount: parseFloat(formData.discount),
           minAmount: parseFloat(formData.minAmount),
           usageLimit: parseInt(formData.usageLimit),
-          used: coupon.used || 0 // Preserve existing usage count
+          used: coupon.used || 0, // Preserve existing usage count
+          updatedAt: new Date()
         };
 
-        await updateData(couponData);
+        // Use _id or id, whichever is available
+        const couponId = coupon._id || coupon.id;
+        console.log('Updating coupon with ID:', couponId, 'Coupon object:', coupon);
+        
+        if (!couponId) {
+          throw new Error('Coupon ID is missing. Cannot update coupon.');
+        }
+
+        await updateData({ id: couponId, data: couponData });
         onClose();
       } catch (error) {
         console.error('Error updating coupon:', error);

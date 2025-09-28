@@ -132,9 +132,21 @@ const AllUsersClient = ({ users: userData = [], orders: ordersDataProp = [], isL
   };
   const handleConfirmDelete = async () => {
     if (selectedUser) {
-      setDeletingUserId(selectedUser._id);
+      // Get the correct user ID (handle both _id and id fields)
+      const userId = selectedUser._id || selectedUser.id;
+      if (!userId) {
+        console.error('User ID not found:', selectedUser);
+        setToast({
+          show: true,
+          type: 'error',
+          message: 'User ID not found. Cannot delete user.'
+        });
+        return;
+      }
+
+      setDeletingUserId(userId);
       try {
-        await deleteData(selectedUser._id);
+        await deleteData(userId);
         setShowDeleteModal(false);
         setSelectedUser(null);
         setToast({
@@ -142,8 +154,8 @@ const AllUsersClient = ({ users: userData = [], orders: ordersDataProp = [], isL
           type: 'success',
           message: `User "${selectedUser.name}" deleted successfully!`
         });
-        // Update local state
-        setAllUsers(prev => prev.filter(user => user._id !== selectedUser._id));
+        // Update local state - filter by the same ID field that was used
+        setAllUsers(prev => prev.filter(user => (user._id || user.id) !== userId));
       } catch (error) {
         console.error('Delete failed:', error);
         setToast({
@@ -257,7 +269,7 @@ const AllUsersClient = ({ users: userData = [], orders: ordersDataProp = [], isL
                   </button>
                   <button 
                     onClick={() => handleDeleteUser(user)}
-                    disabled={deletingUserId === user._id}
+                    disabled={deletingUserId === (user._id || user.id)}
                     className="bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
                   >
                     {deletingUserId === user._id ? (

@@ -187,16 +187,16 @@ const AllReviewsClient = ({reviewsData}) => {
           <p className="text-gray-600">Monitor and manage customer reviews</p>
         </div>
         
-        <button
+        {/* <button
           onClick={() => {
             setIsAddModalOpen(true);
           }}
           disabled={isSubmittingReview}
-          className="flex items-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600"
+          className="flex items-center space-x-2 bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600"
         >
           <Plus size={20} className={isSubmittingReview ? 'animate-spin' : ''} />
           <span>{isSubmittingReview ? 'Adding Review...' : 'Add Review'}</span>
-        </button>
+        </button> */}
       </div>
 
       {/* Stats Overview */}
@@ -293,6 +293,7 @@ const AllReviewsClient = ({reviewsData}) => {
                       width={128}
                       height={128}
                       className="w-32 h-32 object-cover rounded-lg shadow-sm"
+                      unoptimized={true}
                     />
                   </div>
                 )}

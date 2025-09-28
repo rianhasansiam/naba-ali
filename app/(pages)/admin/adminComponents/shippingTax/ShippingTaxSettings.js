@@ -9,7 +9,7 @@ import axios from 'axios';
 const ShippingTaxSettings = () => {
   const [settings, setSettings] = useState({
     shippingSettings: {
-      shippingCharge: 15.99,
+      shippingCharge: 15,
       enabled: true
     },
     taxSettings: {
@@ -34,7 +34,7 @@ const ShippingTaxSettings = () => {
     if (currentSettings?.data) {
       const loadedSettings = {
         shippingSettings: {
-          shippingCharge: currentSettings.data.shippingSettings?.shippingCharge || 15.99,
+          shippingCharge: currentSettings.data.shippingSettings?.shippingCharge || 15,
           enabled: currentSettings.data.shippingSettings?.enabled !== undefined 
             ? currentSettings.data.shippingSettings.enabled 
             : true
@@ -176,12 +176,12 @@ const ShippingTaxSettings = () => {
                 <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
                   type="number"
-                  step="0.01"
+                  step="1"
                   min="0"
                   value={settings.shippingSettings.shippingCharge || ''}
                   onChange={(e) => handleNumberChange('shippingSettings', 'shippingCharge', e.target.value)}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
-                  placeholder="15.99"
+                  placeholder="15"
                 />
               </div>
               <p className="text-xs text-gray-500 mt-1">Fixed shipping charge for all orders</p>

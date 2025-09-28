@@ -2,20 +2,22 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Mail, 
-  MailOpen, 
-  Trash2, 
-  Calendar, 
-  User, 
-  AtSign, 
-  MessageSquare, 
+import {
+  Mail,
+  MailOpen,
+  Trash2,
+  Calendar,
+  User,
+  AtSign,
+  MessageSquare,
   RefreshCw,
   AlertCircle,
   CheckCircle,
   Clock,
   Search
 } from 'lucide-react';
+import Swal from 'sweetalert2';
+import Toast from './Toast';
 
 export default function AllMessages() {
   const [messages, setMessages] = useState([]);
@@ -23,11 +25,14 @@ export default function AllMessages() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all'); // all, read, unread
   const [deleteLoading, setDeleteLoading] = useState(null);
+  const [toast, setToast] = useState({ show: false, type: 'success', message: '' });
+  const [error, setError] = useState(null);
 
   // Fetch messages from API
   const fetchMessages = async () => {
     try {
       setLoading(true);
+      setError(null);
       const response = await fetch('/api/contacts');
       const data = await response.json();
       
@@ -35,9 +40,11 @@ export default function AllMessages() {
         setMessages(data.Data);
       } else {
         console.error('Failed to fetch messages:', data.error);
+        setError('Failed to fetch messages: ' + data.error);
       }
     } catch (error) {
       console.error('Error fetching messages:', error);
+      setError('Failed to fetch messages. Please check your connection and try again.');
     } finally {
       setLoading(false);
     }
@@ -45,7 +52,18 @@ export default function AllMessages() {
 
   // Delete message
   const deleteMessage = async (messageId) => {
-    if (!confirm('Are you sure you want to delete this message?')) {
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: 'You won\'t be able to recover this message!',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete it!',
+      cancelButtonText: 'Cancel'
+    });
+
+    if (!result.isConfirmed) {
       return;
     }
 
@@ -54,17 +72,30 @@ export default function AllMessages() {
       const response = await fetch(`/api/contacts/${messageId}`, {
         method: 'DELETE',
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
         setMessages(messages.filter(msg => msg._id !== messageId));
+        setToast({
+          show: true,
+          type: 'success',
+          message: 'Message deleted successfully!'
+        });
       } else {
-        alert('Failed to delete message: ' + data.error);
+        setToast({
+          show: true,
+          type: 'error',
+          message: `Failed to delete message: ${data.error}`
+        });
       }
     } catch (error) {
       console.error('Error deleting message:', error);
-      alert('Failed to delete message');
+      setToast({
+        show: true,
+        type: 'error',
+        message: 'Failed to delete message. Please try again.'
+      });
     } finally {
       setDeleteLoading(null);
     }
@@ -73,7 +104,7 @@ export default function AllMessages() {
   // Toggle message status
   const toggleMessageStatus = async (messageId, currentStatus) => {
     const newStatus = currentStatus === 'read' ? 'unread' : 'read';
-    
+
     try {
       const response = await fetch(`/api/contacts/${messageId}`, {
         method: 'PATCH',
@@ -82,21 +113,34 @@ export default function AllMessages() {
         },
         body: JSON.stringify({ status: newStatus }),
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
-        setMessages(messages.map(msg => 
-          msg._id === messageId 
+        setMessages(messages.map(msg =>
+          msg._id === messageId
             ? { ...msg, status: newStatus, updatedAt: new Date() }
             : msg
         ));
+        setToast({
+          show: true,
+          type: 'success',
+          message: `Message marked as ${newStatus}!`
+        });
       } else {
-        alert('Failed to update message status: ' + data.error);
+        setToast({
+          show: true,
+          type: 'error',
+          message: `Failed to update message status: ${data.error}`
+        });
       }
     } catch (error) {
       console.error('Error updating message status:', error);
-      alert('Failed to update message status');
+      setToast({
+        show: true,
+        type: 'error',
+        message: 'Failed to update message status. Please try again.'
+      });
     }
   };
 
@@ -130,6 +174,11 @@ export default function AllMessages() {
     read: messages.filter(msg => msg.status === 'read').length,
   };
 
+  // Close toast
+  const closeToast = () => {
+    setToast({ show: false, type: 'success', message: '' });
+  };
+
   useEffect(() => {
     fetchMessages();
   }, []);
@@ -140,6 +189,24 @@ export default function AllMessages() {
         <div className="flex items-center gap-3">
           <RefreshCw className="h-6 w-6 animate-spin text-blue-500" />
           <span className="text-lg">Loading messages...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-96">
+        <div className="text-center">
+          <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Error Loading Messages</h3>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button
+            onClick={fetchMessages}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Try Again
+          </button>
         </div>
       </div>
     );
@@ -343,6 +410,14 @@ export default function AllMessages() {
           ))
         )}
       </div>
+
+      {/* Toast Notifications */}
+      <Toast
+        type={toast.type}
+        message={toast.message}
+        isVisible={toast.show}
+        onClose={closeToast}
+      />
     </div>
   );
 }

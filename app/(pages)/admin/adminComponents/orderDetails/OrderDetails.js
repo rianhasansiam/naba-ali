@@ -5,6 +5,7 @@ import OrderDetailsClient from './OrderDetailsClient';
 
 // Server Component - Handles data processing from props
 const OrderDetails = ({ orders = [], users = [], products = [], isLoading = false }) => {
+console.log('Raw orders data:', orders);
 
   // Process orders data to match expected format - must be called before early returns
   const ordersData = useMemo(() => {
@@ -24,8 +25,12 @@ const OrderDetails = ({ orders = [], users = [], products = [], isLoading = fals
 
     // Enrich orders with user and product data
     const enrichedOrders = orders.map(order => {
-      // Extract customer info from the order itself (not from separate user lookup)
-      const customerInfo = order.customerInfo || {};
+      // Extract customer info from multiple possible locations
+      const customerInfo = order.customerInfo || order.customer || {};
+      
+      // Extract financial data from multiple possible locations
+      const orderSummary = order.orderSummary || order.summary || {};
+      const financials = orderSummary || order;
       
       // Map order items to products format
       const orderProducts = order.items?.map(item => ({
@@ -37,28 +42,34 @@ const OrderDetails = ({ orders = [], users = [], products = [], isLoading = fals
         subtotal: item.subtotal || (item.price * item.quantity)
       })) || [];
 
-      return {
+
+      const enrichedOrder = {
         id: order._id || order.id,
-        orderId: order.orderId, // Include the actual order ID
-        customer: customerInfo.name || 'Unknown Customer',
+        orderId: order.orderId || order.id || `ORD-${order._id?.slice(-8) || 'N/A'}`, // Include the actual order ID
+        customer: customerInfo.name || customerInfo.customer || 'Unknown Customer',
         email: customerInfo.email || '',
-        phone: customerInfo.phone || '',
+        phone: customerInfo.phone || customerInfo.contact || '',
         status: order.status || 'confirmed',
         paymentStatus: order.paymentStatus || 'completed',
-        total: order.orderSummary?.total || 0,
-        subtotal: order.orderSummary?.subtotal || 0,
-        shipping: order.orderSummary?.shipping || 0,
-        tax: order.orderSummary?.tax || 0,
+        total: financials.total || order.total || order.totalAmount || 0,
+        subtotal: financials.subtotal || order.subtotal || 0,
+        shipping: financials.shipping || order.shipping || 0,
+        tax: financials.tax || order.tax || 0,
         items: order.items?.length || 0,
-        date: new Date(order.createdAt || order.orderDate).toLocaleDateString(),
+        date: new Date(order.createdAt || order.orderDate || order.date).toLocaleDateString(),
         shippingAddress: customerInfo.address 
-          ? `${customerInfo.address.street || ''}, ${customerInfo.address.city || ''}, ${customerInfo.address.zipCode || ''}`.replace(/^,\s*|,\s*$/g, '') 
-          : 'No address provided',
-        trackingNumber: order.trackingNumber || `TN${order._id?.slice(-9) || 'N/A'}`,
-        paymentMethod: order.paymentMethod || { name: 'Unknown', type: 'unknown' },
+          ? `${customerInfo.address.street || customerInfo.address.address || ''}, ${customerInfo.address.city || ''}, ${customerInfo.address.zipCode || customerInfo.address.zip || ''}`.replace(/^,\s*|,\s*$/g, '') 
+          : customerInfo.shippingAddress || 'No address provided',
+        trackingNumber: order.trackingNumber || order.tracking || (order._id ? `TN${order._id.slice(-9)}` : `TN${Date.now().toString().slice(-9)}`),
+        paymentMethod: order.paymentMethod || order.payment || { 
+          name: order.paymentMethod?.name || order.payment?.name || order.paymentMethodName || order.paymentType || 'Unknown', 
+          type: order.paymentMethod?.type || order.payment?.type || order.paymentMethodType || order.paymentType || 'unknown' 
+        },
         products: orderProducts,
         customerInfo: customerInfo // Include full customer info for detailed view
       };
+      
+      return enrichedOrder;
     });
 
     // Calculate stats
@@ -68,7 +79,11 @@ const OrderDetails = ({ orders = [], users = [], products = [], isLoading = fals
     const processingOrders = orders.filter(o => o.status === 'processing').length;
     const shippedOrders = orders.filter(o => o.status === 'shipped').length;
     const deliveredOrders = orders.filter(o => o.status === 'delivered').length;
-    const totalRevenue = orders.reduce((sum, order) => sum + (order.orderSummary?.total || 0), 0);
+    const totalRevenue = orders.reduce((sum, order) => {
+      const orderSummary = order.orderSummary || order.summary || {};
+      const financials = orderSummary || order;
+      return sum + (financials.total || order.total || 0);
+    }, 0);
 
     return {
       orders: enrichedOrders,

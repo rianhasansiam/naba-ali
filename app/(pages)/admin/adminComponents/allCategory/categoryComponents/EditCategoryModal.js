@@ -32,6 +32,9 @@ const EditCategoryModal = ({ isOpen, onClose, category }) => {
   // Populate form when category prop changes
   useEffect(() => {
     if (category && isOpen) {
+      console.log('EditCategoryModal - Category object received:', category);
+      console.log('Category _id:', category._id, 'Category id:', category.id);
+      
       setFormData({
         name: category.name || '',
         description: category.description || '',
@@ -96,6 +99,9 @@ const EditCategoryModal = ({ isOpen, onClose, category }) => {
         setImageUploading(false);
       }
       
+      // Use _id or id, whichever is available
+      const categoryId = category._id || category.id;
+      
       // Prepare category data
       const categoryData = {
         ...formData,
@@ -103,7 +109,13 @@ const EditCategoryModal = ({ isOpen, onClose, category }) => {
         updatedAt: new Date()
       };
       
-      await updateData({ id: category._id, data: categoryData });
+      console.log('Updating category with ID:', categoryId, 'Category object:', category);
+      
+      if (!categoryId) {
+        throw new Error('Category ID is missing. Cannot update category.');
+      }
+      
+      await updateData({ id: categoryId, data: categoryData });
       setSuccessMessage('Category updated successfully!');
       
       // Close modal after success

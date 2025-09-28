@@ -66,14 +66,14 @@ const ProductListItem = ({ product, onEdit, onDelete, onAddReview, isDeleting })
           >
             <Edit size={16} />
           </button>
-          <button 
+          {/* <button 
             onClick={() => onAddReview?.(product)}
             disabled={isDeleting}
             className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             title="Add Review"
           >
             <MessageSquare size={16} />
-          </button>
+          </button> */}
           <button 
             onClick={() => onDelete?.(product)}
             disabled={isDeleting}

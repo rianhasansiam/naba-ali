@@ -444,6 +444,7 @@ const AddReviewModal = ({ isOpen, onClose, onReviewAdded, onSubmitStart, onSubmi
                     width={500}
                     height={192}
                     className="w-full h-48 object-cover rounded-lg border"
+                    unoptimized={true}
                   />
                   <button
                     type="button"

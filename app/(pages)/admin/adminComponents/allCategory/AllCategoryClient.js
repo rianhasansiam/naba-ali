@@ -62,20 +62,36 @@ const AllCategoryClient = () => {
 
   // Handler functions
   const handleEditCategory = (category) => {
+    console.log('handleEditCategory called with category:', category);
+    console.log('Category _id:', category._id, 'Category id:', category.id);
     setSelectedCategory(category);
     setShowEditModal(true);
   };
 
   const handleDeleteCategory = (category) => {
+    console.log('handleDeleteCategory called with category:', category);
+    console.log('Category _id:', category._id, 'Category id:', category.id);
     setSelectedCategory(category);
     setShowDeleteModal(true);
   };
 
   const handleConfirmDelete = async () => {
     if (selectedCategory) {
-      setDeletingCategoryId(selectedCategory._id);
+      const categoryId = selectedCategory._id || selectedCategory.id;
+      
+      if (!categoryId) {
+        console.error('Category ID is missing for deletion:', selectedCategory);
+        setToast({
+          show: true,
+          type: 'error',
+          message: 'Category ID is missing. Cannot delete category.'
+        });
+        return;
+      }
+      
+      setDeletingCategoryId(categoryId);
       try {
-        await deleteData(selectedCategory._id);
+        await deleteData(categoryId);
         setShowDeleteModal(false);
         setSelectedCategory(null);
         setToast({
@@ -236,7 +252,7 @@ const AllCategoryClient = () => {
                   category={category}
                   onEdit={handleEditCategory}
                   onDelete={handleDeleteCategory}
-                  isDeleting={deletingCategoryId === category._id}
+                  isDeleting={deletingCategoryId === (category._id || category.id)}
                 />
               ))}
             </div>
@@ -248,7 +264,7 @@ const AllCategoryClient = () => {
                   category={category}
                   onEdit={handleEditCategory}
                   onDelete={handleDeleteCategory}
-                  isDeleting={deletingCategoryId === category._id}
+                  isDeleting={deletingCategoryId === (category._id || category.id)}
                 />
               ))}
             </div>

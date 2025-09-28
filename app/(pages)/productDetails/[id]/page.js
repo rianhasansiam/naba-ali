@@ -3,7 +3,7 @@
 import React from 'react';
 import { useGetData } from '@/lib/hooks/useGetData';
 import { useAppDispatch } from '@/app/redux/reduxHooks';
-import { addToCart, addToWishlist, removeFromWishlist } from '@/app/redux/slice';
+import { addToCart, removeFromCart, addToWishlist, removeFromWishlist } from '@/app/redux/slice';
 import { PLACEHOLDER_IMAGES } from '@/lib/constants';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -54,8 +54,10 @@ const OptimizedImage = ({ src, alt, className, width, height, ...props }) => {
     setImageSrc(fallbackSrc);
   }, [fallbackSrc]);
 
-  // If using fallback, disable Next.js optimization to avoid 500 errors
+  // Check if image is external (ImageBB, etc.) or using fallback
+  const isExternalImage = imageSrc.startsWith('http') && (imageSrc.includes('ibb.co') || imageSrc.includes('imagebb'));
   const isUsingFallback = imageSrc === fallbackSrc;
+  const shouldUnoptimize = isUsingFallback || isExternalImage;
 
   return (
     <Image
@@ -65,7 +67,7 @@ const OptimizedImage = ({ src, alt, className, width, height, ...props }) => {
       height={height}
       className={className}
       onError={handleError}
-      unoptimized={isUsingFallback}
+      unoptimized={shouldUnoptimize}
       {...props}
     />
   );
@@ -138,14 +140,19 @@ export default function ProductDetailPage({ params }) {
 
   // Check if product is in cart or wishlist
   useEffect(() => {
-    if (product) {
+    if (product && selectedSize && selectedColor) {
       const cart = getCartFromStorage();
       const wishlist = getWishlistFromStorage();
       
-      setIsInCart(cart.some(item => item.id === product._id));
+      // Check if this specific product variant (id + size + color) is in cart
+      setIsInCart(cart.some(item => 
+        item.id === product._id && 
+        item.size === selectedSize && 
+        item.color === selectedColor
+      ));
       setIsInWishlist(wishlist.some(item => item.id === product._id));
     }
-  }, [product]);
+  }, [product, selectedSize, selectedColor]);
 
   // Show toast notification
   const showToast = (type, message) => {
@@ -155,7 +162,7 @@ export default function ProductDetailPage({ params }) {
     }, 3000);
   };
 
-  // Add to Cart function
+  // Add/Remove from Cart function (Toggle)
   const handleAddToCart = () => {
     if (!product) return;
     
@@ -165,19 +172,36 @@ export default function ProductDetailPage({ params }) {
     }
     
     try {
-      // Add to Redux store
-      dispatch(addToCart({
-        product: product,
-        quantity: quantity,
-        size: selectedSize,
-        color: selectedColor
-      }));
+      const cart = getCartFromStorage();
+      const existingItem = cart.find(item => 
+        item.id === product._id && 
+        item.size === selectedSize && 
+        item.color === selectedColor
+      );
       
-      setIsInCart(true);
-      showToast('success', 'Product added to cart successfully!');
+      if (existingItem) {
+        // Remove from cart
+        dispatch(removeFromCart({
+          id: product._id,
+          size: selectedSize,
+          color: selectedColor
+        }));
+        setIsInCart(false);
+        showToast('success', 'Product removed from cart!');
+      } else {
+        // Add to cart
+        dispatch(addToCart({
+          product: product,
+          quantity: quantity,
+          size: selectedSize,
+          color: selectedColor
+        }));
+        setIsInCart(true);
+        showToast('success', 'Product added to cart successfully!');
+      }
     } catch (error) {
-      console.error('Error adding to cart:', error);
-      showToast('error', 'Failed to add product to cart!');
+      console.error('Error updating cart:', error);
+      showToast('error', 'Failed to update cart!');
     }
   };
 
@@ -257,7 +281,7 @@ export default function ProductDetailPage({ params }) {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <LoadingSpinner size="lg" />
-          <p className="text-gray-600 mt-4">Loading product details...</p>
+          
         </div>
       </div>
     );
@@ -973,7 +997,7 @@ export default function ProductDetailPage({ params }) {
                 </div>
                 <h4 className="text-2xl font-medium text-gray-900 mb-3">No Reviews Yet</h4>
                 <p className="text-gray-600 mb-8 max-w-md mx-auto">Be the first to share your thoughts about this product and help other customers make informed decisions!</p>
-                <button className="inline-flex items-center space-x-2 px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors shadow-lg">
+                <button className="inline-flex items-center space-x-2 px-8 py-4 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-xl transition-colors shadow-lg">
                   <Star size={20} />
                   <span>Write a Review</span>
                 </button>

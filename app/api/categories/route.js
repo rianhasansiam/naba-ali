@@ -69,16 +69,23 @@ export async function POST(request) {
 } // End of POST function
 
 // PUT - Update category by _id
-export async function PUT(request) {
+export async function PUT(request, { params }) {
   try {
     const categories = await getCollection('allCategories');
     const body = await request.json();
-    const { _id, ...updateData } = body;
+    
+    // Get _id from URL params or from body for backward compatibility
+    const url = new URL(request.url);
+    const idFromUrl = url.pathname.split('/').pop();
+    const _id = idFromUrl !== 'categories' ? idFromUrl : body._id;
+    
     if (!_id) {
       return NextResponse.json({ success: false, error: 'Category _id is required for update' }, { status: 400 });
     }
+    
     const { ObjectId } = (await import('mongodb'));
-    const result = await categories.updateOne({ _id: new ObjectId(_id) }, { $set: updateData });
+    const result = await categories.updateOne({ _id: new ObjectId(_id) }, { $set: body });
+    
     return NextResponse.json({ success: true, Data: result, message: 'Category updated successfully' });
   } catch (error) {
     console.error('Error updating category:', error);
@@ -87,16 +94,22 @@ export async function PUT(request) {
 } // End of PUT function
 
 // DELETE - Delete category by _id
-export async function DELETE(request) {
+export async function DELETE(request, { params }) {
   try {
     const categories = await getCollection('allCategories');
-    const body = await request.json();
-    const { _id } = body;
+    
+    // Get _id from URL params
+    const url = new URL(request.url);
+    const idFromUrl = url.pathname.split('/').pop();
+    const _id = idFromUrl !== 'categories' ? idFromUrl : null;
+    
     if (!_id) {
       return NextResponse.json({ success: false, error: 'Category _id is required for delete' }, { status: 400 });
     }
+    
     const { ObjectId } = (await import('mongodb'));
     const result = await categories.deleteOne({ _id: new ObjectId(_id) });
+    
     return NextResponse.json({ success: true, Data: result, message: 'Category deleted successfully' });
   } catch (error) {
     console.error('Error deleting category:', error);
