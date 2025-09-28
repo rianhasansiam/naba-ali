@@ -43,6 +43,14 @@ const AllUsersClient = ({ users: userData = [], orders: ordersDataProp = [], isL
     }
   }, [userData]);
 
+  // Debug: Log orders data when it changes
+  useEffect(() => {
+    console.log('Orders data loaded:', {
+      count: ordersDataProp?.length || 0,
+      hasData: Boolean(ordersDataProp && ordersDataProp.length > 0)
+    });
+  }, [ordersDataProp]);
+
   // Search filter
   const filteredUsers = allUsers.filter((user) =>
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -73,14 +81,47 @@ const AllUsersClient = ({ users: userData = [], orders: ordersDataProp = [], isL
 
   // Handler functions
   const handleViewOrders = (user) => {
+    // Check if orders data is still loading
+    if (isLoadingProp) {
+      console.log('Orders data is still loading...');
+      return;
+    }
+
+    console.log(`Viewing orders for user: ${user.name} (${user.email})`);
+
     setSelectedUser(user);
-    // Filter orders for this user - orders store customer info in 'customerInfo' field
+    // Filter orders for this user - check both normalized (customer) and raw (customerInfo) formats
     const userOrderHistory = Array.isArray(ordersDataProp) ? ordersDataProp.filter(order => {
-      if (!order || !order.customerInfo) return false;
-      
-      // Match by email (primary identifier)
-      return order.customerInfo.email === user.email;
+      if (!order) return false;
+
+      // Check both possible customer data structures
+      const orderEmail = (order.customerInfo?.email || order.customer?.email || '').toLowerCase().trim();
+      const orderUserId = order.customerInfo?.userId || order.customer?.userId;
+      const orderName = order.customerInfo?.name || order.customer?.name;
+
+      const userEmail = (user.email || '').toLowerCase().trim();
+      const userName = user.name;
+
+      // Match by email (primary identifier) - case insensitive
+      if (orderEmail && userEmail && orderEmail === userEmail) {
+        return true;
+      }
+
+      // Fallback: match by user ID if available
+      if (orderUserId && user._id && orderUserId === user._id) {
+        return true;
+      }
+
+      // Fallback: match by name if email is not available
+      if (!orderEmail && orderName && userName && orderName.toLowerCase().trim() === userName.toLowerCase().trim()) {
+        return true;
+      }
+
+      return false;
     }) : [];
+
+    console.log(`Found ${userOrderHistory.length} orders for ${user.name}`);
+
     setUserOrders(userOrderHistory);
     setShowOrderModal(true);
   };
@@ -89,7 +130,6 @@ const AllUsersClient = ({ users: userData = [], orders: ordersDataProp = [], isL
     setSelectedUser(user);
     setShowDeleteModal(true);
   };
-
   const handleConfirmDelete = async () => {
     if (selectedUser) {
       setDeletingUserId(selectedUser._id);
@@ -166,6 +206,10 @@ const AllUsersClient = ({ users: userData = [], orders: ordersDataProp = [], isL
                   width={64}
                   height={64}
                   className="w-full h-full object-cover"
+                  unoptimized={true}
+                  onError={(e) => {
+                    e.target.src = defaultAvatar;
+                  }}
                 />
               </div>
               
@@ -201,9 +245,14 @@ const AllUsersClient = ({ users: userData = [], orders: ordersDataProp = [], isL
                 <div className="flex items-center space-x-2">
                   <button 
                     onClick={() => handleViewOrders(user)}
-                    className="flex items-center space-x-2 bg-gray-600 text-white px-3 py-2 rounded-lg hover:bg-gray-700 transition-colors text-sm"
+                    disabled={isLoadingProp}
+                    className="flex items-center space-x-2 bg-gray-600 text-white px-3 py-2 rounded-lg hover:bg-gray-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <Eye size={14} />
+                    {isLoadingProp ? (
+                      <Loader2 className="animate-spin" size={14} />
+                    ) : (
+                      <Eye size={14} />
+                    )}
                     <span>Orders</span>
                   </button>
                   <button 
@@ -276,7 +325,7 @@ const AllUsersClient = ({ users: userData = [], orders: ordersDataProp = [], isL
                   <div className="space-y-4">
                     {userOrders.map((order, index) => (
                       <motion.div
-                        key={order._id}
+                        key={order._id || order.id || `order-${index}`}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.1 }}
@@ -297,7 +346,7 @@ const AllUsersClient = ({ users: userData = [], orders: ordersDataProp = [], isL
                           </div>
                           <div className="text-right">
                             <div className="text-lg font-bold text-gray-900">
-                              ${order.orderSummary?.total || order.total || order.totalAmount || 0}
+                              ${order.summary?.total || order.orderSummary?.total || order.total || order.totalAmount || 0}
                             </div>
                             <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                               order.status === 'completed' 
@@ -317,7 +366,7 @@ const AllUsersClient = ({ users: userData = [], orders: ordersDataProp = [], isL
                             <p className="text-sm font-medium text-gray-700 mb-2">Items ({order.items.length})</p>
                             <div className="space-y-2">
                               {order.items.slice(0, 3).map((item, itemIndex) => (
-                                <div key={itemIndex} className="flex items-center justify-between text-sm">
+                                <div key={`item-${itemIndex}-${item.productId || item.id || item.name}`} className="flex items-center justify-between text-sm">
                                   <span className="text-gray-600">{item.name || item.productName}</span>
                                   <span className="text-gray-900">
                                     {item.quantity}x ${item.price}

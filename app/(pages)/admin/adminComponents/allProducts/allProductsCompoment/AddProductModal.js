@@ -614,6 +614,10 @@ const AddProductModal = ({ isOpen, onClose, categories }) => {
                               fill
                               className="object-cover"
                               sizes="(max-width: 768px) 50vw, 33vw"
+                              unoptimized={true}
+                              onError={(e) => {
+                                e.target.src = '/default-product.png';
+                              }}
                             />
                             <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
                             <button

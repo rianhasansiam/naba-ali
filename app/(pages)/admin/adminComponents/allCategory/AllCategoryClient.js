@@ -54,10 +54,11 @@ const AllCategoryClient = () => {
   });
 
   // Filter categories based on search
-  const filteredCategories = Array.isArray(data) ? data.filter(category =>
-    category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    category.description?.toLowerCase().includes(searchTerm.toLowerCase())
-  ) : [];
+  const filteredCategories = Array.isArray(data) ? data.filter(category => {
+    if (!category) return false;
+    return category.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           category.description?.toLowerCase().includes(searchTerm.toLowerCase());
+  }) : [];
 
   // Handler functions
   const handleEditCategory = (category) => {
@@ -110,8 +111,8 @@ const AllCategoryClient = () => {
   // Statistics
   const stats = {
     totalCategories: filteredCategories.length,
-    activeCategories: filteredCategories.filter(cat => cat.status !== 'inactive').length,
-    inactiveCategories: filteredCategories.filter(cat => cat.status === 'inactive').length
+    activeCategories: filteredCategories.filter(cat => cat && cat.status !== 'inactive').length,
+    inactiveCategories: filteredCategories.filter(cat => cat && cat.status === 'inactive').length
   };
 
   // Handle loading and error states
@@ -229,9 +230,9 @@ const AllCategoryClient = () => {
         <div className="bg-white rounded-xl p-6 shadow-sm">
           {viewMode === 'grid' ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredCategories.map((category) => (
+              {filteredCategories.map((category, index) => (
                 <CategoryCard 
-                  key={category._id} 
+                  key={category._id || category.id || `category-${index}`} 
                   category={category}
                   onEdit={handleEditCategory}
                   onDelete={handleDeleteCategory}
@@ -241,9 +242,9 @@ const AllCategoryClient = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {filteredCategories.map((category) => (
+              {filteredCategories.map((category, index) => (
                 <CategoryListItem 
-                  key={category._id} 
+                  key={category._id || category.id || `category-list-${index}`} 
                   category={category}
                   onEdit={handleEditCategory}
                   onDelete={handleDeleteCategory}
@@ -315,12 +316,16 @@ const CategoryCard = ({ category, onEdit, onDelete, isDeleting }) => (
           width={200}
           height={200}
           className="w-full h-full object-cover"
+          unoptimized={true}
+          onError={(e) => {
+            e.target.style.display = 'none';
+            e.target.nextElementSibling.style.display = 'flex';
+          }}
         />
-      ) : (
-        <div className="w-full h-full flex items-center justify-center bg-gray-100">
-          <ImageIcon className="text-gray-400" size={32} />
-        </div>
-      )}
+      ) : null}
+      <div className="w-full h-full flex items-center justify-center bg-gray-100" style={{ display: category.image ? 'none' : 'flex' }}>
+        <ImageIcon className="text-gray-400" size={32} />
+      </div>
     </div>
     
     <h3 className="font-medium text-gray-900 mb-1">{category.name}</h3>
@@ -368,12 +373,16 @@ const CategoryListItem = ({ category, onEdit, onDelete, isDeleting }) => (
             width={48}
             height={48}
             className="w-full h-full object-cover"
+            unoptimized={true}
+            onError={(e) => {
+              e.target.style.display = 'none';
+              e.target.nextElementSibling.style.display = 'flex';
+            }}
           />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gray-100">
-            <ImageIcon className="text-gray-400" size={20} />
-          </div>
-        )}
+        ) : null}
+        <div className="w-full h-full flex items-center justify-center bg-gray-100" style={{ display: category.image ? 'none' : 'flex' }}>
+          <ImageIcon className="text-gray-400" size={20} />
+        </div>
       </div>
       
       <div>

@@ -22,7 +22,7 @@ export default function ContactPage() {
     title: "Contact Us",
     subtitle: "Have questions? We're here to help!",
     description: "Get in touch with us for any questions about our products or services.",
-    address: "123 Fashion Street, New York, NY 10001",
+    address: "Paduar Bazar Bishwa Road Cumilla, Bangladesh",
     contactMethods: [
       {
         iconName: "Mail",

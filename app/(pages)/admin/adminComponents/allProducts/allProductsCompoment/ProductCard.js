@@ -18,7 +18,10 @@ const ProductCard = ({ product, onEdit, onDelete, onAddReview, isDeleting }) => 
         width={300}
         height={200}
         className="w-full h-48 object-cover"
-        unoptimized={!product.primaryImage && !product.image}
+        unoptimized={true}
+        onError={(e) => {
+          e.target.src = PLACEHOLDER_IMAGES.PRODUCT_LARGE;
+        }}
       />
       <div className="absolute top-3 right-3 flex flex-col gap-1">
         {product.isNew && (

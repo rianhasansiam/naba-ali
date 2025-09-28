@@ -299,6 +299,10 @@ const EditCategoryModal = ({ isOpen, onClose, category }) => {
                         width={200}
                         height={150}
                         className="w-48 h-32 object-cover rounded-lg border border-gray-200"
+                        unoptimized={true}
+                        onError={(e) => {
+                          e.target.src = '/default-product.png';
+                        }}
                       />
                       <button
                         type="button"

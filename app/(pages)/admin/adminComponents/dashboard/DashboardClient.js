@@ -38,7 +38,7 @@ const StatCard = ({ title, value, change, trend, icon: Icon, color = "gray" }) =
     </div>
     <h3 className="text-gray-600 text-sm font-medium mb-1">{title}</h3>
     <p className="text-2xl font-bold text-gray-900">
-      {typeof value === 'number' && title.includes('Revenue') ? `$${value.toLocaleString()}` : value}
+      {typeof value === 'number' && (title.includes('Revenue') || title.includes('Average Order')) ? `$${value.toFixed(2)}` : value}
     </p>
   </motion.div>
 );
@@ -94,7 +94,7 @@ const DashboardClient = ({ analytics }) => {
         />
         <StatCard
           title="Average Order"
-          value={`$${analytics.overview.averageOrder.value}`}
+          value={analytics.overview.averageOrder.value}
           change={analytics.overview.averageOrder.change}
           trend={analytics.overview.averageOrder.trend}
           icon={Star}
@@ -151,7 +151,10 @@ const DashboardClient = ({ analytics }) => {
                     fill
                     className="object-cover"
                     sizes="48px"
-                    unoptimized={product.image?.startsWith('data:')}
+                    unoptimized={true}
+                    onError={(e) => {
+                      e.target.src = '/default-product.png';
+                    }}
                   />
                 </div>
                 <div className="flex-1">

@@ -4,6 +4,7 @@
 import { motion } from 'framer-motion';
 import { Eye, Edit, Trash2, Loader, MessageSquare } from 'lucide-react';
 import Image from 'next/image';
+import { PLACEHOLDER_IMAGES } from '@/lib/constants';
 
 const ProductListItem = ({ product, onEdit, onDelete, onAddReview, isDeleting }) => (
   <motion.div
@@ -13,11 +14,15 @@ const ProductListItem = ({ product, onEdit, onDelete, onAddReview, isDeleting })
   >
     <div className="flex items-center space-x-4">
       <Image
-        src={product.image}
+        src={product.image || PLACEHOLDER_IMAGES.PRODUCT_SMALL}
         alt={product.name}
         width={60}
         height={60}
         className="w-15 h-15 rounded-lg object-cover"
+        unoptimized={true}
+        onError={(e) => {
+          e.target.src = PLACEHOLDER_IMAGES.PRODUCT_SMALL;
+        }}
       />
       
       <div className="flex-1 grid grid-cols-6 gap-4 items-center">

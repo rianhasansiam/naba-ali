@@ -59,6 +59,8 @@ const AllCouponsClient = () => {
 
   // Filter coupons based on search term and status
   const filteredCoupons = Array.isArray(data) ? data.filter(coupon => {
+    if (!coupon) return false;
+    
     const matchesSearch = coupon.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          coupon.description?.toLowerCase().includes(searchTerm.toLowerCase());
     
@@ -118,9 +120,9 @@ const AllCouponsClient = () => {
   // Calculate stats from filtered coupons
   const stats = {
     total: filteredCoupons.length || 0,
-    active: filteredCoupons.filter(c => c.status === 'active').length || 0,
-    expired: filteredCoupons.filter(c => c.status === 'expired').length || 0,
-    totalUsage: filteredCoupons.reduce((sum, c) => sum + (c.used || 0), 0)
+    active: filteredCoupons.filter(c => c && c.status === 'active').length || 0,
+    expired: filteredCoupons.filter(c => c && c.status === 'expired').length || 0,
+    totalUsage: filteredCoupons.reduce((sum, c) => sum + (c && c.used ? c.used : 0), 0)
   };
 
   const getStatusColor = (status) => {
@@ -302,7 +304,7 @@ const AllCouponsClient = () => {
       <div className={`grid gap-6 ${viewMode === 'grid' ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
         {filteredCoupons.map((coupon, index) => (
           <motion.div
-            key={coupon._id}
+            key={coupon._id || coupon.id || `coupon-${index}`}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}

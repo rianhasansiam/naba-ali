@@ -238,13 +238,13 @@ export default function ReviewClient({ reviews = [], stats, error }) {
         transition={{ duration: 0.6, delay: 0.4 }}
         viewport={{ once: true }}
       >
-        <motion.button
+        {/* <motion.button
           className="inline-flex items-center gap-3 bg-black text-white px-8 py-4 rounded-full font-medium text-lg hover:bg-gray-800 transition-all duration-200 shadow-lg hover:shadow-xl"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
           <span>Read All Reviews</span>
-        </motion.button>
+        </motion.button> */}
       </motion.div>
 
       {/* Custom scrollbar hide styles */}

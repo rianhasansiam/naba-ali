@@ -14,14 +14,49 @@ const Dashboard = ({ products = [], users = [], orders = [], reviews = [], isLoa
     const allOrders = Array.isArray(orders) ? orders : [];
     const allReviews = Array.isArray(reviews) ? reviews : [];
 
+    console.log('Dashboard data check:', {
+      productsCount: allProducts.length,
+      usersCount: allUsers.length,
+      ordersCount: allOrders.length,
+      reviewsCount: allReviews.length
+    });
+
     // Calculate total revenue from orders
-    const totalRevenue = allOrders.reduce((sum, order) => {
-      const orderTotal = order.orderSummary?.total || order.total || 0;
-      return sum + parseFloat(orderTotal);
-    }, 0);
+    let totalRevenue = 0;
+    let validOrdersCount = 0;
+
+    allOrders.forEach(order => {
+      let orderTotal = 0;
+
+      // Try multiple ways to get the order total
+      if (order.orderSummary?.total !== undefined) {
+        orderTotal = parseFloat(order.orderSummary.total) || 0;
+      } else if (order.total !== undefined) {
+        orderTotal = parseFloat(order.total) || 0;
+      } else if (order.items && Array.isArray(order.items)) {
+        // Calculate from items if no total provided
+        orderTotal = order.items.reduce((sum, item) => {
+          const price = parseFloat(item.price || 0);
+          const quantity = parseFloat(item.quantity || 0);
+          return sum + (price * quantity);
+        }, 0);
+      }
+
+      if (orderTotal > 0) {
+        totalRevenue += orderTotal;
+        validOrdersCount++;
+      }
+    });
 
     // Calculate average order value
-    const averageOrder = allOrders.length > 0 ? totalRevenue / allOrders.length : 0;
+    const averageOrder = validOrdersCount > 0 ? totalRevenue / validOrdersCount : 0;
+
+    console.log('Dashboard Analytics Summary:', {
+      totalOrders: allOrders.length,
+      validOrdersCount,
+      totalRevenue,
+      averageOrder
+    });
 
     // Get recent orders (last 5)
     const recentSales = allOrders
@@ -106,7 +141,7 @@ const Dashboard = ({ products = [], users = [], orders = [], reviews = [], isLoa
           trend: 'up' 
         },
         totalOrders: { 
-          value: allOrders.length, 
+          value: validOrdersCount, 
           change: 0,
           trend: 'up' 
         },
