@@ -38,7 +38,7 @@ const OrderDetails = ({ orders = [], users = [], products = [], isLoading = fals
       })) || [];
 
       return {
-        id: order._id,
+        id: order._id || order.id,
         orderId: order.orderId, // Include the actual order ID
         customer: customerInfo.name || 'Unknown Customer',
         email: customerInfo.email || '',

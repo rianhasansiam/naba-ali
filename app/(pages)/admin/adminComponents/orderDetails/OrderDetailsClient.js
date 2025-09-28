@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useUpdateData } from '@/lib/hooks/useUpdateData';
+import { useQueryClient } from '@tanstack/react-query';
 import { useDeleteData } from '@/lib/hooks/useDeleteData';
 import { 
   Search, 
@@ -31,6 +31,9 @@ const OrderDetails = ({ ordersData }) => {
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [toast, setToast] = useState({ show: false, type: 'success', message: '' });
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const queryClient = useQueryClient();
 
   const showToast = (type, message) => {
     setToast({ show: true, type, message });
@@ -38,12 +41,6 @@ const OrderDetails = ({ ordersData }) => {
       setToast({ show: false, type: '', message: '' });
     }, 3000);
   };
-
-  // Use the update hook for order status updates
-  const { updateData: updateOrder, isLoading: isUpdating } = useUpdateData({
-    name: 'orders',
-    api: '/api/orders'
-  });
 
   // Use the delete hook for order deletion
   const { deleteData: deleteOrder, isLoading: isDeleting } = useDeleteData({
@@ -60,21 +57,52 @@ const OrderDetails = ({ ordersData }) => {
     return matchesSearch && matchesStatus;
   });
 
-  // Status update function using the hook
+  // Status update function using direct API call
   const updateOrderStatus = async (orderId, newStatus) => {
     if (isUpdating) return; // Prevent multiple updates
 
+    if (!orderId) {
+      console.error('updateOrderStatus called with undefined/null orderId');
+      showToast('error', 'Invalid order ID. Please try again.');
+      return;
+    }
+
+    console.log('updateOrderStatus called with:', { orderId, newStatus, type: typeof orderId });
+
+    setIsUpdating(true);
     try {
-      await updateOrder({
-        id: orderId,
-        data: { status: newStatus }
+      const url = `/api/orders/${orderId}`;
+      console.log('Making PUT request to:', url);
+
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status: newStatus }),
       });
+
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Response error text:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log('Response result:', result);
       
-      // The hook will automatically refresh the data through React Query
+      // Refresh the orders data
+      queryClient.invalidateQueries(['orders']);
+      
       showToast('success', `Order status updated to ${newStatus} successfully!`);
     } catch (error) {
       console.error('Error updating order status:', error);
       showToast('error', 'Failed to update order status. Please try again.');
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -109,8 +137,11 @@ const OrderDetails = ({ ordersData }) => {
 
   // View detailed order function
   const viewOrderDetails = (order) => {
+    console.log('viewOrderDetails called with order:', order);
+    console.log('order.id:', order.id, 'order._id:', order._id);
     setSelectedOrder(order);
     setShowOrderModal(true);
+    console.log('Modal should now be open with selectedOrder:', order);
   };
 
   const getStatusColor = (status) => {
@@ -163,6 +194,7 @@ const OrderDetails = ({ ordersData }) => {
 
   // Status Dropdown Component
   const StatusDropdown = ({ currentStatus, orderId }) => {
+    console.log('StatusDropdown rendered with:', { currentStatus, orderId });
     const [isOpen, setIsOpen] = useState(false);
 
     // Close dropdown when clicking outside
@@ -199,6 +231,7 @@ const OrderDetails = ({ ordersData }) => {
                 <button
                   key={option.value}
                   onClick={() => {
+                    console.log('StatusDropdown onClick:', { orderId, optionValue: option.value, currentStatus });
                     updateOrderStatus(orderId, option.value);
                     setIsOpen(false);
                   }}
@@ -337,7 +370,7 @@ const OrderDetails = ({ ordersData }) => {
         ) : (
           filteredOrders.map((order, index) => (
             <motion.div
-              key={order.id}
+              key={order._id || order.id || index}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}

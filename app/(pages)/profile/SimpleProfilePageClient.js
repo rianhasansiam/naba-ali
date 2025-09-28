@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useSession } from 'next-auth/react';
 import { 
   User, Package, Edit3, Save, X, Phone, Mail, Calendar,
-  Truck, CheckCircle, Clock, AlertCircle, DollarSign, Star, Camera, Upload
+  Truck, CheckCircle, Clock, AlertCircle, DollarSign, Star, Camera, Upload, MessageSquare, Plus, Send
 } from 'lucide-react';
 import Image from 'next/image';
 import { uploadToImageBB } from '@/lib/imagebb';
@@ -20,6 +20,7 @@ const SimpleProfilePageClient = () => {
   const [data, setData] = useState({
     user: null,
     orders: [],
+    reviews: [],
     loading: true,
     error: null
   });
@@ -30,6 +31,18 @@ const SimpleProfilePageClient = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [toast, setToast] = useState({ show: false, type: 'success', message: '' });
   const [uploadingImage, setUploadingImage] = useState(false);
+  
+  // Review form states
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [selectedOrderForReview, setSelectedOrderForReview] = useState(null);
+  const [selectedProductForReview, setSelectedProductForReview] = useState(null);
+  const [reviewFormData, setReviewFormData] = useState({
+    rating: 5,
+    title: '',
+    comment: '',
+    photo: ''
+  });
+  const [submittingReview, setSubmittingReview] = useState(false);
   
   // Form data
   const [formData, setFormData] = useState({
@@ -103,10 +116,20 @@ const SimpleProfilePageClient = () => {
         );
       }) : [];
       
+      // Fetch user reviews
+      const reviewsResponse = await fetch('/api/reviews');
+      const reviewsData = await reviewsResponse.json();
+      
+      // Filter reviews for current user
+      const userReviews = Array.isArray(reviewsData) ? reviewsData.filter(review => {
+        return review.customerEmail === session.user.email;
+      }) : [];
+      
       // Set all data
       setData({
         user: userData.user || userData,
         orders: userOrders,
+        reviews: userReviews,
         loading: false,
         error: null
       });
@@ -186,12 +209,144 @@ const SimpleProfilePageClient = () => {
     }
   };
 
+  // Handle review photo upload
+  const handleReviewPhotoUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file type and size
+    if (!file.type.startsWith('image/')) {
+      showToast('error', 'Please select a valid image file');
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      showToast('error', 'Image size should be less than 5MB');
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      const imageUrl = await uploadToImageBB(file);
+      setReviewFormData(prev => ({ ...prev, photo: imageUrl }));
+      showToast('success', 'Review photo uploaded successfully!');
+    } catch (error) {
+      console.error('Error uploading review photo:', error);
+      showToast('error', error.message || 'Failed to upload photo');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  // Open review modal for specific product
+  const openReviewModal = (order, product) => {
+    setSelectedOrderForReview(order);
+    setSelectedProductForReview(product);
+    setReviewFormData({
+      rating: 5,
+      title: '',
+      comment: '',
+      photo: ''
+    });
+    setShowReviewModal(true);
+  };
+
+  // Close review modal
+  const closeReviewModal = () => {
+    setShowReviewModal(false);
+    setSelectedOrderForReview(null);
+    setSelectedProductForReview(null);
+    setReviewFormData({
+      rating: 5,
+      title: '',
+      comment: '',
+      photo: ''
+    });
+  };
+
+  // Handle review submission
+  const handleCreateReview = async () => {
+    if (!selectedProductForReview || !reviewFormData.comment.trim()) {
+      showToast('error', 'Please provide a rating and comment');
+      return;
+    }
+
+    setSubmittingReview(true);
+    try {
+      const now = new Date();
+      const reviewData = {
+        productId: selectedProductForReview.productId,
+        productName: selectedProductForReview.productName,
+        customerName: data.user?.name || `${formData.firstName} ${formData.lastName}`.trim(),
+        customerEmail: session.user.email,
+        rating: reviewFormData.rating,
+        comment: reviewFormData.comment.trim(),
+        title: reviewFormData.title.trim() || `Review for ${selectedProductForReview.productName}`,
+        photo: reviewFormData.photo,
+        verified: true, // Since it's based on actual order
+        status: 'pending', // Will be reviewed by admin
+        date: now.toISOString().slice(0, 10), // YYYY-MM-DD
+        helpful: 0,
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString()
+      };
+
+      const response = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(reviewData)
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        showToast('success', 'Review submitted successfully!');
+        closeReviewModal();
+        // Refresh reviews data
+        await fetchUserData();
+      } else {
+        showToast('error', result.error || 'Failed to submit review');
+      }
+    } catch (error) {
+      console.error('Error submitting review:', error);
+      showToast('error', 'An error occurred while submitting review');
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
+  // Check if user has already reviewed a product
+  const hasReviewedProduct = (productId) => {
+    return data.reviews.some(review => review.productId === productId);
+  };
+
+  // Get products from delivered orders that can be reviewed
+  const getReviewableProducts = () => {
+    const reviewableProducts = [];
+    data.orders.forEach(order => {
+      if (order.status === 'delivered' && order.items) {
+        order.items.forEach(item => {
+          if (!hasReviewedProduct(item.productId)) {
+            reviewableProducts.push({
+              ...item,
+              orderId: order._id,
+              orderDate: order.orderDate
+            });
+          }
+        });
+      }
+    });
+    return reviewableProducts;
+  };
+
   // Calculate user statistics
   const userStats = {
     totalOrders: data.orders.length,
+    totalReviews: data.reviews.length,
     totalSpent: data.orders.reduce((sum, order) => sum + (order.total || order.orderSummary?.total || 0), 0),
     avgOrderValue: data.orders.length > 0 ? 
       data.orders.reduce((sum, order) => sum + (order.total || order.orderSummary?.total || 0), 0) / data.orders.length : 0,
+    avgRating: data.reviews.length > 0 ? 
+      data.reviews.reduce((sum, review) => sum + (review.rating || 0), 0) / data.reviews.length : 0,
     memberSince: data.user?.createdAt ? 
       new Date(data.user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short' }) : 
       'Recently'
@@ -230,7 +385,8 @@ const SimpleProfilePageClient = () => {
 
   const tabs = [
     { id: "overview", label: "Overview", icon: User },
-    { id: "orders", label: "My Orders", icon: Package }
+    { id: "orders", label: "My Orders", icon: Package },
+    { id: "reviews", label: "My Reviews", icon: MessageSquare }
   ];
 
   return (
@@ -487,11 +643,17 @@ const SimpleProfilePageClient = () => {
                       <div className="bg-white rounded-xl shadow-lg p-6">
                         <div className="flex items-center">
                           <div className="p-2 bg-purple-100 rounded-lg">
-                            <Star className="w-6 h-6 text-purple-600" />
+                            <MessageSquare className="w-6 h-6 text-purple-600" />
                           </div>
                           <div className="ml-4">
-                            <p className="text-sm font-medium text-gray-500">Avg Order</p>
-                            <p className="text-2xl font-bold text-gray-900">${userStats.avgOrderValue.toFixed(2)}</p>
+                            <p className="text-sm font-medium text-gray-500">Reviews</p>
+                            <p className="text-2xl font-bold text-gray-900">{userStats.totalReviews}</p>
+                            {userStats.avgRating > 0 && (
+                              <div className="flex items-center mt-1">
+                                <Star className="w-3 h-3 text-yellow-400 fill-current mr-1" />
+                                <span className="text-xs text-gray-500">{userStats.avgRating.toFixed(1)} avg</span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -572,7 +734,7 @@ const SimpleProfilePageClient = () => {
                           
                           return (
                             <div key={order._id || index} className="border border-gray-200 rounded-lg p-4">
-                              <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center justify-between mb-3">
                                 <div className="flex items-center gap-2">
                                   <StatusIcon className="w-5 h-5 text-blue-600" />
                                   <span className="font-medium">Order #{order.orderId || order._id?.slice(-8)}</span>
@@ -581,7 +743,9 @@ const SimpleProfilePageClient = () => {
                                   {order.orderDate ? new Date(order.orderDate).toLocaleDateString() : 'Date unknown'}
                                 </div>
                               </div>
-                              <div className="flex justify-between items-center">
+                              
+                              {/* Order Summary */}
+                              <div className="flex justify-between items-center mb-3">
                                 <div>
                                   <p className="text-sm text-gray-600">
                                     {order.items?.length || 0} item(s) • ${(order.total || order.orderSummary?.total || 0).toFixed(2)}
@@ -598,9 +762,205 @@ const SimpleProfilePageClient = () => {
                                   </p>
                                 </div>
                               </div>
+
+                              {/* Order Items - Show for delivered orders */}
+                              {order.status === 'delivered' && order.items && order.items.length > 0 && (
+                                <div className="space-y-2 pt-3 border-t border-gray-100">
+                                  <p className="text-sm font-medium text-gray-700 mb-2">Items in this order:</p>
+                                  {order.items.map((item, itemIndex) => {
+                                    const hasReview = hasReviewedProduct(item.productId);
+                                    return (
+                                      <div key={itemIndex} className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
+                                        <div className="flex-1">
+                                          <p className="font-medium text-gray-900 text-sm">{item.productName}</p>
+                                          <p className="text-xs text-gray-600">
+                                            Size: {item.size || 'N/A'} • Color: {item.color || 'Default'} • 
+                                            Qty: {item.quantity || 1} • ${(item.price || 0).toFixed(2)}
+                                          </p>
+                                        </div>
+                                        <div className="ml-3">
+                                          {hasReview ? (
+                                            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full">
+                                              ✓ Reviewed
+                                            </span>
+                                          ) : (
+                                            <button
+                                              onClick={() => openReviewModal(order, item)}
+                                              className="flex items-center gap-1 text-xs bg-black text-white px-3 py-1 rounded-lg hover:bg-gray-800 transition-colors"
+                                            >
+                                              <Star size={12} />
+                                              Write Review
+                                            </button>
+                                          )}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
                             </div>
                           );
                         })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Reviews Tab */}
+                {activeTab === 'reviews' && (
+                  <div className="bg-white rounded-xl shadow-lg p-6">
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="text-lg font-semibold text-gray-900">My Reviews</h3>
+                      <div className="flex items-center gap-4">
+                        <div className="text-sm text-gray-500">
+                          {data.reviews.length} review{data.reviews.length !== 1 ? 's' : ''}
+                        </div>
+                        {getReviewableProducts().length > 0 && (
+                          <div className="relative group">
+                            <button className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors">
+                              <Plus size={16} />
+                              Write Review
+                            </button>
+                            
+                            {/* Dropdown for reviewable products */}
+                            <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
+                              <div className="p-3">
+                                <p className="text-sm font-medium text-gray-700 mb-3">Select a product to review:</p>
+                                <div className="space-y-2 max-h-60 overflow-y-auto">
+                                  {getReviewableProducts().map((product, index) => (
+                                    <button
+                                      key={index}
+                                      onClick={() => {
+                                        const mockOrder = {
+                                          _id: product.orderId,
+                                          orderDate: product.orderDate
+                                        };
+                                        openReviewModal(mockOrder, product);
+                                      }}
+                                      className="w-full text-left p-3 hover:bg-gray-50 rounded-lg border border-gray-100 transition-colors"
+                                    >
+                                      <p className="font-medium text-gray-900 text-sm">{product.productName}</p>
+                                      <p className="text-xs text-gray-600">
+                                        Size: {product.size || 'N/A'} • Color: {product.color || 'Default'}
+                                      </p>
+                                      <p className="text-xs text-gray-500 mt-1">
+                                        Purchased: {product.orderDate ? new Date(product.orderDate).toLocaleDateString() : 'Unknown'}
+                                      </p>
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Show message if no reviewable products */}
+                    {getReviewableProducts().length === 0 && data.reviews.length === 0 && (
+                      <div className="text-center py-8">
+                        <MessageSquare className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+                        <p className="text-gray-500 mb-2">No reviews yet</p>
+                        <p className="text-sm text-gray-400 mb-4">You can write reviews for delivered orders</p>
+                        <p className="text-xs text-gray-400">Complete your first order to start writing reviews!</p>
+                      </div>
+                    )}
+
+                    {/* Show reviews if any exist */}
+                    {data.reviews.length > 0 && (
+                      <div className="space-y-4">
+                        {data.reviews.map((review, index) => (
+                          <div key={review._id || index} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                            {/* Review Header */}
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h4 className="font-medium text-gray-900 truncate">{review.productName}</h4>
+                                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                    review.status === 'approved' ? 'bg-green-100 text-green-800' :
+                                    review.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                    'bg-red-100 text-red-800'
+                                  }`}>
+                                    {review.status?.charAt(0).toUpperCase() + review.status?.slice(1) || 'Pending'}
+                                  </span>
+                                </div>
+                                
+                                {/* Rating Stars */}
+                                <div className="flex items-center gap-1 mb-2">
+                                  {[1, 2, 3, 4, 5].map((star) => (
+                                    <Star
+                                      key={star}
+                                      className={`w-4 h-4 ${
+                                        star <= (review.rating || 0)
+                                          ? 'text-yellow-400 fill-current'
+                                          : 'text-gray-300'
+                                      }`}
+                                    />
+                                  ))}
+                                  <span className="text-sm text-gray-600 ml-1">
+                                    ({review.rating || 0}/5)
+                                  </span>
+                                </div>
+                              </div>
+                              
+                              <div className="text-sm text-gray-500">
+                                {review.date ? new Date(review.date).toLocaleDateString() : 
+                                 review.createdAt ? new Date(review.createdAt).toLocaleDateString() : 'Date unknown'}
+                              </div>
+                            </div>
+                            
+                            {/* Review Title */}
+                            {review.title && (
+                              <h5 className="font-medium text-gray-800 mb-2">{review.title}</h5>
+                            )}
+                            
+                            {/* Review Comment */}
+                            <p className="text-gray-700 text-sm leading-relaxed mb-3">
+                              {review.comment || 'No comment provided'}
+                            </p>
+                            
+                            {/* Review Photo */}
+                            {review.photo && (
+                              <div className="mb-3">
+                                <Image
+                                  src={review.photo}
+                                  alt="Review photo"
+                                  width={120}
+                                  height={120}
+                                  className="rounded-lg object-cover border border-gray-200"
+                                  onError={(e) => {
+                                    e.target.style.display = 'none';
+                                  }}
+                                />
+                              </div>
+                            )}
+                            
+                            {/* Review Stats */}
+                            <div className="flex items-center justify-between text-xs text-gray-500 pt-3 border-t border-gray-100">
+                              <div className="flex items-center gap-4">
+                                {review.verified && (
+                                  <span className="flex items-center gap-1 text-green-600">
+                                    <CheckCircle className="w-3 h-3" />
+                                    Verified Purchase
+                                  </span>
+                                )}
+                                {review.helpful > 0 && (
+                                  <span>{review.helpful} found this helpful</span>
+                                )}
+                              </div>
+                              <span>Review #{review._id?.slice(-8) || index + 1}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Show message when user has reviews but no reviewable products */}
+                    {data.reviews.length > 0 && getReviewableProducts().length === 0 && (
+                      <div className="mt-6 p-4 bg-gray-50 rounded-lg text-center">
+                        <p className="text-sm text-gray-600">
+                          ✓ You&apos;ve reviewed all your purchased items!
+                        </p>
                       </div>
                     )}
                   </div>
@@ -611,6 +971,193 @@ const SimpleProfilePageClient = () => {
           </div>
         </div>
       </div>
+
+      {/* Review Creation Modal */}
+      <AnimatePresence>
+        {showReviewModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 backdrop-blur-sm bg-opacity-50 flex items-center justify-center z-50 p-4"
+            onClick={closeReviewModal}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-6">
+                {/* Modal Header */}
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-semibold text-gray-900">Write a Review</h2>
+                  <button
+                    onClick={closeReviewModal}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+
+                {/* Product Info */}
+                {selectedProductForReview && (
+                  <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                    <h3 className="font-medium text-gray-900 mb-1">
+                      {selectedProductForReview.productName}
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Purchased on {selectedOrderForReview?.orderDate ? 
+                        new Date(selectedOrderForReview.orderDate).toLocaleDateString() : 'Unknown date'}
+                    </p>
+                    <div className="mt-2 text-sm text-gray-600">
+                      Size: {selectedProductForReview.size || 'N/A'} • 
+                      Color: {selectedProductForReview.color || 'Default'} • 
+                      Quantity: {selectedProductForReview.quantity || 1}
+                    </div>
+                  </div>
+                )}
+
+                {/* Rating Selection */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Your Rating *
+                  </label>
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setReviewFormData(prev => ({ ...prev, rating: star }))}
+                        className="p-1 hover:scale-110 transition-transform"
+                      >
+                        <Star
+                          className={`w-8 h-8 ${
+                            star <= reviewFormData.rating
+                              ? 'text-yellow-400 fill-current'
+                              : 'text-gray-300 hover:text-yellow-300'
+                          }`}
+                        />
+                      </button>
+                    ))}
+                    <span className="ml-2 text-sm text-gray-600">
+                      ({reviewFormData.rating}/5)
+                    </span>
+                  </div>
+                </div>
+
+                {/* Review Title */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Review Title (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={reviewFormData.title}
+                    onChange={(e) => setReviewFormData(prev => ({ ...prev, title: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent"
+                    placeholder="Summarize your experience..."
+                    maxLength={100}
+                  />
+                </div>
+
+                {/* Review Comment */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Your Review *
+                  </label>
+                  <textarea
+                    value={reviewFormData.comment}
+                    onChange={(e) => setReviewFormData(prev => ({ ...prev, comment: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-transparent resize-none"
+                    rows={4}
+                    placeholder="Share your thoughts about this product..."
+                    maxLength={500}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    {reviewFormData.comment.length}/500 characters
+                  </p>
+                </div>
+
+                {/* Photo Upload */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Add Photo (Optional)
+                  </label>
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleReviewPhotoUpload}
+                      className="hidden"
+                      id="review-photo-upload"
+                      disabled={uploadingImage}
+                    />
+                    <label
+                      htmlFor="review-photo-upload"
+                      className={`flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors ${
+                        uploadingImage ? 'opacity-50 cursor-not-allowed' : ''
+                      }`}
+                    >
+                      {uploadingImage ? (
+                        <div className="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        <Camera size={16} />
+                      )}
+                      {uploadingImage ? 'Uploading...' : 'Upload Photo'}
+                    </label>
+                    
+                    {reviewFormData.photo && (
+                      <div className="relative">
+                        <Image
+                          src={reviewFormData.photo}
+                          alt="Review photo"
+                          width={60}
+                          height={60}
+                          className="rounded-lg object-cover border"
+                        />
+                        <button
+                          onClick={() => setReviewFormData(prev => ({ ...prev, photo: '' }))}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Modal Footer */}
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
+                  <button
+                    onClick={closeReviewModal}
+                    className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleCreateReview}
+                    disabled={submittingReview || !reviewFormData.comment.trim()}
+                    className={`flex items-center gap-2 px-6 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors ${
+                      submittingReview || !reviewFormData.comment.trim() 
+                        ? 'opacity-50 cursor-not-allowed' 
+                        : ''
+                    }`}
+                  >
+                    {submittingReview ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <Send size={16} />
+                    )}
+                    {submittingReview ? 'Submitting...' : 'Submit Review'}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Toast Notification */}
       <AnimatePresence>
