@@ -189,18 +189,8 @@ const LoginPageClient = ({ loginData }) => {
         >
           {/* Brand Header */}
           <div className="text-center">
-            <motion.h1
-              className="text-4xl font-bold text-gray-900 mb-2"
-              variants={itemVariants}
-            >
-              {loginData.brandInfo.name}
-            </motion.h1>
-            <motion.p
-              className="text-sm text-gray-600 mb-8"
-              variants={itemVariants}
-            >
-              {loginData.brandInfo.tagline}
-            </motion.p>
+           
+           
             <motion.h2
               className="text-3xl font-bold text-gray-900 mb-2"
               variants={itemVariants}

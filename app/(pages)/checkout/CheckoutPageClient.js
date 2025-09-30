@@ -75,6 +75,7 @@ const CheckoutPageClient = () => {
   const [showTransactionForm, setShowTransactionForm] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderProcessed, setOrderProcessed] = useState(false); // Prevent multiple submissions
+  const [isRedirecting, setIsRedirecting] = useState(false); // Prevent showing empty cart during redirect
   
   // Transaction form refs to avoid re-rendering during typing
   const transactionIdRef = useRef(null);
@@ -343,6 +344,9 @@ const CheckoutPageClient = () => {
       setIsProcessing(false);
       setShowTransactionForm(false);
 
+      // Set redirecting state to prevent showing empty cart
+      setIsRedirecting(true);
+
       // Clear cart from localStorage and Redux store
       dispatch(clearCart());
       
@@ -548,8 +552,29 @@ const CheckoutPageClient = () => {
     </AnimatePresence>
   );
 
-  // Empty cart state
-  if (!isLoading && enrichedCartItems.length === 0) {
+  // Empty cart state or redirecting state
+  if ((!isLoading && enrichedCartItems.length === 0 && !isRedirecting) || isRedirecting) {
+    if (isRedirecting) {
+      return (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <motion.div
+            className="text-center"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+          >
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-8 h-8 text-green-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Processing Order...</h2>
+            <p className="text-gray-600 mb-6">Please wait while we confirm your order.</p>
+            <div className="flex justify-center">
+              <LoadingSpinner size="md" />
+            </div>
+          </motion.div>
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <motion.div
