@@ -78,11 +78,11 @@ const HeroClient = ({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6 }}
-              className="flex flex-col sm:flex-row gap-4"
+              className="flex  flex-wrap gap-4"
             >
               <Link href="/allProducts">
                 <button 
-                  className="inline-flex items-center justify-center h-11 px-8 py-2 text-base bg-white text-black hover:bg-gray-100 group rounded-md font-medium transition-colors"
+                  className="inline-flex items-center justify-center h-11 px-4 sm:px-8 py-2 text-base bg-white text-black hover:bg-gray-100 group rounded-md font-medium transition-colors"
                 >
                   Shop Collection
                   <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
@@ -91,7 +91,7 @@ const HeroClient = ({
 
               <Link  href="/allProducts">
                 <button 
-                  className="inline-flex cursor-pointer items-center justify-center h-11 px-8 py-2 text-base border border-white text-white hover:bg-white hover:text-black rounded-md font-medium transition-colors"
+                  className="inline-flex cursor-pointer items-center justify-center h-11 px-4 sm:px-8 py-2 text-base border border-white text-white hover:bg-white hover:text-black rounded-md font-medium transition-colors"
                 >
                   View All Products
                 </button>
@@ -103,7 +103,7 @@ const HeroClient = ({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.8 }}
-              className="grid grid-cols-3 gap-8 pt-8 border-t border-gray-700"
+              className="grid grid-cols-3 gap-8 pt-8 border-t border-gray-700 max-md:w-[90vw] max-md:mx-auto"
             >
               {stats.map((stat, index) => {
                 // Extract numeric value and suffix from stat.number

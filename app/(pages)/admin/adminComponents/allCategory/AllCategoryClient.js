@@ -166,7 +166,7 @@ const AllCategoryClient = () => {
         
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors shadow-lg"
+          className="flex items-center space-x-2 bg-gray-800 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors shadow-lg"
         >
           <Plus size={20} />
           <span>Add Category</span>

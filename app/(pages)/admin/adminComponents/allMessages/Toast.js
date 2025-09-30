@@ -61,9 +61,9 @@ const Toast = ({ type, message, isVisible, onClose }) => {
           initial={{ opacity: 0, y: -100, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: -100, scale: 0.95 }}
-          className="fixed top-4 right-4 z-50"
+          className="fixed top-4 left-4 right-4 sm:left-auto sm:right-4 z-50"
         >
-          <div className={`${config.bgColor} ${config.borderColor} ${config.textColor} rounded-xl shadow-2xl border backdrop-blur-sm p-4 min-w-[300px] max-w-md`}>
+          <div className={`${config.bgColor} ${config.borderColor} ${config.textColor} rounded-xl shadow-2xl border backdrop-blur-sm p-3 sm:p-4 min-w-0 sm:min-w-[300px] max-w-md`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="flex-shrink-0">

@@ -157,13 +157,9 @@ const NavbarClient = ({ navItems, defaultShopCategories }) => {
   }, []);
 
   useEffect(() => {
-    // Remove initial loading after a short delay to prevent showing zero counts briefly
-    const timer = setTimeout(() => {
-      setIsInitialLoad(false);
-    }, 1000);
-    
-    return () => clearTimeout(timer);
-  }, []);
+    // Remove initial loading immediately since cart/wishlist data is loaded from localStorage
+    setIsInitialLoad(false);
+  }, [cartTotalQuantity, wishlistTotalItems]);
 
   return (
     <motion.header 
@@ -190,7 +186,7 @@ const NavbarClient = ({ navItems, defaultShopCategories }) => {
                 priority
                 style={{ height: "auto" }}
               />
-              <div className="hidden sm:block">
+              <div className=" ">
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-black bg-clip-text text-transparent">
                   SkyZonee
                 </h1>

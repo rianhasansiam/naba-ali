@@ -48,7 +48,7 @@ const ProductsContent = ({ productsData, categoriesData }) => {
       {/* Mobile Filters Overlay */}
       {mobileFiltersOpen && (
         <div className="fixed inset-0 z-50 xl:hidden">
-          <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={() => setMobileFiltersOpen(false)} />
+          <div className="fixed inset-0 bg-transparent transition-opacity" onClick={() => setMobileFiltersOpen(false)} />
           <div className="fixed inset-y-0 left-0 w-full max-w-sm bg-white shadow-xl overflow-y-auto transform transition-transform">
             <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-white sticky top-0 z-10">
               <h2 className="text-xl font-semibold text-gray-900">Filters</h2>

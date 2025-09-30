@@ -260,17 +260,17 @@ const AddToCartPageClient = ({ productsData, couponsData }) => {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -20 }}
-                      className="flex items-center gap-4 p-4 border-b border-gray-100 last:border-b-0"
+                      className="flex items-center gap-3 sm:gap-4 p-4 border-b border-gray-100 last:border-b-0"
                     >
                       {/* Product Image */}
-                      <div className="relative">
+                      <div className="relative flex-shrink-0">
                         <Image
                           src={item.image || PLACEHOLDER_IMAGES.PRODUCT_SMALL}
                           alt={item.name}
-                          width={80}
-                          height={80}
-                          className="rounded-lg object-cover"
-                          unoptimized={!item.image}
+                          width={60}
+                          height={60}
+                          className="rounded-lg object-cover w-15 h-15 sm:w-20 sm:h-20"
+                          unoptimized={true}
                         />
                         {!itemInStock && (
                           <div className="absolute inset-0 bg-red-500 bg-opacity-75 rounded-lg flex items-center justify-center">
@@ -280,15 +280,15 @@ const AddToCartPageClient = ({ productsData, couponsData }) => {
                       </div>
 
                       {/* Product Info */}
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900 mb-1">{item.name || 'Product Name'}</h3>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-gray-900 mb-1 truncate">{item.name || 'Product Name'}</h3>
                         <div className="text-sm text-gray-500 mb-2">
                           Size: {item.size || 'N/A'} | Color: {item.color || 'N/A'}
                         </div>
                         <div className="text-lg font-bold text-gray-900">
                           ${(item.price || 0).toFixed(2)}
                         </div>
-                        
+
                         {/* Stock Status */}
                         {itemInStock && currentStock <= 5 && (
                           <div className="text-sm text-orange-600 mt-1">
@@ -303,24 +303,24 @@ const AddToCartPageClient = ({ productsData, couponsData }) => {
                       </div>
 
                       {/* Quantity Controls */}
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2 sm:gap-3">
                         <div className="flex items-center border border-gray-200 rounded-lg">
                           <button
                             onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
                             disabled={item.quantity <= 1 || !itemInStock}
-                            className="p-2 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="p-1.5 sm:p-2 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            <Minus className="w-4 h-4" />
+                            <Minus className="w-3 h-3 sm:w-4 sm:h-4" />
                           </button>
-                          <span className="px-4 py-2 text-center min-w-[60px]">
+                          <span className="px-2 sm:px-4 py-2 text-center min-w-[40px] sm:min-w-[60px] text-sm sm:text-base">
                             {item.quantity}
                           </span>
                           <button
                             onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
                             disabled={!itemInStock || item.quantity >= currentStock}
-                            className="p-2 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="p-1.5 sm:p-2 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            <Plus className="w-4 h-4" />
+                            <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
                           </button>
                         </div>
 
@@ -334,7 +334,7 @@ const AddToCartPageClient = ({ productsData, couponsData }) => {
                       </div>
 
                       {/* Item Total */}
-                      <div className="text-right">
+                      <div className="text-right hidden sm:block">
                         <div className="font-bold text-gray-900">
                           ${((item.price || 0) * (item.quantity || 0)).toFixed(2)}
                         </div>
@@ -345,6 +345,7 @@ const AddToCartPageClient = ({ productsData, couponsData }) => {
               </AnimatePresence>
             </div>
           </div>
+
 
           {/* Order Summary */}
           <div className="lg:col-span-1">
@@ -444,15 +445,15 @@ const AddToCartPageClient = ({ productsData, couponsData }) => {
 
               {/* Checkout Button */}
               <Link href="/checkout">
-                <button className="w-full bg-gray-900 text-white py-3 px-6 rounded-lg hover:bg-gray-800 transition-colors flex items-center justify-center gap-2">
-                  <ShoppingCart className="w-4 h-4" />
+                <button className="w-full bg-gray-900 text-white py-3 sm:py-4 px-4 sm:px-6 rounded-lg hover:bg-gray-800 transition-colors flex items-center justify-center gap-2 text-sm sm:text-base">
+                  <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5" />
                   Proceed to Checkout
                 </button>
               </Link>
 
               {/* Continue Shopping */}
               <Link href="/allProducts">
-                <button className="w-full mt-3 border border-gray-200 text-gray-700 py-3 px-6 rounded-lg hover:bg-gray-50 transition-colors">
+                <button className="w-full mt-3 border border-gray-200 text-gray-700 py-3 sm:py-3 px-4 sm:px-6 rounded-lg hover:bg-gray-50 transition-colors text-sm sm:text-base">
                   Continue Shopping
                 </button>
               </Link>

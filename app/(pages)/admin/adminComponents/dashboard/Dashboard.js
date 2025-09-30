@@ -6,20 +6,12 @@ import { PLACEHOLDER_IMAGES } from '@/lib/constants';
 
 // Client Component - Handles real data processing from props
 const Dashboard = ({ products = [], users = [], orders = [], reviews = [], isLoading }) => {
-
   // Calculate real analytics from database data
   const analytics = useMemo(() => {
     const allProducts = Array.isArray(products) ? products : [];
     const allUsers = Array.isArray(users) ? users : [];
     const allOrders = Array.isArray(orders) ? orders : [];
     const allReviews = Array.isArray(reviews) ? reviews : [];
-
-    console.log('Dashboard data check:', {
-      productsCount: allProducts.length,
-      usersCount: allUsers.length,
-      ordersCount: allOrders.length,
-      reviewsCount: allReviews.length
-    });
 
     // Calculate total revenue from orders
     let totalRevenue = 0;
@@ -30,14 +22,18 @@ const Dashboard = ({ products = [], users = [], orders = [], reviews = [], isLoa
 
       // Try multiple ways to get the order total
       if (order.orderSummary?.total !== undefined) {
-        orderTotal = parseFloat(order.orderSummary.total) || 0;
+        orderTotal = typeof order.orderSummary.total === 'string' 
+          ? parseFloat(order.orderSummary.total) || 0
+          : Number(order.orderSummary.total) || 0;
       } else if (order.total !== undefined) {
-        orderTotal = parseFloat(order.total) || 0;
+        orderTotal = typeof order.total === 'string'
+          ? parseFloat(order.total) || 0
+          : Number(order.total) || 0;
       } else if (order.items && Array.isArray(order.items)) {
         // Calculate from items if no total provided
         orderTotal = order.items.reduce((sum, item) => {
-          const price = parseFloat(item.price || 0);
-          const quantity = parseFloat(item.quantity || 0);
+          const price = typeof item.price === 'string' ? parseFloat(item.price) || 0 : Number(item.price) || 0;
+          const quantity = typeof item.quantity === 'string' ? parseFloat(item.quantity) || 0 : Number(item.quantity) || 0;
           return sum + (price * quantity);
         }, 0);
       }
@@ -51,24 +47,43 @@ const Dashboard = ({ products = [], users = [], orders = [], reviews = [], isLoa
     // Calculate average order value
     const averageOrder = validOrdersCount > 0 ? totalRevenue / validOrdersCount : 0;
 
-    console.log('Dashboard Analytics Summary:', {
-      totalOrders: allOrders.length,
-      validOrdersCount,
-      totalRevenue,
-      averageOrder
-    });
-
     // Get recent orders (last 5)
     const recentSales = allOrders
       .sort((a, b) => new Date(b.createdAt || b.orderDate) - new Date(a.createdAt || a.orderDate))
       .slice(0, 5)
-      .map(order => ({
-        id: order.orderId || order._id?.toString().substring(0, 8) || 'N/A',
-        customer: order.customerInfo?.name || order.customer?.name || 'Anonymous',
-        amount: parseFloat(order.orderSummary?.total || order.total || 0),
-        status: order.status || 'pending',
-        date: order.createdAt ? new Date(order.createdAt).toISOString().split('T')[0] : 'N/A'
-      }));
+      .map(order => {
+        // Calculate total amount from various possible data structures
+        let amount = 0;
+        
+        // Try orderSummary.total first (from checkout process) - handle both string and number
+        if (order.orderSummary?.total !== undefined) {
+          amount = typeof order.orderSummary.total === 'string' 
+            ? parseFloat(order.orderSummary.total) || 0
+            : Number(order.orderSummary.total) || 0;
+        }
+        // Try direct total field - handle both string and number
+        else if (order.total !== undefined) {
+          amount = typeof order.total === 'string'
+            ? parseFloat(order.total) || 0
+            : Number(order.total) || 0;
+        }
+        // Calculate from items if no total provided
+        else if (order.items && Array.isArray(order.items)) {
+          amount = order.items.reduce((sum, item) => {
+            const price = typeof item.price === 'string' ? parseFloat(item.price) || 0 : Number(item.price) || 0;
+            const quantity = typeof item.quantity === 'string' ? parseFloat(item.quantity) || 0 : Number(item.quantity) || 0;
+            return sum + (price * quantity);
+          }, 0);
+        }
+
+        return {
+          id: order.orderId || order._id?.toString().substring(0, 8) || 'N/A',
+          customer: order.customerInfo?.name || order.customer?.name || 'Anonymous',
+          amount: amount,
+          status: order.status || 'pending',
+          date: order.createdAt ? new Date(order.createdAt).toISOString().split('T')[0] : 'N/A'
+        };
+      });
 
     // Calculate top products from orders
     const productSales = {};
@@ -83,12 +98,6 @@ const Dashboard = ({ products = [], users = [], orders = [], reviews = [], isLoa
           if (!productSales[productId]) {
             // Find product using normalized field names (id instead of _id)
             const product = allProducts.find(p => p.id === productId || p._id === productId);
-            console.log('Debug - Product lookup for ID:', productId, 'Found product:', product);
-            console.log('Debug - Product image fields:', {
-              primaryImage: product?.primaryImage,
-              image: product?.image,
-              images: product?.images
-            });
             
             productSales[productId] = {
               name: productName,
@@ -123,8 +132,29 @@ const Dashboard = ({ products = [], users = [], orders = [], reviews = [], isLoa
                orderDate.getFullYear() === date.getFullYear();
       });
       
-      const monthRevenue = monthOrders.reduce((sum, order) => 
-        sum + parseFloat(order.orderSummary?.total || order.total || 0), 0);
+      const monthRevenue = monthOrders.reduce((sum, order) => {
+        let orderTotal = 0;
+        
+        // Try multiple ways to get the order total
+        if (order.orderSummary?.total !== undefined) {
+          orderTotal = typeof order.orderSummary.total === 'string' 
+            ? parseFloat(order.orderSummary.total) || 0
+            : Number(order.orderSummary.total) || 0;
+        } else if (order.total !== undefined) {
+          orderTotal = typeof order.total === 'string'
+            ? parseFloat(order.total) || 0
+            : Number(order.total) || 0;
+        } else if (order.items && Array.isArray(order.items)) {
+          // Calculate from items if no total provided
+          orderTotal = order.items.reduce((sum, item) => {
+            const price = typeof item.price === 'string' ? parseFloat(item.price) || 0 : Number(item.price) || 0;
+            const quantity = typeof item.quantity === 'string' ? parseFloat(item.quantity) || 0 : Number(item.quantity) || 0;
+            return sum + (price * quantity);
+          }, 0);
+        }
+        
+        return sum + orderTotal;
+      }, 0);
       
       monthlyData.push({
         month: monthName,

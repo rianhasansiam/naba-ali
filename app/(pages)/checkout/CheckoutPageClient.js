@@ -74,6 +74,7 @@ const CheckoutPageClient = () => {
   const [selectedPayment, setSelectedPayment] = useState('');
   const [showTransactionForm, setShowTransactionForm] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [orderProcessed, setOrderProcessed] = useState(false); // Prevent multiple submissions
   
   // Transaction form refs to avoid re-rendering during typing
   const transactionIdRef = useRef(null);
@@ -133,6 +134,11 @@ const CheckoutPageClient = () => {
       }
     }
   }, [products, dispatch]);
+
+  // Reset order processed flag when cart changes
+  useEffect(() => {
+    setOrderProcessed(false);
+  }, [enrichedCartItems.length, selectedPayment]);
 
   // Calculate totals with dynamic shipping and tax
   const calculateTotals = () => {
@@ -240,6 +246,8 @@ const CheckoutPageClient = () => {
 
   // Process order
   const processOrder = async () => {
+    if (orderProcessed) return; // Prevent multiple submissions
+    
     if (!isFormValid()) {
       alert('Please fill in all required fields and select a payment method.');
       return;
@@ -247,7 +255,9 @@ const CheckoutPageClient = () => {
 
     // If payment method is not COD, show transaction form
     if (selectedPayment !== 'cod') {
-      setShowTransactionForm(true);
+      if (!orderProcessed) {
+        setShowTransactionForm(true);
+      }
       return;
     }
 
@@ -257,7 +267,10 @@ const CheckoutPageClient = () => {
 
   // Process order with payment information
   const processOrderWithPayment = async (transactionData = null) => {
+    if (orderProcessed || isProcessing) return; // Prevent multiple submissions
+    
     setIsProcessing(true);
+    setOrderProcessed(true); // Mark order as being processed
 
     try {
       // Simulate payment processing
@@ -350,7 +363,7 @@ const CheckoutPageClient = () => {
   // Transaction Form Modal for non-COD payments
   const TransactionForm = () => (
     <AnimatePresence>
-      {showTransactionForm && (
+      {showTransactionForm && !orderProcessed && (
         <motion.div
           className="fixed inset-0 backdrop-blur-sm flex items-center justify-center p-4 z-50"
           initial={{ opacity: 0 }}
@@ -492,6 +505,8 @@ const CheckoutPageClient = () => {
                 </button>
                 <button
                   onClick={() => {
+                    if (orderProcessed || isProcessing) return; // Prevent multiple submissions
+                    
                     // Get values from refs
                     const transactionId = transactionIdRef.current?.value || '';
                     const paymentDate = paymentDateRef.current?.value || '';
@@ -703,7 +718,7 @@ const CheckoutPageClient = () => {
                         fill
                         sizes="64px"
                         className="object-cover"
-                        unoptimized={!item.image}
+                        unoptimized={true}
                       />
                     </div>
                     <div className="flex-1">
@@ -751,20 +766,22 @@ const CheckoutPageClient = () => {
               {/* Place Order Button */}
               <motion.button
                 onClick={processOrder}
-                disabled={!isFormValid() || isProcessing}
+                disabled={!isFormValid() || isProcessing || orderProcessed}
                 className={`w-full mt-6 py-4 rounded-lg font-medium text-white transition-colors ${
-                  isFormValid() && !isProcessing
+                  isFormValid() && !isProcessing && !orderProcessed
                     ? 'bg-gray-600 hover:bg-gray-700'
                     : 'bg-gray-400 cursor-not-allowed'
                 }`}
-                whileHover={isFormValid() && !isProcessing ? { scale: 1.02 } : {}}
-                whileTap={isFormValid() && !isProcessing ? { scale: 0.98 } : {}}
+                whileHover={isFormValid() && !isProcessing && !orderProcessed ? { scale: 1.02 } : {}}
+                whileTap={isFormValid() && !isProcessing && !orderProcessed ? { scale: 0.98 } : {}}
               >
                 {isProcessing ? (
                   <div className="flex items-center justify-center space-x-2">
                     <LoadingSpinner size="sm" color="white" />
                     <span>{isAddingOrder ? 'Saving order...' : 'Processing payment...'}</span>
                   </div>
+                ) : orderProcessed ? (
+                  'Order Placed Successfully!'
                 ) : (
                   `Place Order - $${totals.total}`
                 )}

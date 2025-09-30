@@ -197,7 +197,7 @@ const { data: reviews = [], isLoading: reviewsLoading } = useGetData({ name: 're
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"
+          className="fixed inset-0 bg-transparent z-20 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}

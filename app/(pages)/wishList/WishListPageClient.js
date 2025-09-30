@@ -120,7 +120,7 @@ const WishlistProductCard = ({ product, onRemove, onAddToCart, isSelected, onSel
           fill
           className="object-cover group-hover:scale-105 transition-transform duration-500"
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-          unoptimized={!product.image || product.image.startsWith('data:')}
+          unoptimized={true}
           onError={(e) => {
             e.target.src = PLACEHOLDER_IMAGES.PRODUCT_LARGE;
           }}

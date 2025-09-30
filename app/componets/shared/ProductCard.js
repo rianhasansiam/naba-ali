@@ -147,6 +147,7 @@ const ProductCard = memo(({
       className={`
         relative bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl 
         transition-all duration-300 cursor-pointer group border border-gray-100
+        flex flex-col h-full
         ${variant === 'featured' ? 'max-w-sm' : ''}
       `}
     >
@@ -166,7 +167,7 @@ const ProductCard = memo(({
         )}
 
         {/* Action Buttons */}
-        <div className="absolute top-3 right-3 flex flex-col space-y-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+        <div className="absolute top-3 right-3 flex flex-col space-y-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200">
           <motion.button
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.95 }}
@@ -197,7 +198,7 @@ const ProductCard = memo(({
           className={`
             absolute bottom-3 right-3 w-10 h-10 rounded-full
             flex items-center justify-center transition-all duration-200 shadow-lg
-            opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0
+            opacity-100 translate-y-0 md:opacity-0 md:group-hover:opacity-100 md:translate-y-2 md:group-hover:translate-y-0
             ${isInCart 
               ? 'bg-green-500 text-white hover:bg-green-600' 
               : 'bg-black text-white hover:bg-gray-800'
@@ -215,12 +216,12 @@ const ProductCard = memo(({
       </div>
 
       {/* Product Info */}
-      <div className="p-4">
+      <div className="p-4 flex flex-col flex-grow">
         <div className="flex items-start justify-between mb-2">
           <h3 className="font-semibold text-gray-900 line-clamp-2 flex-1">
             {product.name}
           </h3>
-          <div className="flex items-center space-x-1 ml-2">
+          <div className="flex items-center space-x-1 ml-2 flex-shrink-0">
             <Star size={14} className="text-yellow-400 fill-current" />
             <span className="text-sm text-gray-600">
               {product.rating || '4.5'}
@@ -228,11 +229,11 @@ const ProductCard = memo(({
           </div>
         </div>
         
-        <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+        <p className="text-gray-600 text-sm mb-3 line-clamp-2 flex-grow">
           {product.shortDescription || product.description}
         </p>
         
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mt-auto">
           <div className="flex items-center space-x-2">
             <span className="text-xl font-bold text-gray-900">
               ${product.price}
@@ -244,7 +245,7 @@ const ProductCard = memo(({
             )}
           </div>
           
-          <span className="text-sm text-gray-500 capitalize">
+          <span className="text-sm text-gray-500 capitalize flex-shrink-0">
             {product.category}
           </span>
         </div>
