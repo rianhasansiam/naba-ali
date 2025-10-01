@@ -190,7 +190,7 @@ const AddCouponModal = ({ isOpen, onClose }) => {
                     className="w-full px-4 py-3 rounded-lg border border-gray-200/60 focus:border-blue-500 focus:ring-blue-500/20 focus:outline-none focus:ring-2 transition-all duration-200 text-sm bg-white/80 backdrop-blur-sm"
                   >
                     <option value="percentage">Percentage (%)</option>
-                    <option value="fixed">Fixed Amount ($)</option>
+                    <option value="fixed">Fixed Amount (৳)</option>
                   </select>
                 </div>
 

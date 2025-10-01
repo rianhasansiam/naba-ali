@@ -8,6 +8,7 @@ import ErrorSuppression from "./componets/shared/ErrorSuppression";
 import AuthProvider from "../lib/AuthProvider";
 import ReactQueryProvider from "@/lib/ReactQueryProvider";
 import { LoadingProvider } from "../lib/LoadingProvider";
+import CustomerChatButton from "./componets/chat/CustomerChatButton";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -62,10 +63,13 @@ export default function RootLayout({ children }) {
           <StoreProvider>
             <ReactQueryProvider>
               <LoadingProvider>
-                <div className="bg-white min-h-screen text-black">
+                <div className="flex flex-col min-h-screen bg-white text-black">
                   <Navbar />
-                  {children}
+                  <main className="flex-grow">
+                    {children}
+                  </main>
                   <Footer />
+                  <CustomerChatButton />
                 </div>
               </LoadingProvider>
             </ReactQueryProvider>

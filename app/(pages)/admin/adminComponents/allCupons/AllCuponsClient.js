@@ -365,14 +365,14 @@ const AllCouponsClient = () => {
                 <div className="flex items-center space-x-1">
                   <Percent className="text-green-600" size={16} />
                   <span className="font-bold text-green-600">
-                    {coupon.type === 'percentage' ? `${coupon.discount}%` : `$${coupon.discount}`}
+                    {coupon.type === 'percentage' ? `${coupon.discount}%` : `৳${coupon.discount}`}
                   </span>
                 </div>
               </div>
               
               <div className="bg-gray-50 rounded-xl p-3">
                 <p className="text-sm text-gray-600 mb-1">Min Amount</p>
-                <span className="font-bold text-gray-900">${coupon.minAmount}</span>
+                <span className="font-bold text-gray-900">৳{coupon.minAmount}</span>
               </div>
               
               <div className="bg-gray-50 rounded-xl p-3">

@@ -409,7 +409,7 @@ const AddProductModal = ({ isOpen, onClose, categories }) => {
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-500">
-                      $
+                      ৳
                     </div>
                     <input
                       type="number"
@@ -437,7 +437,7 @@ const AddProductModal = ({ isOpen, onClose, categories }) => {
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-gray-500">
-                      $
+                      ৳
                     </div>
                     <input
                       type="number"

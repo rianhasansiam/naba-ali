@@ -67,9 +67,9 @@ const ProductCard = ({ product, onEdit, onDelete, onAddReview, isDeleting }) => 
         <div>
           <p className="text-gray-500 text-xs">Price</p>
           <div className="flex items-center space-x-2">
-            <span className="font-bold text-green-600">${product.price || 0}</span>
+            <span className="font-bold text-green-600">৳{product.price || 0}</span>
             {(product.originalPrice || 0) > (product.price || 0) && (
-              <span className="text-gray-400 line-through text-sm">${product.originalPrice}</span>
+              <span className="text-gray-400 line-through text-sm">৳{product.originalPrice}</span>
             )}
           </div>
         </div>

@@ -135,7 +135,7 @@ const AddReviewModal = ({ isOpen, onClose, products, onSubmitReview }) => {
               <option value="">Choose a product to review...</option>
               {products?.map(product => (
                 <option key={product._id} value={product._id}>
-                  {product.name} - ${product.price}
+                  {product.name} - ৳{product.price}
                 </option>
               ))}
             </select>

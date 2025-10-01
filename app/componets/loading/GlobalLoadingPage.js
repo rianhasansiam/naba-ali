@@ -99,11 +99,8 @@ const GlobalLoadingPage = ({
               animate={floatingAnimation}
               className="relative"
             >
-              <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center shadow-2xl">
-                <span className="text-white text-2xl font-bold">NA</span>
-              </div>
-              {/* Glow effect */}
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-600 to-purple-600 rounded-2xl blur-xl opacity-30 -z-10"></div>
+              
+            
             </motion.div>
           </motion.div>
         )}

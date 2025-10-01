@@ -412,7 +412,7 @@ const CheckoutPageClient = () => {
                   })()}
                   <span className="font-medium">{paymentMethods.find(p => p.id === selectedPayment)?.name}</span>
                 </div>
-                <p className="text-sm text-gray-600 mt-1">Total Amount: ${totals.total}</p>
+                <p className="text-sm text-gray-600 mt-1">Total Amount: ৳{totals.total}</p>
               </div>
 
               {/* Transaction Form */}
@@ -753,7 +753,7 @@ const CheckoutPageClient = () => {
                     </div>
                     <div className="text-right">
                       <p className="font-semibold text-gray-900">
-                        ${((item.price || 0) * (item.quantity || 0)).toFixed(2)}
+                        ৳{((item.price || 0) * (item.quantity || 0)).toFixed(2)}
                       </p>
                     </div>
                   </div>
@@ -768,21 +768,21 @@ const CheckoutPageClient = () => {
               <div className="space-y-3">
                 <div className="flex justify-between text-gray-600">
                   <span>Subtotal</span>
-                  <span>${totals.subtotal}</span>
+                  <span>৳{totals.subtotal}</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>Shipping</span>
-                  <span>${totals.shipping}</span>
+                  <span>৳{totals.shipping}</span>
                 </div>
                 {taxEnabled && parseFloat(totals.tax) > 0 && (
                   <div className="flex justify-between text-gray-600">
                     <span>{totals.taxName || 'Tax'}</span>
-                    <span>${totals.tax}</span>
+                    <span>৳{totals.tax}</span>
                   </div>
                 )}
                 <div className="border-t pt-3 flex justify-between text-xl font-bold text-gray-900">
                   <span>Total</span>
-                  <span>${totals.total}</span>
+                  <span>৳{totals.total}</span>
                 </div>
               </div>
 
@@ -806,7 +806,7 @@ const CheckoutPageClient = () => {
                 ) : orderProcessed ? (
                   'Order Placed Successfully!'
                 ) : (
-                  `Place Order - $${totals.total}`
+                  `Place Order - ৳${totals.total}`
                 )}
               </motion.button>
 
