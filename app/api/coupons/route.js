@@ -1,9 +1,20 @@
 import { NextResponse } from 'next/server';
 import { getCollection } from '../../../lib/mongodb';
+import { checkOrigin, isAdmin, forbiddenResponse } from '../../../lib/security';
 
-// GET - Get all coupons
+// GET - Get all coupons (Admin only)
 export async function GET(request) {
   try {
+    // Check origin for security
+    const originCheck = checkOrigin(request);
+    if (originCheck) return originCheck;
+
+    // Check if user is admin
+    const admin = await isAdmin();
+    if (!admin) {
+      return forbiddenResponse('Only admins can view coupons');
+    }
+
     // Get the coupons collection
     const coupons = await getCollection('allCoupons');
     
@@ -21,9 +32,19 @@ export async function GET(request) {
   }
 } // End of GET function
 
-// POST - Create new coupon
+// POST - Create new coupon (Admin only)
 export async function POST(request) {
   try {
+    // Check origin for security
+    const originCheck = checkOrigin(request);
+    if (originCheck) return originCheck;
+
+    // Check if user is admin
+    const admin = await isAdmin();
+    if (!admin) {
+      return forbiddenResponse('Only admins can create coupons');
+    }
+
     // Get the coupons collection
     const coupons = await getCollection('allCoupons');
     

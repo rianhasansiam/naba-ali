@@ -53,7 +53,7 @@ const WishlistProductCard = ({ product, onRemove, onAddToCart, isSelected, onSel
     onSelect(product.id);
   };
 
-  console.log(product);
+
   return (
     <Link href={`/productDetails/${product.id}`}>
       <motion.div
@@ -318,7 +318,7 @@ export default function WishListPageClient() {
         setItems(updatedItems);
         setSelectedItems(selectedItems.filter(id => id !== itemId));
         
-        console.log('Added to cart and removed from wishlist:', itemId);
+
         resolve();
       }, 500);
     });

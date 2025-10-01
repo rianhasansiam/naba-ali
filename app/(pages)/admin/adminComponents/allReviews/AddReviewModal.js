@@ -36,7 +36,7 @@ const AddReviewModal = ({ isOpen, onClose, onReviewAdded, onSubmitStart, onSubmi
   });
 
   // Debug: Log products data to see structure
-  console.log('Products data in modal:', productsData);
+
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -97,7 +97,7 @@ const AddReviewModal = ({ isOpen, onClose, onReviewAdded, onSubmitStart, onSubmi
         
         // Upload to ImageBB
         const imageUrl = await uploadToImageBB(file);
-        console.log('Image uploaded to ImageBB:', imageUrl);
+
         
         // Update form data with ImageBB URL
         setFormData(prev => ({
@@ -204,7 +204,7 @@ const AddReviewModal = ({ isOpen, onClose, onReviewAdded, onSubmitStart, onSubmi
     
     // Prevent multiple submissions
     if (isProcessing || isSubmitting || imageUploading) {
-      console.log('Submission blocked - already processing');
+
       return;
     }
     
@@ -228,11 +228,10 @@ const AddReviewModal = ({ isOpen, onClose, onReviewAdded, onSubmitStart, onSubmi
         updatedAt: new Date()
       };
 
-      console.log('Submitting review data:', reviewData);
-      console.log('Using addReview function:', typeof addReview);
+
       
       const result = await addReview(reviewData);
-      console.log('API result:', result);
+
       
       if (result?.success) {
         setToast({

@@ -67,12 +67,12 @@ const OrderDetails = ({ ordersData }) => {
       return;
     }
 
-    console.log('updateOrderStatus called with:', { orderId, newStatus, type: typeof orderId });
+
 
     setIsUpdating(true);
     try {
       const url = `/api/orders/${orderId}`;
-      console.log('Making PUT request to:', url);
+
 
       const response = await fetch(url, {
         method: 'PUT',
@@ -82,8 +82,7 @@ const OrderDetails = ({ ordersData }) => {
         body: JSON.stringify({ status: newStatus }),
       });
 
-      console.log('Response status:', response.status);
-      console.log('Response ok:', response.ok);
+
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -92,7 +91,7 @@ const OrderDetails = ({ ordersData }) => {
       }
 
       const result = await response.json();
-      console.log('Response result:', result);
+
       
       // Refresh the orders data
       queryClient.invalidateQueries(['orders']);
@@ -137,11 +136,10 @@ const OrderDetails = ({ ordersData }) => {
 
   // View detailed order function
   const viewOrderDetails = (order) => {
-    console.log('viewOrderDetails called with order:', order);
-    console.log('order.id:', order.id, 'order._id:', order._id);
+
     setSelectedOrder(order);
     setShowOrderModal(true);
-    console.log('Modal should now be open with selectedOrder:', order);
+
   };
 
   const getStatusColor = (status) => {
@@ -194,7 +192,7 @@ const OrderDetails = ({ ordersData }) => {
 
   // Status Dropdown Component
   const StatusDropdown = ({ currentStatus, orderId }) => {
-    console.log('StatusDropdown rendered with:', { currentStatus, orderId });
+
     const [isOpen, setIsOpen] = useState(false);
 
     // Close dropdown when clicking outside
@@ -231,7 +229,7 @@ const OrderDetails = ({ ordersData }) => {
                 <button
                   key={option.value}
                   onClick={() => {
-                    console.log('StatusDropdown onClick:', { orderId, optionValue: option.value, currentStatus });
+
                     updateOrderStatus(orderId, option.value);
                     setIsOpen(false);
                   }}

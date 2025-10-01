@@ -9,12 +9,12 @@ const Category = memo(({ categoriesData }) => {
   const categories = React.useMemo(() => {
     if (!Array.isArray(categoriesData)) return [];
     
-    console.log('Category Debug - Categories Data with counts:', categoriesData);
+
     
     return categoriesData
       .filter(category => category.status === 'active')
       .map(category => {
-        console.log(`Category Debug - "${category.name}": ${category.productCount || 0} products`);
+
         
         return {
           _id: category._id,

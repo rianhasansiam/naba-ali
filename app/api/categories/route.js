@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server';
 import { getCollection } from '../../../lib/mongodb';
+import { checkOrigin, isAdmin, forbiddenResponse } from '../../../lib/security';
 
-// GET - Get all categories
+// GET - Get all categories (Public - Anyone can view)
 export async function GET(request) {
   try {
+    // Check origin for security
+    const originCheck = checkOrigin(request);
+    if (originCheck) return originCheck;
+
     // Get both categories and products collections
     const categories = await getCollection('allCategories');
     const products = await getCollection('allProducts');
@@ -41,9 +46,19 @@ export async function GET(request) {
   }
 } // End of GET function
 
-// POST - Create new category
+// POST - Create new category (Admin only)
 export async function POST(request) {
   try {
+    // Check origin for security
+    const originCheck = checkOrigin(request);
+    if (originCheck) return originCheck;
+
+    // Check if user is admin
+    const admin = await isAdmin();
+    if (!admin) {
+      return forbiddenResponse('Only admins can create categories');
+    }
+
     // Get the categories collection
     const categories = await getCollection('allCategories');
     
@@ -68,9 +83,19 @@ export async function POST(request) {
   }
 } // End of POST function
 
-// PUT - Update category by _id
+// PUT - Update category by _id (Admin only)
 export async function PUT(request, { params }) {
   try {
+    // Check origin for security
+    const originCheck = checkOrigin(request);
+    if (originCheck) return originCheck;
+
+    // Check if user is admin
+    const admin = await isAdmin();
+    if (!admin) {
+      return forbiddenResponse('Only admins can update categories');
+    }
+
     const categories = await getCollection('allCategories');
     const body = await request.json();
     
@@ -93,9 +118,19 @@ export async function PUT(request, { params }) {
   }
 } // End of PUT function
 
-// DELETE - Delete category by _id
+// DELETE - Delete category by _id (Admin only)
 export async function DELETE(request, { params }) {
   try {
+    // Check origin for security
+    const originCheck = checkOrigin(request);
+    if (originCheck) return originCheck;
+
+    // Check if user is admin
+    const admin = await isAdmin();
+    if (!admin) {
+      return forbiddenResponse('Only admins can delete categories');
+    }
+
     const categories = await getCollection('allCategories');
     
     // Get _id from URL params

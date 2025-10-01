@@ -1,5 +1,7 @@
 import { createSlice, current } from '@reduxjs/toolkit';
 
+const isDev = process.env.NODE_ENV === 'development';
+
 const initialState = {
   users: [
     {
@@ -18,24 +20,21 @@ const initialState = {
   }
 }
 
-// 🚀 OPTIMIZED: Helper function to save cart to localStorage with debouncing
+// Helper function to save cart to localStorage with debouncing
 let saveCartTimeout;
 const saveCartToStorage = (cartItems) => {
   if (typeof window !== 'undefined') {
     try {
-      // Debounce localStorage writes to improve performance
       clearTimeout(saveCartTimeout);
       saveCartTimeout = setTimeout(() => {
-        // Add safety check to prevent proxy revocation errors
         if (!cartItems || !Array.isArray(cartItems)) {
-          console.warn('Invalid cart items provided to saveCartToStorage:', cartItems);
+          if (isDev) console.warn('Invalid cart items:', cartItems);
           return;
         }
         
         const cartForStorage = cartItems.map(item => {
-          // Safety check for each item
           if (!item || typeof item !== 'object') {
-            console.warn('Invalid cart item:', item);
+            if (isDev) console.warn('Invalid cart item:', item);
             return null;
           }
           
@@ -49,33 +48,31 @@ const saveCartToStorage = (cartItems) => {
             color: item.color,
             stock: item.stock
           };
-        }).filter(Boolean); // Remove null items
+        }).filter(Boolean);
         
         localStorage.setItem('cart', JSON.stringify(cartForStorage));
-      }, 100); // 100ms debounce
+      }, 100);
     } catch (error) {
-      console.error('Error saving cart to storage:', error);
+      if (isDev) console.error('Error saving cart:', error);
     }
   }
 };
 
-// 🚀 OPTIMIZED: Helper function to save wishlist to localStorage with debouncing
+// Helper function to save wishlist to localStorage with debouncing
 let saveWishlistTimeout;
 const saveWishlistToStorage = (wishlistItems) => {
   if (typeof window !== 'undefined') {
     try {
       clearTimeout(saveWishlistTimeout);
       saveWishlistTimeout = setTimeout(() => {
-        // Add safety check to prevent proxy revocation errors
         if (!wishlistItems || !Array.isArray(wishlistItems)) {
-          console.warn('Invalid wishlist items provided to saveWishlistToStorage:', wishlistItems);
+          if (isDev) console.warn('Invalid wishlist items:', wishlistItems);
           return;
         }
         
         const wishlistForStorage = wishlistItems.map(item => {
-          // Safety check for each item
           if (!item || typeof item !== 'object') {
-            console.warn('Invalid wishlist item:', item);
+            if (isDev) console.warn('Invalid wishlist item:', item);
             return null;
           }
           
@@ -83,12 +80,12 @@ const saveWishlistToStorage = (wishlistItems) => {
             id: item.id,
             addedAt: item.addedAt
           };
-        }).filter(Boolean); // Remove null items
+        }).filter(Boolean);
         
         localStorage.setItem('wishlist', JSON.stringify(wishlistForStorage));
-      }, 100); // 100ms debounce
+      }, 100);
     } catch (error) {
-      console.error('Error saving wishlist to storage:', error);
+      if (isDev) console.error('Error saving wishlist:', error);
     }
   }
 };
@@ -107,7 +104,7 @@ export const userSlice = createSlice({
         const payload = action.payload;
         
         if (!payload) {
-          console.warn('addToCart called with no payload');
+          if (isDev) console.warn('addToCart: no payload');
           return;
         }
         
@@ -117,7 +114,7 @@ export const userSlice = createSlice({
           // Old format
           const { product, quantity = 1, size, color } = payload;
           if (!product || !product._id) {
-            console.warn('Invalid product in addToCart payload:', product);
+            if (isDev) console.warn('Invalid product:', product);
             return;
           }
           
@@ -134,7 +131,7 @@ export const userSlice = createSlice({
         } else {
           // New format (from wishlist and other components)
           if (!payload.id) {
-            console.warn('Invalid payload in addToCart, missing id:', payload);
+            if (isDev) console.warn('Missing id in payload:', payload);
             return;
           }
           
@@ -171,7 +168,7 @@ export const userSlice = createSlice({
         // 🚀 OPTIMIZED: Use debounced localStorage save
         saveCartToStorage(current(state.cart.items));
       } catch (error) {
-        console.error('Error in addToCart reducer:', error);
+        if (isDev) console.error('addToCart error:', error);
       }
     },
     
@@ -181,7 +178,7 @@ export const userSlice = createSlice({
         
         // Safety checks
         if (!state.cart.items || !Array.isArray(state.cart.items)) {
-          console.warn('Cart items not available in updateCartQuantity');
+          if (isDev) console.warn('Cart items not available');
           return;
         }
         
@@ -199,7 +196,7 @@ export const userSlice = createSlice({
           saveCartToStorage(current(state.cart.items));
         }
       } catch (error) {
-        console.error('Error in updateCartQuantity reducer:', error);
+        if (isDev) console.error('updateCartQuantity error:', error);
       }
     },
     
@@ -209,7 +206,7 @@ export const userSlice = createSlice({
         
         // Safety checks
         if (!state.cart.items || !Array.isArray(state.cart.items)) {
-          console.warn('Cart items not available in removeFromCart');
+          if (isDev) console.warn('Cart items not available');
           return;
         }
         
@@ -229,7 +226,7 @@ export const userSlice = createSlice({
           }
         }
       } catch (error) {
-        console.error('Error in removeFromCart reducer:', error);
+        if (isDev) console.error('removeFromCart error:', error);
       }
     },
     

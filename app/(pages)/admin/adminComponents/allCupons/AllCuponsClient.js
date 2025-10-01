@@ -76,8 +76,7 @@ const AllCouponsClient = () => {
   };
 
   const handleDeleteCoupon = (coupon) => {
-    console.log('Deleting coupon:', coupon);
-    console.log('Coupon ID:', coupon._id || coupon.id);
+
     setSelectedCoupon(coupon);
     setShowDeleteModal(true);
   };
@@ -85,7 +84,7 @@ const AllCouponsClient = () => {
   const handleConfirmDelete = async () => {
     if (selectedCoupon) {
       const couponId = selectedCoupon._id || selectedCoupon.id;
-      console.log('Confirming delete for coupon ID:', couponId);
+
       if (!couponId) {
         console.error('No valid ID found for coupon:', selectedCoupon);
         setToast({

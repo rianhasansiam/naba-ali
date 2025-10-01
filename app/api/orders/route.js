@@ -1,9 +1,20 @@
 import { NextResponse } from 'next/server';
 import { getCollection } from '../../../lib/mongodb';
+import { checkOrigin, isAdmin, isAuthenticated, forbiddenResponse, unauthorizedResponse } from '../../../lib/security';
 
-// GET - Get all orders
+// GET - Get all orders (Admin only)
 export async function GET(request) {
   try {
+    // Check origin for security
+    const originCheck = checkOrigin(request);
+    if (originCheck) return originCheck;
+
+    // Check if user is admin
+    const admin = await isAdmin();
+    if (!admin) {
+      return forbiddenResponse('Only admins can view all orders');
+    }
+
     // Get the orders collection
     const orders = await getCollection('allOrders');
     
@@ -21,9 +32,19 @@ export async function GET(request) {
   }
 } // End of GET function
 
-// POST - Create new order
+// POST - Create new order (Authenticated users only)
 export async function POST(request) {
   try {
+    // Check origin for security
+    const originCheck = checkOrigin(request);
+    if (originCheck) return originCheck;
+
+    // Check if user is authenticated
+    const user = await isAuthenticated();
+    if (!user) {
+      return unauthorizedResponse('You must be logged in to create an order');
+    }
+
     // Get the orders collection
     const orders = await getCollection('allOrders');
     
@@ -49,9 +70,19 @@ export async function POST(request) {
 } // End of POST function
 
 
-// PUT - Update admin order by _id
+// PUT - Update admin order by _id (Admin only)
 export async function PUT(request) {
   try {
+    // Check origin for security
+    const originCheck = checkOrigin(request);
+    if (originCheck) return originCheck;
+
+    // Check if user is admin
+    const admin = await isAdmin();
+    if (!admin) {
+      return forbiddenResponse('Only admins can update orders');
+    }
+
     const adminOrders = await getCollection('adminOrders');
     const body = await request.json();
     const { _id, ...updateData } = body;
@@ -67,9 +98,19 @@ export async function PUT(request) {
   }
 } // End of PUT function
 
-// DELETE - Delete admin order by _id
+// DELETE - Delete admin order by _id (Admin only)
 export async function DELETE(request) {
   try {
+    // Check origin for security
+    const originCheck = checkOrigin(request);
+    if (originCheck) return originCheck;
+
+    // Check if user is admin
+    const admin = await isAdmin();
+    if (!admin) {
+      return forbiddenResponse('Only admins can delete orders');
+    }
+
     const adminOrders = await getCollection('adminOrders');
     const body = await request.json();
     const { _id } = body;

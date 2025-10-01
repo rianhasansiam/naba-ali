@@ -130,7 +130,7 @@ const EditCouponModal = ({ isOpen, onClose, coupon }) => {
 
         // Use _id or id, whichever is available
         const couponId = coupon._id || coupon.id;
-        console.log('Updating coupon with ID:', couponId, 'Coupon object:', coupon);
+
         
         if (!couponId) {
           throw new Error('Coupon ID is missing. Cannot update coupon.');

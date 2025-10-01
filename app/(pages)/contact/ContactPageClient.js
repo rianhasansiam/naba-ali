@@ -74,7 +74,7 @@ const ContactPageClient = ({ contactData }) => {
         throw new Error('Failed to save message to database');
       }
       
-      console.log('Message saved to database:', dbResult.message);
+
 
       // 2. Send email using EmailJS
       const emailResult = await emailjs.send(
@@ -89,7 +89,7 @@ const ContactPageClient = ({ contactData }) => {
         process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY || 'your_public_key'
       );
       
-      console.log('Email sent successfully:', emailResult.text);
+
       setSubmitStatus('success');
       
       // Reset form on success

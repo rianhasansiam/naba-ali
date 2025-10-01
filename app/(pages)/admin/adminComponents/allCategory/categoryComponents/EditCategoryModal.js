@@ -32,8 +32,7 @@ const EditCategoryModal = ({ isOpen, onClose, category }) => {
   // Populate form when category prop changes
   useEffect(() => {
     if (category && isOpen) {
-      console.log('EditCategoryModal - Category object received:', category);
-      console.log('Category _id:', category._id, 'Category id:', category.id);
+
       
       setFormData({
         name: category.name || '',
@@ -109,7 +108,7 @@ const EditCategoryModal = ({ isOpen, onClose, category }) => {
         updatedAt: new Date()
       };
       
-      console.log('Updating category with ID:', categoryId, 'Category object:', category);
+
       
       if (!categoryId) {
         throw new Error('Category ID is missing. Cannot update category.');

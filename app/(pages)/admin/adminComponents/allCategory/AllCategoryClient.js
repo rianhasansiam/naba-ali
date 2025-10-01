@@ -62,15 +62,13 @@ const AllCategoryClient = () => {
 
   // Handler functions
   const handleEditCategory = (category) => {
-    console.log('handleEditCategory called with category:', category);
-    console.log('Category _id:', category._id, 'Category id:', category.id);
+
     setSelectedCategory(category);
     setShowEditModal(true);
   };
 
   const handleDeleteCategory = (category) => {
-    console.log('handleDeleteCategory called with category:', category);
-    console.log('Category _id:', category._id, 'Category id:', category.id);
+
     setSelectedCategory(category);
     setShowDeleteModal(true);
   };

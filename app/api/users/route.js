@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { NextResponse } from 'next/server';
-
 import { getCollection } from '../../../lib/mongodb';
+import { checkOrigin, isAdmin, forbiddenResponse } from '../../../lib/security';
 
 
 
@@ -16,6 +16,10 @@ import { getCollection } from '../../../lib/mongodb';
 // =======================
 export async function POST(request) {
   try {
+    // Check origin for security
+    const originCheck = checkOrigin(request);
+    if (originCheck) return originCheck;
+
     const users = await getCollection('users');
     const body = await request.json();
 
@@ -119,6 +123,16 @@ export async function PUT(request) {
 // =======================
 export async function GET(request) {
   try {
+    // Check origin for security
+    const originCheck = checkOrigin(request);
+    if (originCheck) return originCheck;
+
+    // Check if user is admin for fetching all users
+    const admin = await isAdmin();
+    if (!admin) {
+      return forbiddenResponse('Only admins can view users');
+    }
+
     const users = await getCollection('users');
     const { searchParams } = new URL(request.url);
     const email = searchParams.get('email');
@@ -161,9 +175,19 @@ export async function GET(request) {
 
 
 
-// DELETE - Delete admin user by _id
+// DELETE - Delete admin user by _id (Admin only)
 export async function DELETE(request) {
   try {
+    // Check origin for security
+    const originCheck = checkOrigin(request);
+    if (originCheck) return originCheck;
+
+    // Check if user is admin
+    const admin = await isAdmin();
+    if (!admin) {
+      return forbiddenResponse('Only admins can delete users');
+    }
+
     const adminUsers = await getCollection('adminUsers');
     const body = await request.json();
     const { _id } = body;

@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server';
 import { getCollection } from '../../../lib/mongodb';
+import { checkOrigin, isAdmin, forbiddenResponse } from '../../../lib/security';
 
-// GET - Get all products
+// GET - Get all products (Public - Anyone can view)
 export async function GET(request) {
   try {
+    // Check origin for security
+    const originCheck = checkOrigin(request);
+    if (originCheck) return originCheck;
+
     // Get the products collection
     const products = await getCollection('allProducts');
     
@@ -13,7 +18,6 @@ export async function GET(request) {
     return NextResponse.json(allProducts);
 
   } catch (error) {
-    console.error("Error fetching products:", error); 
     return NextResponse.json({ 
       success: false,
       error: "Failed to fetch products" 
@@ -21,9 +25,19 @@ export async function GET(request) {
   }
 } // End of GET function
 
-// POST - Create new product
+// POST - Create new product (Admin only)
 export async function POST(request) {
   try {
+    // Check origin for security
+    const originCheck = checkOrigin(request);
+    if (originCheck) return originCheck;
+
+    // Check if user is admin
+    const admin = await isAdmin();
+    if (!admin) {
+      return forbiddenResponse('Only admins can create products');
+    }
+
     // Get the products collection
     const products = await getCollection('allProducts');
     
@@ -40,7 +54,6 @@ export async function POST(request) {
     });
 
   } catch (error) {
-    console.error("Error creating product:", error); 
     return NextResponse.json({ 
       success: false,
       error: "Failed to create product" 

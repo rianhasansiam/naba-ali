@@ -1,9 +1,14 @@
 import { NextResponse } from 'next/server';
 import { getCollection } from '../../../lib/mongodb';
+import { checkOrigin, isAdmin, isAuthenticated, forbiddenResponse, unauthorizedResponse } from '../../../lib/security';
 
-// GET - Get all reviews
+// GET - Get all reviews (Public - Anyone can view)
 export async function GET(request) {
   try {
+    // Check origin for security
+    const originCheck = checkOrigin(request);
+    if (originCheck) return originCheck;
+
     // Get the reviews collection
     const reviews = await getCollection('allReviews');
     
@@ -21,9 +26,19 @@ export async function GET(request) {
   }
 } // End of GET function
 
-// POST - Create new review
+// POST - Create new review (Authenticated users only)
 export async function POST(request) {
   try {
+    // Check origin for security
+    const originCheck = checkOrigin(request);
+    if (originCheck) return originCheck;
+
+    // Check if user is authenticated
+    const user = await isAuthenticated();
+    if (!user) {
+      return unauthorizedResponse('You must be logged in to create a review');
+    }
+
     // Get the reviews collection
     const reviews = await getCollection('allReviews');
     
@@ -48,9 +63,19 @@ export async function POST(request) {
   }
 } // End of POST function
 
-// PUT - Update review by _id
+// PUT - Update review by _id (Admin only)
 export async function PUT(request) {
   try {
+    // Check origin for security
+    const originCheck = checkOrigin(request);
+    if (originCheck) return originCheck;
+
+    // Check if user is admin
+    const admin = await isAdmin();
+    if (!admin) {
+      return forbiddenResponse('Only admins can update reviews');
+    }
+
     const reviews = await getCollection('allReviews');
     const body = await request.json();
     const { _id, ...updateData } = body;
@@ -71,9 +96,19 @@ export async function PUT(request) {
   }
 } // End of PUT function
 
-// DELETE - Delete review by _id
+// DELETE - Delete review by _id (Admin only)
 export async function DELETE(request) {
   try {
+    // Check origin for security
+    const originCheck = checkOrigin(request);
+    if (originCheck) return originCheck;
+
+    // Check if user is admin
+    const admin = await isAdmin();
+    if (!admin) {
+      return forbiddenResponse('Only admins can delete reviews');
+    }
+
     const reviews = await getCollection('allReviews');
     const body = await request.json();
     const { _id } = body;

@@ -5,7 +5,7 @@ import OrderDetailsClient from './OrderDetailsClient';
 
 // Server Component - Handles data processing from props
 const OrderDetails = ({ orders = [], users = [], products = [], isLoading = false }) => {
-console.log('Raw orders data:', orders);
+
 
   // Process orders data to match expected format - must be called before early returns
   const ordersData = useMemo(() => {

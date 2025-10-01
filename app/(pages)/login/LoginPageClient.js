@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Mail, Lock, ShoppingBag, Heart, Truck, Star } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { signIn } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useLoadingState } from '@/lib/hooks/useLoadingHooks';
 import LoadingSpinner from '../../componets/loading/LoadingSpinner';
@@ -22,6 +22,30 @@ const LoginPageClient = ({ loginData }) => {
   const [errors, setErrors] = useState({});
   const router = useRouter();
   const { showLoading, hideLoading } = useLoadingState();
+
+  // Check if user is already authenticated
+  const { data: session, status } = useSession();
+
+  // Redirect authenticated users away from login page
+  useEffect(() => {
+    if (status === 'authenticated' && session) {
+      router.push('/');
+    }
+  }, [status, session, router]);
+
+  // Show loading while checking authentication
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  // Don't render login form if user is authenticated
+  if (status === 'authenticated') {
+    return null;
+  }
 
   // Icon mapping function
   const getIcon = (iconName) => {

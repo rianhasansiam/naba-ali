@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Mail, Lock, User, Crown, Percent, Gift, Zap, Check, X } from 'lucide-react';
 import Link from 'next/link';
-import { signIn } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import LoadingSpinner from '../../componets/loading/LoadingSpinner';
 
@@ -23,6 +23,30 @@ const SignupPageClient = ({ signupData }) => {
   const [signupStatus, setSignupStatus] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
+
+  // Check if user is already authenticated
+  const { data: session, status } = useSession();
+
+  // Redirect authenticated users away from signup page
+  useEffect(() => {
+    if (status === 'authenticated' && session) {
+      router.push('/');
+    }
+  }, [status, session, router]);
+
+  // Show loading while checking authentication
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  // Don't render signup form if user is authenticated
+  if (status === 'authenticated') {
+    return null;
+  }
 
   // Icon mapping function
   const getIcon = (iconName) => {

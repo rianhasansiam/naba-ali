@@ -345,7 +345,7 @@ export default function ProductDetailPage({ params }) {
                 <button
                   key={index}
                   onClick={() => {
-                    console.log('Clicked thumbnail:', index);
+
                     setSelectedImageIndex(index);
                   }}
                   className={`flex-shrink-0 w-20 h-20 rounded-md overflow-hidden border-2 transition-all duration-200 hover:border-gray-400 ${

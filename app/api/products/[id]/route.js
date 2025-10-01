@@ -1,9 +1,20 @@
 import { NextResponse } from 'next/server';
 import { getCollection } from '../../../../lib/mongodb';
+import { checkOrigin, isAdmin, forbiddenResponse } from '../../../../lib/security';
 
-// PUT - Update product by ID
+// PUT - Update product by ID (Admin only)
 export async function PUT(request, { params }) {
   try {
+    // Check origin for security
+    const originCheck = checkOrigin(request);
+    if (originCheck) return originCheck;
+
+    // Check if user is admin
+    const admin = await isAdmin();
+    if (!admin) {
+      return forbiddenResponse('Only admins can update products');
+    }
+
     const { id } = params;
     const products = await getCollection('allProducts');
     const body = await request.json();
@@ -43,9 +54,19 @@ export async function PUT(request, { params }) {
   }
 }
 
-// DELETE - Delete product by ID
+// DELETE - Delete product by ID (Admin only)
 export async function DELETE(request, { params }) {
   try {
+    // Check origin for security
+    const originCheck = checkOrigin(request);
+    if (originCheck) return originCheck;
+
+    // Check if user is admin
+    const admin = await isAdmin();
+    if (!admin) {
+      return forbiddenResponse('Only admins can delete products');
+    }
+
     const { id } = params;
     const products = await getCollection('allProducts');
     
@@ -81,9 +102,13 @@ export async function DELETE(request, { params }) {
   }
 }
 
-// GET - Get single product by ID
+// GET - Get single product by ID (Public - Anyone can view)
 export async function GET(request, { params }) {
   try {
+    // Check origin for security
+    const originCheck = checkOrigin(request);
+    if (originCheck) return originCheck;
+
     const { id } = params;
     const products = await getCollection('allProducts');
     

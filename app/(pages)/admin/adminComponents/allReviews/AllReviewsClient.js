@@ -138,15 +138,14 @@ const AllReviewsClient = ({reviewsData}) => {
       const reviewId = selectedReview._id || selectedReview.id;
       setDeletingReviewId(reviewId);
       
-      console.log('Attempting to delete review with ID:', reviewId);
-      console.log('Selected review object:', selectedReview);
+
       
       try {
         const response = await axios.delete('/api/reviews', {
           data: { _id: reviewId }
         });
         
-        console.log('Delete response:', response.data);
+
         
         if (response.data.success) {
           setShowDeleteModal(false);

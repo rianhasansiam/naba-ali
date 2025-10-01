@@ -167,9 +167,7 @@ const CheckoutPageClient = () => {
   const totals = calculateTotals();
 
   // Debug logs
-  console.log('Checkout - Cart Items:', cartItems);
-  console.log('Checkout - Enriched Cart Items:', enrichedCartItems);
-  console.log('Checkout - Totals:', totals);
+
 
   // Handle customer info change
   const handleInfoChange = (field, value) => {
@@ -205,7 +203,7 @@ const CheckoutPageClient = () => {
 
       // If user doesn't exist, create new user
       if (!checkResult.success || !checkResult.user) {
-        console.log('User not found, creating new user...');
+
         
         const newUserData = {
           name: customerData.name,
@@ -232,12 +230,12 @@ const CheckoutPageClient = () => {
         const createResult = await createUserResponse.json();
 
         if (createResult.success) {
-          console.log('New user created successfully:', createResult.user);
+
         } else {
           console.error('Failed to create user:', createResult.error);
         }
       } else {
-        console.log('User already exists:', checkResult.user);
+
       }
     } catch (error) {
       console.error('Error checking/creating user:', error);
@@ -318,7 +316,7 @@ const CheckoutPageClient = () => {
 
       // Save order to database
       const savedOrder = await addOrder(orderData);
-      console.log('Order saved successfully:', savedOrder);
+
 
       // Check if user exists and create new user if not
       await createUserIfNotExists(customerInfo);

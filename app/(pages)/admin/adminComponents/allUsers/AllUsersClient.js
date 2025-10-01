@@ -43,14 +43,6 @@ const AllUsersClient = ({ users: userData = [], orders: ordersDataProp = [], isL
     }
   }, [userData]);
 
-  // Debug: Log orders data when it changes
-  useEffect(() => {
-    console.log('Orders data loaded:', {
-      count: ordersDataProp?.length || 0,
-      hasData: Boolean(ordersDataProp && ordersDataProp.length > 0)
-    });
-  }, [ordersDataProp]);
-
   // Search filter
   const filteredUsers = allUsers.filter((user) =>
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -83,11 +75,11 @@ const AllUsersClient = ({ users: userData = [], orders: ordersDataProp = [], isL
   const handleViewOrders = (user) => {
     // Check if orders data is still loading
     if (isLoadingProp) {
-      console.log('Orders data is still loading...');
+
       return;
     }
 
-    console.log(`Viewing orders for user: ${user.name} (${user.email})`);
+
 
     setSelectedUser(user);
     // Filter orders for this user - check both normalized (customer) and raw (customerInfo) formats
@@ -120,7 +112,7 @@ const AllUsersClient = ({ users: userData = [], orders: ordersDataProp = [], isL
       return false;
     }) : [];
 
-    console.log(`Found ${userOrderHistory.length} orders for ${user.name}`);
+
 
     setUserOrders(userOrderHistory);
     setShowOrderModal(true);
