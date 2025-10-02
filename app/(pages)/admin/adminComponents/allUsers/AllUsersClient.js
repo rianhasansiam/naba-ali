@@ -373,7 +373,7 @@ const AllUsersClient = ({ users: userData = [], orders: ordersDataProp = [], isL
                                 <div key={`item-${itemIndex}-${item.productId || item.id || item.name}`} className="flex items-center justify-between text-sm">
                                   <span className="text-gray-600">{item.name || item.productName}</span>
                                   <span className="text-gray-900">
-                                    {item.quantity}x ${item.price}
+                                    {item.quantity}x ৳{item.price}
                                   </span>
                                 </div>
                               ))}

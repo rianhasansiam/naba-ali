@@ -47,7 +47,7 @@ const UserHistory = () => {
           }))
         }));
 
-      // Determine VIP status (customers with more than $500 spent or 5+ orders)
+      // Determine VIP status (customers with more than ৳50,000 spent or 5+ orders)
       const isVIP = totalSpent > 500 || totalOrders >= 5;
 
       // Get last order date

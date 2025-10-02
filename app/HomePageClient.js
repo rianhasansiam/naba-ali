@@ -1,7 +1,7 @@
 'use client';
 
 import { useGetData } from '@/lib/hooks/useGetData';
-import LoadingSpinner from './componets/loading/LoadingSpinner';
+import GlobalLoadingPage from './componets/loading/GlobalLoadingPage';
 import Hero from './componets/hero/Hero';
 import Category from './componets/category/Category';
 import FeaturedProducts from './componets/featuredProducts/FeaturedProducts';
@@ -37,15 +37,13 @@ export default function HomePageClient() {
   const isLoading = productsLoading || categoriesLoading || reviewsLoading || usersLoading;
   const hasError = productsError || categoriesError || reviewsError || usersError;
 
-  if (isLoading && (!productsData && !categoriesData && !reviewsData && !usersData)) {
+  // Keep showing loading until ALL data is ready (not just checking if data exists)
+  if (isLoading) {
     return (
-      <div className="min-h-screen  flex flex-col items-center justify-center">
-        <div className="text-black text-center mb-8">
-          <h1 className="text-6xl font-bold mb-4">SkyZonee</h1>
-          <p className="text-xl mb-6">Loading premium collection...</p>
-        </div>
-        <LoadingSpinner size="lg" color="black" />
-      </div>
+      <GlobalLoadingPage 
+        message="Loading premium collection..." 
+        showLogo={true}
+      />
     );
   }
 
@@ -66,8 +64,9 @@ export default function HomePageClient() {
     );
   }
 
+  // All data loaded - render all components together with opacity animation
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-100 opacity-0 animate-fadeIn">
       <Hero 
         productsData={productsData} 
         usersData={usersData} 

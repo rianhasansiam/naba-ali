@@ -32,7 +32,7 @@ const HeroClient = ({
     { number: "99%", label: "Satisfaction Rate" }
   ],
   productName = "Premium Sneakers",
-  productPrice = "$299",
+  productPrice = "৳25,000",
   productEmoji = "👟"
 }) => {
 

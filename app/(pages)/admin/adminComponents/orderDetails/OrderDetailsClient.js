@@ -325,7 +325,7 @@ const OrderDetails = ({ ordersData }) => {
             <DollarSign className="text-green-600" size={20} />
             <span className="text-sm text-gray-600">Revenue</span>
           </div>
-          <p className="text-2xl font-bold text-green-600 mt-1">${totalRevenue.toFixed(2)}</p>
+          <p className="text-2xl font-bold text-green-600 mt-1">৳{totalRevenue.toFixed(2)}</p>
         </div>
       </div>
 
@@ -397,7 +397,7 @@ const OrderDetails = ({ ordersData }) => {
                         ? order.paymentMethod.name || order.paymentMethod.type || 'Unknown Payment'
                         : order.paymentMethod || 'Unknown Payment'}
                     </p>
-                    <p className="text-lg font-bold text-green-600">${order.total}</p>
+                    <p className="text-lg font-bold text-green-600">৳{order.total}</p>
                   </div>
                 </div>
               </div>
@@ -426,8 +426,8 @@ const OrderDetails = ({ ordersData }) => {
                           <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-medium">${item.price}</p>
-                          <p className="text-sm text-gray-500">${(item.price * item.quantity).toFixed(2)}</p>
+                          <p className="font-medium">৳{item.price}</p>
+                          <p className="text-sm text-gray-500">৳{(item.price * item.quantity).toFixed(2)}</p>
                         </div>
                       </div>
                     ))}
@@ -564,10 +564,14 @@ const OrderDetails = ({ ordersData }) => {
                           <div className="flex-1">
                             <h4 className="font-medium text-gray-900">{item.name}</h4>
                             <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
-                            <p className="text-sm text-gray-600">Unit Price: ${item.price}</p>
+                            <p className="text-sm text-gray-600">Unit Price: ৳{item.price}</p>
                           </div>
                           <div className="text-right">
-                            <p className="font-semibold text-lg">${(item.price * item.quantity).toFixed(2)}</p>
+                                                        <p className="text-sm text-gray-600">Unit Price: ৳{item.price}</p>
+                            <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold text-lg">৳{(item.price * item.quantity).toFixed(2)}</p>
                           </div>
                         </div>
                       ))
@@ -604,19 +608,19 @@ const OrderDetails = ({ ordersData }) => {
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Subtotal:</span>
-                        <span className="text-gray-900">${selectedOrder.subtotal || 0}</span>
+                        <span className="text-gray-900">৳{selectedOrder.subtotal || 0}</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Shipping:</span>
-                        <span className="text-gray-900">${selectedOrder.shipping || 0}</span>
+                        <span className="text-gray-900">৳{selectedOrder.shipping || 0}</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-gray-600">Tax:</span>
-                        <span className="text-gray-900">${selectedOrder.tax || 0}</span>
+                        <span className="text-gray-900">৳{selectedOrder.tax || 0}</span>
                       </div>
                       <div className="flex justify-between text-lg font-bold border-t pt-2">
                         <span className="text-gray-900">Total:</span>
-                        <span className="text-green-600">${selectedOrder.total}</span>
+                        <span className="text-green-600">৳{selectedOrder.total}</span>
                       </div>
                     </div>
                   </div>

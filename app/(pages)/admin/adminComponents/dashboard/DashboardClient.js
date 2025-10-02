@@ -38,7 +38,7 @@ const StatCard = ({ title, value, change, trend, icon: Icon, color = "gray" }) =
     </div>
     <h3 className="text-gray-600 text-sm font-medium mb-1">{title}</h3>
     <p className="text-2xl font-bold text-gray-900">
-      {typeof value === 'number' && (title.includes('Revenue') || title.includes('Average Order')) ? `$${value.toFixed(2)}` : value}
+      {typeof value === 'number' && (title.includes('Revenue') || title.includes('Average Order')) ? `৳${value.toFixed(2)}` : value}
     </p>
   </motion.div>
 );
@@ -124,7 +124,7 @@ const DashboardClient = ({ analytics }) => {
                       style={{ width: `${(data.revenue / 70000) * 100}%` }}
                     />
                   </div>
-                  <span className="text-sm font-bold text-gray-900">${(data.revenue / 1000).toFixed(0)}k</span>
+                  <span className="text-sm font-bold text-gray-900">৳{(data.revenue / 1000).toFixed(0)}k</span>
                 </div>
               </div>
             ))}
@@ -162,7 +162,7 @@ const DashboardClient = ({ analytics }) => {
                   <p className="text-xs text-gray-500">{product.sales} sales</p>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-gray-900 text-sm">${product.revenue.toLocaleString()}</p>
+                  <p className="font-bold text-gray-900 text-sm">৳{product.revenue.toLocaleString()}</p>
                   <p className="text-xs text-green-600">Revenue</p>
                 </div>
               </div>
@@ -198,7 +198,7 @@ const DashboardClient = ({ analytics }) => {
                   <tr key={sale.id} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="py-2 sm:py-3 px-2 sm:px-4 font-medium text-gray-900 text-sm">{sale.id}</td>
                     <td className="py-2 sm:py-3 px-2 sm:px-4 text-gray-700 text-sm truncate max-w-[120px] sm:max-w-none">{sale.customer}</td>
-                    <td className="py-2 sm:py-3 px-2 sm:px-4 font-medium text-gray-900 text-sm">${sale.amount.toFixed(2)}</td>
+                    <td className="py-2 sm:py-3 px-2 sm:px-4 font-medium text-gray-900 text-sm">৳{sale.amount.toFixed(2)}</td>
                     <td className="py-2 sm:py-3 px-2 sm:px-4">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         sale.status === 'completed' ? 'bg-green-100 text-green-800' :

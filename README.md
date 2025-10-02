@@ -1,4 +1,4 @@
-# 🛍️ Naba Ali - Modern E-Commerce Platform
+# 🛍️ Skyzonee - Modern E-Commerce Platform
 
 <div align="center">
 
@@ -53,6 +53,7 @@ A full-stack, production-ready e-commerce platform built with Next.js 15, featur
 - **Category Management** - Organize products by categories
 - **Coupon System** - Create and manage discount coupons
 - **Analytics** - View sales statistics and insights
+- **Live Chat Support** - Real-time customer support chat system
 
 ### 🔒 Security Features
 - **CORS Protection** - Cross-origin resource sharing control
@@ -61,6 +62,14 @@ A full-stack, production-ready e-commerce platform built with Next.js 15, featur
 - **Security Headers** - XSS, Clickjacking, CSP protection
 - **Password Hashing** - Secure bcrypt password encryption
 - **Environment-Aware** - Different security levels for dev/prod
+
+### 💬 Real-Time Features
+- **Live Chat System** - WebSocket-powered customer support chat
+- **Instant Messaging** - Real-time message delivery between customers and admin
+- **Typing Indicators** - See when someone is typing
+- **Online Status** - Know when admin is available
+- **Unread Counts** - Track unread messages with badge notifications
+- **Message History** - Persistent chat conversations stored in database
 
 ### ⚡ Performance
 - **Server-Side Rendering** - Fast initial page loads
@@ -88,6 +97,7 @@ A full-stack, production-ready e-commerce platform built with Next.js 15, featur
 - **Database**: [MongoDB 6.19.0](https://www.mongodb.com/)
 - **Authentication**: [NextAuth.js 5.0.0](https://next-auth.js.org/)
 - **API**: Next.js API Routes (RESTful)
+- **WebSocket**: [Socket.io 4.8.1](https://socket.io/) - Real-time communication
 - **Password Hashing**: [bcryptjs 3.0.2](https://github.com/dcodeIO/bcrypt.js)
 
 ### Additional Tools
@@ -452,7 +462,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **Rian Hasan Siam**
 
 - GitHub: [@rianhasansiam](https://github.com/rianhasansiam)
-- Website: [skyzonee.com](https://skyzonee.com)
+
 
 ---
 
@@ -468,7 +478,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-For support, email support@skyzonee.com or create an issue in this repository.
+For support, email rianhasan1971@gmail.com or create an issue in this repository.
 
 ---
 

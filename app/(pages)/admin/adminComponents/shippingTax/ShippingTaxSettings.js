@@ -268,25 +268,25 @@ const ShippingTaxSettings = () => {
           <div className="bg-white rounded-lg p-4 border">
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span>Sample Order ($100.00):</span>
-                <span>$100.00</span>
+                <span>Sample Order (৳8,500.00):</span>
+                <span>৳8,500.00</span>
               </div>
               {settings.shippingSettings.enabled && (
                 <div className="flex justify-between">
                   <span>Shipping:</span>
-                  <span>${settings.shippingSettings.shippingCharge || '0.00'}</span>
+                  <span>৳{settings.shippingSettings.shippingCharge || '0.00'}</span>
                 </div>
               )}
               {settings.taxSettings.enabled && (
                 <div className="flex justify-between">
                   <span>{settings.taxSettings.taxName}:</span>
-                  <span>${((100 * (settings.taxSettings.taxRate || 0)) / 100).toFixed(2)}</span>
+                  <span>৳{((100 * (settings.taxSettings.taxRate || 0)) / 100).toFixed(2)}</span>
                 </div>
               )}
               <div className="flex justify-between font-semibold border-t pt-2">
                 <span>Total:</span>
                 <span>
-                  ${(
+                  \u09f3{(
                     100 + 
                     (settings.shippingSettings.enabled ? (settings.shippingSettings.shippingCharge || 0) : 0) + 
                     (settings.taxSettings.enabled ? ((100 * (settings.taxSettings.taxRate || 0)) / 100) : 0)

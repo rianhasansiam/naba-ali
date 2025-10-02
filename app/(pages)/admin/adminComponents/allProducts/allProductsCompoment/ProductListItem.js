@@ -32,9 +32,9 @@ const ProductListItem = ({ product, onEdit, onDelete, onAddReview, isDeleting })
         </div>
         
         <div>
-          <p className="font-bold text-green-600">${product.price}</p>
+          <p className="font-bold text-green-600">৳{product.price}</p>
           {product.originalPrice > product.price && (
-            <p className="text-xs text-gray-400 line-through">${product.originalPrice}</p>
+            <p className="text-xs text-gray-400 line-through">৳{product.originalPrice}</p>
           )}
         </div>
         

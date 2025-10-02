@@ -40,7 +40,7 @@ export default function Hero({ productsData, usersData, reviewsData }) {
     mainTitle: "Fashion",
     description: "Elevate your style with our curated collection of luxury items. Quality, comfort, and sophistication in every piece.",
     productName: "Premium Products",
-    productPrice: "$100",
+    productPrice: "৳8,500",
     productEmoji: "👟"
   };
 

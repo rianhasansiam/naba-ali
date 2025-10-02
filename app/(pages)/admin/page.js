@@ -11,7 +11,8 @@ import {
   History,
   Shield,
   Settings,
-  Mail
+  Mail,
+  MessageCircle
 } from 'lucide-react';
 
 // Import admin components directly (no wrapper layers)
@@ -24,6 +25,7 @@ import AllCuponsClient from './adminComponents/allCupons/AllCuponsClient';
 import AllCategoryClient from './adminComponents/allCategory/AllCategoryClient';
 import ShippingTaxSettings from './adminComponents/shippingTax/ShippingTaxSettings';
 import AllMessages from './adminComponents/allMessages/AllMessages';
+import AdminChatPanel from './adminComponents/AdminChatPanel';
 
 
 // Metadata for SEO - Admin Panel
@@ -139,6 +141,13 @@ export default function AdminPage() {
       icon: Mail,
       component: AllMessages,
       description: 'Customer Messages'
+    },
+    {
+      id: 'chat',
+      name: 'Live Chat',
+      icon: MessageCircle,
+      component: AdminChatPanel,
+      description: 'Customer Support Chat'
     },
     
   ];

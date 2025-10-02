@@ -96,7 +96,7 @@ const OrderSummaryPageClient = ({ orderData }) => {
 
     doc.setFontSize(9);
     doc.text(`Method: ${orderData.payment?.name || 'N/A'}`, 20, 146);
-    doc.text(`Total: $${orderData.totals?.total || '0.00'}`, 20, 154);
+    doc.text(`Total: ৳${orderData.totals?.total || '0.00'}`, 20, 154);
 
     // Order items
     let yPosition = 168;
@@ -124,8 +124,8 @@ const OrderSummaryPageClient = ({ orderData }) => {
 
       doc.text(truncatedName, 25, yPosition);
       doc.text(item.quantity?.toString() || '1', 120, yPosition);
-      doc.text(`$${item.price?.toFixed(2) || '0.00'}`, 140, yPosition);
-      doc.text(`$${itemTotal}`, 165, yPosition);
+      doc.text(`৳${item.price?.toFixed(2) || '0.00'}`, 140, yPosition);
+      doc.text(`৳${itemTotal}`, 165, yPosition);
       yPosition += 8;
     });
 
@@ -143,17 +143,17 @@ const OrderSummaryPageClient = ({ orderData }) => {
     yPosition += 10;
 
     doc.setFontSize(9);
-    doc.text(`Subtotal: $${orderData.totals?.subtotal || '0.00'}`, 20, yPosition);
+    doc.text(`Subtotal: ৳${orderData.totals?.subtotal || '0.00'}`, 20, yPosition);
     yPosition += 8;
-    doc.text(`Shipping: $${orderData.totals?.shipping || '0.00'}`, 20, yPosition);
+    doc.text(`Shipping: ৳${orderData.totals?.shipping || '0.00'}`, 20, yPosition);
     yPosition += 8;
-    doc.text(`Tax: $${orderData.totals?.tax || '0.00'}`, 20, yPosition);
+    doc.text(`Tax: ৳${orderData.totals?.tax || '0.00'}`, 20, yPosition);
     yPosition += 12;
 
     // Total
     doc.setFontSize(12);
     doc.setTextColor(...accentColor);
-    doc.text(`Total: $${orderData.totals?.total || '0.00'}`, 20, yPosition);
+    doc.text(`Total: ৳${orderData.totals?.total || '0.00'}`, 20, yPosition);
 
     // Footer
     const pageHeight = doc.internal.pageSize.height;
@@ -260,7 +260,7 @@ const OrderSummaryPageClient = ({ orderData }) => {
                 })()}
                 <span className="font-medium">{orderData.payment?.name}</span>
               </div>
-              <span className="font-bold text-lg">${orderData.totals?.total}</span>
+              <span className="font-bold text-lg">৳{orderData.totals?.total}</span>
             </div>
             
             {/* Transaction Details if available */}
@@ -336,8 +336,8 @@ const OrderSummaryPageClient = ({ orderData }) => {
                 </div>
                 
                 <div className="text-right">
-                  <p className="font-semibold text-gray-900">${(item.price * item.quantity).toFixed(2)}</p>
-                  <p className="text-sm text-gray-600">${item.price}/item</p>
+                  <p className="font-semibold text-gray-900">৳{(item.price * item.quantity).toFixed(2)}</p>
+                  <p className="text-sm text-gray-600">৳{item.price}/item</p>
                 </div>
               </div>
             ))}
@@ -355,19 +355,19 @@ const OrderSummaryPageClient = ({ orderData }) => {
           <div className="space-y-3">
             <div className="flex justify-between">
               <span className="text-gray-600">Subtotal:</span>
-              <span className="font-medium">${orderData.totals?.subtotal}</span>
+              <span className="font-medium">৳{orderData.totals?.subtotal}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Shipping:</span>
-              <span className="font-medium">${orderData.totals?.shipping}</span>
+              <span className="font-medium">৳{orderData.totals?.shipping}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Tax:</span>
-              <span className="font-medium">${orderData.totals?.tax}</span>
+              <span className="font-medium">৳{orderData.totals?.tax}</span>
             </div>
             <div className="border-t pt-3 flex justify-between text-lg font-bold">
               <span>Total:</span>
-              <span className="text-indigo-600">${orderData.totals?.total}</span>
+              <span className="text-indigo-600">৳{orderData.totals?.total}</span>
             </div>
           </div>
         </motion.div>
@@ -462,7 +462,7 @@ const OrderSummaryPageClient = ({ orderData }) => {
                     </div>
                     <div>
                       <span className="font-medium text-gray-600">Total Amount:</span>
-                      <p className="text-gray-900 font-semibold">${orderData.totals?.total}</p>
+                      <p className="text-gray-900 font-semibold">৳{orderData.totals?.total}</p>
                     </div>
                   </div>
                 </div>
@@ -512,7 +512,7 @@ const OrderSummaryPageClient = ({ orderData }) => {
                       })()}
                       <span className="font-medium">{orderData.payment?.name}</span>
                     </div>
-                    <span className="font-bold text-lg text-green-600">${orderData.totals?.total}</span>
+                    <span className="font-bold text-lg text-green-600">৳{orderData.totals?.total}</span>
                   </div>
                 </div>
 
@@ -544,8 +544,8 @@ const OrderSummaryPageClient = ({ orderData }) => {
                           <p className="text-sm text-gray-500">Quantity: {item.quantity}</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-semibold text-gray-900">${(item.price * item.quantity).toFixed(2)}</p>
-                          <p className="text-sm text-gray-600">${item.price}/item</p>
+                          <p className="font-semibold text-gray-900">৳{(item.price * item.quantity).toFixed(2)}</p>
+                          <p className="text-sm text-gray-600">৳{item.price}/item</p>
                         </div>
                       </div>
                     ))}
@@ -558,19 +558,19 @@ const OrderSummaryPageClient = ({ orderData }) => {
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Subtotal:</span>
-                      <span className="font-medium">${orderData.totals?.subtotal}</span>
+                      <span className="font-medium">৳{orderData.totals?.subtotal}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Shipping:</span>
-                      <span className="font-medium">${orderData.totals?.shipping}</span>
+                      <span className="font-medium">৳{orderData.totals?.shipping}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Tax:</span>
-                      <span className="font-medium">${orderData.totals?.tax}</span>
+                      <span className="font-medium">৳{orderData.totals?.tax}</span>
                     </div>
                     <div className="border-t pt-2 flex justify-between text-lg font-bold">
                       <span className="text-gray-900">Total:</span>
-                      <span className="text-green-600">${orderData.totals?.total}</span>
+                      <span className="text-green-600">৳{orderData.totals?.total}</span>
                     </div>
                   </div>
                 </div>
