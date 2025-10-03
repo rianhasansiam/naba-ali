@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import { useEffect } from 'react';
 import LoadingSpinner from './LoadingSpinner';
 
 const GlobalLoadingPage = ({ 
@@ -9,6 +10,38 @@ const GlobalLoadingPage = ({
   showLogo = true,
   variant = 'default'
 }) => {
+  // Suppress scroll restoration warnings during development
+  useEffect(() => {
+    const originalWarn = console.warn;
+    const originalError = console.error;
+    
+    console.warn = (...args) => {
+      const message = args[0];
+      if (typeof message === 'string' && 
+          (message.includes('auto-scroll behavior') || 
+           message.includes('position: sticky') || 
+           message.includes('position: fixed'))) {
+        return; // Suppress these specific warnings
+      }
+      originalWarn.apply(console, args);
+    };
+    
+    console.error = (...args) => {
+      const message = args[0];
+      if (typeof message === 'string' && 
+          (message.includes('auto-scroll behavior') || 
+           message.includes('position: sticky') || 
+           message.includes('position: fixed'))) {
+        return; // Suppress these specific errors
+      }
+      originalError.apply(console, args);
+    };
+    
+    return () => {
+      console.warn = originalWarn;
+      console.error = originalError;
+    };
+  }, []);
   const containerVariants = {
     initial: { opacity: 0 },
     animate: { opacity: 1 },

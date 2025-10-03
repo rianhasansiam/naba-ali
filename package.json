@@ -16,6 +16,7 @@
     "axios": "^1.12.2",
     "bcryptjs": "^3.0.2",
     "critters": "^0.0.23",
+    "formidable": "^3.5.4",
     "framer-motion": "^12.23.12",
     "html2canvas": "^1.4.1",
     "jspdf": "^3.0.3",

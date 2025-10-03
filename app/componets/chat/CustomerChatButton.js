@@ -15,6 +15,14 @@ export default function CustomerChatButton() {
   const [isAdminOnline, setIsAdminOnline] = useState(false);
   const [guestId, setGuestId] = useState(null);
   const [guestName, setGuestName] = useState('');
+  const [typingTimeout, setTypingTimeout] = useState(null);
+  const [messageStatus, setMessageStatus] = useState({});
+  const [lastSeen, setLastSeen] = useState(null);
+  const [adminTyping, setAdminTyping] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef(null);
   const socketRef = useRef(null);
 
@@ -43,6 +51,7 @@ export default function CustomerChatButton() {
   }, [messages]);
 
   const fetchOrCreateConversation = async () => {
+    setIsLoadingMessages(true);
     try {
       const userId = session?.user?.id || guestId;
       const userName = session?.user?.name || guestName;
@@ -82,18 +91,24 @@ export default function CustomerChatButton() {
       }
     } catch (error) {
       console.error('Failed to load conversation:', error);
+    } finally {
+      setIsLoadingMessages(false);
     }
   };
 
   // Initialize socket connection when chat opens
   useEffect(() => {
     if (isOpen) {
+      setIsConnecting(true);
       // Initialize conversation
       fetchOrCreateConversation();
 
       // Get user ID (authenticated or guest)
       const userId = session?.user?.id || guestId;
-      if (!userId) return;
+      if (!userId) {
+        setIsConnecting(false);
+        return;
+      }
 
       // Connect to WebSocket
       socketRef.current = io(window.location.origin, {
@@ -102,26 +117,56 @@ export default function CustomerChatButton() {
 
       socketRef.current.on('connect', () => {
         console.log('Connected to chat server');
+        setIsConnecting(false);
         socketRef.current.emit('join', userId, 'user');
+      });
+
+      socketRef.current.on('disconnect', () => {
+        setIsConnecting(true);
       });
 
       // Listen for new messages
       socketRef.current.on('new-message', (message) => {
         setMessages(prev => [...prev, message]);
+        // Mark message as delivered if from admin
+        if (message.senderId !== userId) {
+          socketRef.current.emit('message-delivered', {
+            messageId: message._id,
+            conversationId: message.conversationId
+          });
+        }
       });
 
-      // Listen for typing indicator
-      socketRef.current.on('user-typing', () => {
-        setIsTyping(true);
+      // Enhanced typing indicators
+      socketRef.current.on('admin-typing', (data) => {
+        setAdminTyping(true);
+        setTimeout(() => setAdminTyping(false), 3000);
+      });
+      
+      socketRef.current.on('admin-stop-typing', () => {
+        setAdminTyping(false);
       });
 
-      socketRef.current.on('user-stop-typing', () => {
-        setIsTyping(false);
+      // Message status updates
+      socketRef.current.on('message-status', (data) => {
+        setMessageStatus(prev => ({
+          ...prev,
+          [data.messageId]: data.status
+        }));
       });
 
-      // Listen for admin status
+      // Enhanced admin status with last seen
       socketRef.current.on('admin-status', (data) => {
         setIsAdminOnline(data.online);
+        if (data.lastSeen) {
+          setLastSeen(new Date(data.lastSeen));
+        }
+      });
+
+      // Admin presence updates
+      socketRef.current.on('admin-presence', (data) => {
+        setIsAdminOnline(data.online);
+        setLastSeen(data.lastSeen ? new Date(data.lastSeen) : null);
       });
 
       return () => {
@@ -134,8 +179,9 @@ export default function CustomerChatButton() {
   }, [isOpen, session, guestId, guestName]);
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || !conversationId) return;
+    if (!newMessage.trim() || !conversationId || isSending) return;
 
+    setIsSending(true);
     try {
       const userId = session?.user?.id || guestId;
       const userName = session?.user?.name || guestName;
@@ -166,6 +212,33 @@ export default function CustomerChatButton() {
       }
     } catch (error) {
       console.error('Failed to send message:', error);
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  // Typing indicator functionality
+  const handleInputChange = (e) => {
+    setNewMessage(e.target.value);
+    
+    // Emit typing event
+    if (socketRef.current && conversationId) {
+      socketRef.current.emit('typing', {
+        conversationId,
+        userName: session?.user?.name || guestName
+      });
+      
+      // Clear previous timeout
+      if (typingTimeout) {
+        clearTimeout(typingTimeout);
+      }
+      
+      // Set new timeout to stop typing indicator
+      const timeout = setTimeout(() => {
+        socketRef.current?.emit('stop-typing', { conversationId });
+      }, 1000);
+      
+      setTypingTimeout(timeout);
     }
   };
 
@@ -173,6 +246,13 @@ export default function CustomerChatButton() {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
+      // Stop typing indicator immediately
+      if (socketRef.current && conversationId) {
+        socketRef.current.emit('stop-typing', { conversationId });
+      }
+      if (typingTimeout) {
+        clearTimeout(typingTimeout);
+      }
     }
   };
 
@@ -199,9 +279,22 @@ export default function CustomerChatButton() {
           <div className="bg-gradient-to-r from-gray-800 to-gray-900 text-white p-4 flex items-center justify-between">
             <div>
               <h3 className="font-semibold text-lg">Customer Support</h3>
-              <p className="text-xs text-blue-100">
-                {isAdminOnline ? '🟢 Admin is online' : '🔴 Admin is offline'}
-              </p>
+              <div className="flex items-center gap-2">
+                {isConnecting ? (
+                  <div className="w-3 h-3 border border-blue-300 rounded-full border-t-transparent animate-spin"></div>
+                ) : (
+                  <div className={`w-2 h-2 rounded-full ${isAdminOnline ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
+                )}
+                <p className="text-xs text-blue-100">
+                  {isConnecting ? 'Connecting...' :
+                   isAdminOnline ? 'Admin is online' : 
+                   lastSeen ? `Last seen ${lastSeen.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'})}` : 
+                   'Admin is offline'}
+                </p>
+              </div>
+              {adminTyping && (
+                <p className="text-xs text-green-300 animate-pulse">Admin is typing...</p>
+              )}
             </div>
             <button
               onClick={() => setIsOpen(false)}
@@ -213,7 +306,12 @@ export default function CustomerChatButton() {
 
           {/* Messages Area */}
           <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
-            {messages.length === 0 ? (
+            {isLoadingMessages ? (
+              <div className="text-center text-gray-500 mt-20">
+                <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-600 rounded-full animate-spin mx-auto mb-4"></div>
+                <p>Loading messages...</p>
+              </div>
+            ) : messages.length === 0 ? (
               <div className="text-center text-gray-500 mt-20">
                 <MessageCircle size={48} className="mx-auto mb-2 text-gray-300" />
                 <p>Start a conversation with our support team</p>
@@ -231,16 +329,58 @@ export default function CustomerChatButton() {
                     <div
                       className={`max-w-[70%] rounded-2xl px-4 py-2 ${
                         isMyMessage
-                          ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-br-none'
-                          : 'bg-white text-gray-800 shadow-sm rounded-bl-none'
+                          ? 'bg-gradient-to-r from-gray-700 to-gray-800 text-white rounded-br-none'
+                          : 'bg-white text-gray-800 shadow-sm rounded-bl-none border'
                       }`}
                     >
+                      {!isMyMessage && (
+                        <p className="text-xs font-medium text-gray-600 mb-1">{msg.senderName}</p>
+                      )}
                       <p className="text-sm break-words">{msg.message}</p>
-                      <p className={`text-xs mt-1 ${
+                      <div className={`flex items-center justify-between mt-1 ${
                         isMyMessage ? 'text-blue-100' : 'text-gray-500'
                       }`}>
-                        {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </p>
+                        <p className="text-xs">
+                          {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                        {isMyMessage && (
+                          <div className="flex items-center gap-1">
+                            {msg.status === 'sending' && (
+                              <div className="w-3 h-3 border border-white rounded-full border-t-transparent animate-spin"></div>
+                            )}
+                            {msg.status === 'sent' && (
+                              <svg className="w-3 h-3 text-blue-200" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                              </svg>
+                            )}
+                            {msg.status === 'delivered' && (
+                              <div className="flex -space-x-1">
+                                <svg className="w-3 h-3 text-blue-200" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                                <svg className="w-3 h-3 text-blue-200" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                              </div>
+                            )}
+                            {msg.status === 'read' && (
+                              <div className="flex -space-x-1">
+                                <svg className="w-3 h-3 text-green-300" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                                <svg className="w-3 h-3 text-green-300" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                              </div>
+                            )}
+                            {msg.status === 'failed' && (
+                              <svg className="w-3 h-3 text-red-300" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                              </svg>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
@@ -268,17 +408,21 @@ export default function CustomerChatButton() {
               <input
                 type="text"
                 value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
+                onChange={handleInputChange}
                 onKeyPress={handleKeyPress}
                 placeholder="Type your message..."
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-all duration-200"
               />
               <button
                 onClick={sendMessage}
-                disabled={!newMessage.trim()}
-                className="bg-gradient-to-r from-gray-600 to-gray-700 text-white p-3 rounded-full hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!newMessage.trim() || isSending || isConnecting}
+                className="bg-gradient-to-r from-gray-600 to-gray-700 text-white p-3 rounded-full hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
-                <Send size={20} />
+                {isSending ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <Send size={20} />
+                )}
               </button>
             </div>
           </div>
