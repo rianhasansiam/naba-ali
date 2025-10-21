@@ -13,25 +13,31 @@ export async function GET(request) {
     const categories = await getCollection('allCategories');
     const products = await getCollection('allProducts');
     
-    // Find all categories and products
-    const allCategories = await categories.find({}).toArray();
-    const allProducts = await products.find({}).toArray();
+    // Parallel fetch for better performance
+    const [allCategories, allProducts] = await Promise.all([
+      categories.find({}).toArray(),
+      products.find({}, { projection: { category: 1 } }).toArray()
+    ]);
     
-    // Calculate product count for each category
+    // Create a category count map for O(n) complexity instead of O(n²)
+    const categoryCountMap = new Map();
+    
+    allProducts.forEach(product => {
+      const productCategory = product?.category?.toLowerCase()?.trim();
+      if (productCategory) {
+        categoryCountMap.set(productCategory, (categoryCountMap.get(productCategory) || 0) + 1);
+      }
+    });
+    
+    // Calculate product count for each category efficiently
     const categoriesWithCount = allCategories.map(category => {
-      const productCount = allProducts.filter(product => {
-        const categoryName = category.name?.toLowerCase()?.trim();
-        const productCategory = product?.category?.toLowerCase()?.trim();
-        
-        // Flexible matching
-        return productCategory === categoryName || 
-               productCategory?.includes(categoryName) ||
-               categoryName?.includes(productCategory);
-      }).length;
+      const categoryName = category.name?.toLowerCase()?.trim();
+      const productCount = categoryCountMap.get(categoryName) || 0;
       
       return {
         ...category,
-        productCount: productCount
+        productCount: productCount,
+        hasProducts: productCount > 0
       };
     });
     

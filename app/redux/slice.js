@@ -261,7 +261,7 @@ export const userSlice = createSlice({
             state.cart.totalQuantity = cartItems.reduce((sum, item) => sum + item.quantity, 0);
             state.cart.totalAmount = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
           } catch (error) {
-            console.error('Error loading cart from storage:', error);
+            if (isDev) console.error('Error loading cart from storage:', error);
           }
         }
       }
@@ -330,7 +330,7 @@ export const userSlice = createSlice({
             }));
             state.wishlist.totalItems = wishlistItems.length;
           } catch (error) {
-            console.error('Error loading wishlist from storage:', error);
+            if (isDev) console.error('Error loading wishlist from storage:', error);
           }
         }
       }

@@ -71,7 +71,7 @@ const CheckoutPageClient = () => {
   });
   
   // State management
-  const [selectedPayment, setSelectedPayment] = useState('');
+  const [selectedPayment, setSelectedPayment] = useState('cod'); // Default to COD
   const [showTransactionForm, setShowTransactionForm] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderProcessed, setOrderProcessed] = useState(false); // Prevent multiple submissions
@@ -105,13 +105,9 @@ const CheckoutPageClient = () => {
     zipCode: ''
   });
 
-  // Payment methods configuration
+  // Payment methods configuration - Only Cash on Delivery
   const paymentMethods = [
-    { id: 'card', name: 'Credit/Debit Card', icon: CreditCard, description: 'Visa, MasterCard, American Express' },
-    { id: 'paypal', name: 'PayPal', icon: Lock, description: 'Pay with your PayPal account' },
-    { id: 'cod', name: 'Cash on Delivery', icon: Truck, description: 'Pay when you receive your order' },
-    { id: 'apple', name: 'Apple Pay', icon: CheckCircle, description: 'Pay with Touch ID or Face ID' },
-    { id: 'google', name: 'Google Pay', icon: CheckCircle, description: 'Pay with Google Pay' }
+    { id: 'cod', name: 'Cash on Delivery', icon: Truck, description: 'Pay when you receive your order' }
   ];
 
   // Load cart from localStorage when products are loaded
@@ -412,7 +408,7 @@ const CheckoutPageClient = () => {
                   })()}
                   <span className="font-medium">{paymentMethods.find(p => p.id === selectedPayment)?.name}</span>
                 </div>
-                <p className="text-sm text-gray-600 mt-1">Total Amount: ৳{totals.total}</p>
+                <p className="text-sm text-gray-600 mt-1 price-number">Total Amount: BDT {totals.total}</p>
               </div>
 
               {/* Transaction Form */}
@@ -752,8 +748,8 @@ const CheckoutPageClient = () => {
                       <p className="text-sm text-gray-600">Qty: {item.quantity || 0}</p>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold text-gray-900">
-                        ৳{((item.price || 0) * (item.quantity || 0)).toFixed(2)}
+                      <p className="font-semibold text-gray-900 price-number">
+                        BDT {((item.price || 0) * (item.quantity || 0)).toFixed(2)}
                       </p>
                     </div>
                   </div>
@@ -768,21 +764,21 @@ const CheckoutPageClient = () => {
               <div className="space-y-3">
                 <div className="flex justify-between text-gray-600">
                   <span>Subtotal</span>
-                  <span>৳{totals.subtotal}</span>
+                  <span className="price-number">BDT {totals.subtotal}</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>Shipping</span>
-                  <span>৳{totals.shipping}</span>
+                  <span className="price-number">BDT {totals.shipping}</span>
                 </div>
                 {taxEnabled && parseFloat(totals.tax) > 0 && (
                   <div className="flex justify-between text-gray-600">
                     <span>{totals.taxName || 'Tax'}</span>
-                    <span>৳{totals.tax}</span>
+                    <span className="price-number">BDT {totals.tax}</span>
                   </div>
                 )}
                 <div className="border-t pt-3 flex justify-between text-xl font-bold text-gray-900">
                   <span>Total</span>
-                  <span>৳{totals.total}</span>
+                  <span className="price-number">BDT {totals.total}</span>
                 </div>
               </div>
 
@@ -806,7 +802,7 @@ const CheckoutPageClient = () => {
                 ) : orderProcessed ? (
                   'Order Placed Successfully!'
                 ) : (
-                  `Place Order - ৳${totals.total}`
+                  <span className="price-number">Place Order - BDT {totals.total}</span>
                 )}
               </motion.button>
 

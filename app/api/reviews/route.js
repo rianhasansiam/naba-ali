@@ -12,8 +12,10 @@ export async function GET(request) {
     // Get the reviews collection
     const reviews = await getCollection('allReviews');
     
-    // Find all reviews
-    const allReviews = await reviews.find({}).toArray();
+    // Find all reviews with sorting for better UX (newest first)
+    const allReviews = await reviews.find({})
+      .sort({ createdAt: -1 })
+      .toArray();
 
     return NextResponse.json(allReviews);
 

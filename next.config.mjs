@@ -43,19 +43,17 @@ const nextConfig = {
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',
     contentSecurityPolicy: "default-src 'self' data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; media-src 'self' data: blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none';",
-    // Add timeout handling for image optimization
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    unoptimized: false, // Keep optimization on
+    unoptimized: false,
   },
 
   compress: true,
 
-  experimental: {
-    optimizeCss: true,
-    optimizePackageImports: ['lucide-react', 'framer-motion'],
-  },
-
+  // Performance optimizations
+  poweredByHeader: false,
+  reactStrictMode: true,
+  
   async headers() {
     return [
       {
@@ -71,7 +69,7 @@ const nextConfig = {
           {
             key: 'Content-Security-Policy',
             value:
-              "default-src 'self'; img-src 'self' https: data:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; font-src 'self' https: data:; connect-src 'self' https://api.imgbb.com https:;",
+              "default-src 'self'; img-src 'self' https: data:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; font-src 'self' https: data:; connect-src 'self' ws://localhost:3001 wss://localhost:3001 ws: wss: https://api.imgbb.com https:;",
           },
         ],
       },
@@ -98,6 +96,9 @@ const nextConfig = {
   experimental: {
     // Suppress scroll restoration warnings
     scrollRestoration: true,
+    // CSS and package optimization
+    optimizeCss: true,
+    optimizePackageImports: ['lucide-react', 'framer-motion'],
   },
 };
 

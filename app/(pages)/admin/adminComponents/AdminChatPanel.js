@@ -35,9 +35,14 @@ export default function AdminChatPanel() {
   useEffect(() => {
     if (session?.user) {
       setIsConnecting(true);
-      // Connect to WebSocket
-      socketRef.current = io(window.location.origin, {
-        transports: ['websocket', 'polling']
+      // Connect to External WebSocket Server
+      const SOCKET_SERVER = process.env.NEXT_PUBLIC_SOCKET_URL || window.location.origin;
+      
+      socketRef.current = io(SOCKET_SERVER, {
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionAttempts: 5
       });
 
       socketRef.current.on('connect', () => {
@@ -53,7 +58,22 @@ export default function AdminChatPanel() {
       // Listen for new messages
       socketRef.current.on('new-message', (message) => {
         if (selectedConversation && message.conversationId === selectedConversation.userId) {
-          setMessages(prev => [...prev, message]);
+          // Prevent duplicate messages (check if message already exists)
+          setMessages(prev => {
+            const exists = prev.some(msg => 
+              msg._id === message._id || 
+              (msg.message === message.message && 
+               msg.senderId === message.senderId &&
+               Math.abs(new Date(msg.timestamp) - new Date(message.timestamp)) < 1000)
+            );
+            
+            if (exists) {
+              return prev;
+            }
+            
+            return [...prev, message];
+          });
+          
           // Auto-mark admin messages as read
           if (message.senderId !== session.user.id) {
             setTimeout(() => {
@@ -180,35 +200,82 @@ export default function AdminChatPanel() {
     if (!newMessage.trim() || !selectedConversation || isSending) return;
 
     setIsSending(true);
+    const messageText = newMessage.trim();
+    const tempMessageId = `temp-${Date.now()}`;
+    
+    // Optimistically add message to UI immediately
+    const optimisticMessage = {
+      _id: tempMessageId,
+      conversationId: selectedConversation.userId,
+      senderId: session.user.id,
+      senderName: session.user.name || 'Support Team',
+      senderRole: 'admin',
+      message: messageText,
+      timestamp: new Date(),
+      isRead: false
+    };
+    
+    setMessages(prev => [...prev, optimisticMessage]);
+    setNewMessage('');
+
     try {
       const response = await fetch('/api/chat/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           conversationId: selectedConversation.userId,
-          message: newMessage
+          message: messageText,
+          userId: session.user.id,
+          userName: session.user.name || 'Support Team'
         })
       });
 
       const data = await response.json();
       
       if (data.success) {
-        // Emit via socket for real-time delivery
+        // Replace temporary message with real one from server
+        setMessages(prev => 
+          prev.map(msg => 
+            msg._id === tempMessageId ? data.message : msg
+          )
+        );
+
+        // Emit via socket for real-time delivery to customer
         socketRef.current?.emit('send-message', {
           conversationId: selectedConversation.userId,
-          message: newMessage,
+          message: messageText,
           senderId: session.user.id,
-          senderName: 'Support Team'
+          senderName: session.user.name || 'Support Team',
+          senderRole: 'admin'
         });
 
-      setNewMessage('');
+        // Update conversation in list
+        setConversations(prev =>
+          prev.map(conv =>
+            conv.userId === selectedConversation.userId
+              ? { 
+                  ...conv, 
+                  lastMessage: messageText.substring(0, 50),
+                  lastMessageTime: new Date()
+                }
+              : conv
+          )
+        );
+      } else {
+        // Remove optimistic message on failure
+        setMessages(prev => prev.filter(msg => msg._id !== tempMessageId));
+        setNewMessage(messageText); // Restore message
+        console.error('Failed to send message:', data.error);
+      }
+    } catch (error) {
+      // Remove optimistic message on error
+      setMessages(prev => prev.filter(msg => msg._id !== tempMessageId));
+      setNewMessage(messageText); // Restore message
+      console.error('Failed to send message:', error);
+    } finally {
+      setIsSending(false);
     }
-  } catch (error) {
-    console.error('Failed to send message:', error);
-  } finally {
-    setIsSending(false);
-  }
-};  // Enhanced typing functionality for admin
+  };  // Enhanced typing functionality for admin
   const handleInputChange = (e) => {
     setNewMessage(e.target.value);
     

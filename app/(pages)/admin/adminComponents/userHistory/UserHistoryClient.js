@@ -106,12 +106,12 @@ const UserHistory = ({ userHistoryData = {} }) => {
             <div className="text-center p-3 bg-green-50 rounded-xl">
               <DollarSign className="text-green-600 mx-auto mb-1" size={20} />
               <p className="text-sm text-gray-600">Total Spent</p>
-              <p className="text-lg font-bold text-green-600">৳{customer.totalSpent.toLocaleString()}</p>
+              <p className="text-lg font-bold text-green-600 price-number">BDT {customer.totalSpent.toLocaleString()}</p>
             </div>
             <div className="text-center p-3 bg-gray-100 rounded-xl">
               <TrendingUp className="text-gray-700 mx-auto mb-1" size={20} />
               <p className="text-sm text-gray-600">Avg Order</p>
-              <p className="text-lg font-bold text-gray-800">৳{customer.averageOrder}</p>
+              <p className="text-lg font-bold text-gray-800 price-number">BDT {customer.averageOrder}</p>
             </div>
           </div>
           
@@ -189,7 +189,7 @@ const UserHistory = ({ userHistoryData = {} }) => {
                       <p className="text-sm text-gray-600">{order.date}</p>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-green-600">৳{order.total}</p>
+                      <p className="font-bold text-green-600 price-number">BDT {order.total}</p>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         order.status === 'delivered' ? 'bg-green-100 text-green-800' :
                         order.status === 'shipped' ? 'bg-blue-100 text-blue-800' :
@@ -214,7 +214,7 @@ const UserHistory = ({ userHistoryData = {} }) => {
                         />
                         <div className="flex-1">
                           <p className="font-medium text-gray-900">{item.name}</p>
-                          <p className="text-sm text-gray-600">Qty: {item.quantity} × ৳{item.price}</p>
+                          <p className="text-sm text-gray-600 price-number">Qty: {item.quantity} × BDT {item.price}</p>
                         </div>
                       </div>
                     ))}
@@ -332,7 +332,7 @@ const UserHistory = ({ userHistoryData = {} }) => {
             <DollarSign className="text-green-600" size={20} />
             <span className="text-sm text-gray-600">Avg Spent</span>
           </div>
-          <p className="text-2xl font-bold text-green-600 mt-1">৳{stats.averageSpent.toFixed(0)}</p>
+          <p className="text-2xl font-bold text-green-600 mt-1 price-number">BDT {stats.averageSpent.toFixed(0)}</p>
         </div>
         
         <div className="bg-white rounded-xl p-4 shadow-sm">
@@ -340,7 +340,7 @@ const UserHistory = ({ userHistoryData = {} }) => {
             <TrendingUp className="text-indigo-600" size={20} />
             <span className="text-sm text-gray-600">Total Revenue</span>
           </div>
-          <p className="text-2xl font-bold text-indigo-600 mt-1">৳{stats.totalRevenue.toLocaleString()}</p>
+          <p className="text-2xl font-bold text-indigo-600 mt-1 price-number">BDT {stats.totalRevenue.toLocaleString()}</p>
         </div>
         
         <div className="bg-white rounded-xl p-4 shadow-sm">

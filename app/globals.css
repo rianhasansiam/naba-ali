@@ -25,6 +25,16 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* Fix for number spacing issue */
+.price-number,
+.tabular-nums,
+[class*="price"],
+[class*="total"],
+[class*="amount"] {
+  letter-spacing: 0 !important;
+  font-variant-numeric: tabular-nums;
+}
+
 /* Smooth fade-in animation for content */
 @keyframes fadeIn {
   from {

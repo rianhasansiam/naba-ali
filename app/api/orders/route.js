@@ -18,8 +18,10 @@ export async function GET(request) {
     // Get the orders collection
     const orders = await getCollection('allOrders');
     
-    // Find all orders
-    const allOrders = await orders.find({}).toArray();
+    // Find all orders sorted by date (newest first) for better performance
+    const allOrders = await orders.find({})
+      .sort({ createdAt: -1 })
+      .toArray();
 
     return NextResponse.json(allOrders);
 

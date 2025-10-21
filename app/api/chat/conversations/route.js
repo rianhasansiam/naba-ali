@@ -5,20 +5,43 @@ import { checkOrigin, isAuthenticated, isAdmin, unauthorizedResponse } from '../
 // GET - Get all conversations (Admin only)
 export async function GET(request) {
   try {
+    console.log('GET /api/chat/conversations - Start');
+    
     const originCheck = checkOrigin(request);
-    if (originCheck) return originCheck;
+    if (originCheck) {
+      console.log('Origin check failed');
+      return originCheck;
+    }
 
+    // Check authentication first
+    const user = await isAuthenticated();
+    console.log('User authenticated:', user ? 'Yes' : 'No', user?.email);
+    
     // Only admin can view all conversations
     const admin = await isAdmin();
+    console.log('Is admin:', admin);
+    
     if (!admin) {
+      console.log('Admin access denied');
       return unauthorizedResponse('Admin access required');
     }
 
     const conversations = await getCollection('chatConversations');
+    
+    if (!conversations) {
+      console.error('Failed to get chatConversations collection');
+      return NextResponse.json({ 
+        success: false,
+        error: "Database connection error" 
+      }, { status: 500 });
+    }
+
     const conversationList = await conversations
       .find({})
       .sort({ lastMessageTime: -1 })
       .toArray();
+
+    console.log('Conversations fetched:', conversationList.length);
 
     return NextResponse.json({
       success: true,
@@ -26,9 +49,11 @@ export async function GET(request) {
     });
 
   } catch (error) {
+    console.error('GET /api/chat/conversations error:', error);
     return NextResponse.json({ 
       success: false,
-      error: "Failed to fetch conversations" 
+      error: "Failed to fetch conversations",
+      details: error.message 
     }, { status: 500 });
   }
 }
@@ -50,6 +75,14 @@ export async function POST(request) {
     }
 
     const conversations = await getCollection('chatConversations');
+    
+    if (!conversations) {
+      console.error('Failed to get chatConversations collection');
+      return NextResponse.json({ 
+        success: false,
+        error: "Database connection error" 
+      }, { status: 500 });
+    }
     
     // Check if conversation exists
     let conversation = await conversations.findOne({ userId });
@@ -78,9 +111,11 @@ export async function POST(request) {
     });
 
   } catch (error) {
+    console.error('POST /api/chat/conversations error:', error);
     return NextResponse.json({ 
       success: false,
-      error: "Failed to create conversation" 
+      error: "Failed to create conversation",
+      details: error.message 
     }, { status: 500 });
   }
 }

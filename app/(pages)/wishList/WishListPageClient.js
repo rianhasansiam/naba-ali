@@ -157,12 +157,12 @@ const WishlistProductCard = ({ product, onRemove, onAddToCart, isSelected, onSel
 
         {/* Price */}
         <div className="flex items-center gap-2 mb-4">
-          <span className="text-xl font-bold text-gray-900">
-            ৳{product.price}
+          <span className="text-xl font-bold text-gray-900 price-number">
+            BDT {product.price}
           </span>
           {product.originalPrice && (
-            <span className="text-sm text-gray-500 line-through">
-              ৳{product.originalPrice}
+            <span className="text-sm text-gray-500 line-through price-number">
+              BDT {product.originalPrice}
             </span>
           )}
         </div>
@@ -428,12 +428,12 @@ export default function WishListPageClient() {
             <div className="text-sm text-gray-500">Items</div>
           </div>
           <div className="text-center">
-            <div className="text-2xl font-bold text-gray-900">৳{totalValue.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-gray-900 price-number">BDT {totalValue.toFixed(2)}</div>
             <div className="text-sm text-gray-500">Total Value</div>
           </div>
           {totalSavings > 0 && (
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">৳{totalSavings.toFixed(2)}</div>
+              <div className="text-2xl font-bold text-green-600 price-number">BDT {totalSavings.toFixed(2)}</div>
               <div className="text-sm text-gray-500">You Save</div>
             </div>
           )}

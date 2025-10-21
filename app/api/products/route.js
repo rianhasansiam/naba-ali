@@ -12,8 +12,32 @@ export async function GET(request) {
     // Get the products collection
     const products = await getCollection('allProducts');
     
-    // Find all products
-    const allProducts = await products.find({}).toArray();
+    // Find all products with projection for better performance
+    const allProducts = await products.find({}, {
+      projection: {
+        // Include all fields but this makes query more efficient
+        _id: 1,
+        name: 1,
+        category: 1,
+        style: 1,
+        price: 1,
+        originalPrice: 1,
+        salePrice: 1,
+        stock: 1,
+        isInStock: 1,
+        primaryImage: 1,
+        images: 1,
+        image: 1,
+        description: 1,
+        shortDescription: 1,
+        colors: 1,
+        sizes: 1,
+        color: 1,
+        rating: 1,
+        reviews: 1,
+        createdAt: 1
+      }
+    }).toArray();
 
     return NextResponse.json(allProducts);
 

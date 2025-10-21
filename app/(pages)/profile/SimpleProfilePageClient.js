@@ -642,7 +642,7 @@ const SimpleProfilePageClient = () => {
                           </div>
                           <div className="ml-4">
                             <p className="text-sm font-medium text-gray-500">Total Spent</p>
-                            <p className="text-2xl font-bold text-gray-900">৳{userStats.totalSpent.toFixed(2)}</p>
+                            <p className="text-2xl font-bold text-gray-900 price-number">BDT {userStats.totalSpent.toFixed(2)}</p>
                           </div>
                         </div>
                       </div>
@@ -793,8 +793,8 @@ const SimpleProfilePageClient = () => {
                               {/* Order Summary */}
                               <div className="flex justify-between items-center mb-3">
                                 <div>
-                                  <p className="text-sm text-gray-600">
-                                    {order.items?.length || 0} item(s) • ৳{(order.total || order.orderSummary?.total || 0).toFixed(2)}
+                                  <p className="text-sm text-gray-600 price-number">
+                                    {order.items?.length || 0} item(s) • BDT {(order.total || order.orderSummary?.total || 0).toFixed(2)}
                                   </p>
                                   <p className="text-sm">
                                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -821,9 +821,9 @@ const SimpleProfilePageClient = () => {
                                       <div key={itemIndex} className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
                                         <div className="flex-1">
                                           <p className="font-medium text-gray-900 text-sm">{item.productName}</p>
-                                          <p className="text-xs text-gray-600">
+                                          <p className="text-xs text-gray-600 price-number">
                                             Size: {item.size || 'N/A'} • Color: {item.color || 'Default'} • 
-                                            Qty: {item.quantity || 1} • ৳{(item.price || 0).toFixed(2)}
+                                            Qty: {item.quantity || 1} • BDT {(item.price || 0).toFixed(2)}
                                           </p>
                                         </div>
                                         <div className="ml-3">

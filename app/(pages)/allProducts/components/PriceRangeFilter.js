@@ -99,8 +99,8 @@ const PriceRangeFilter = ({ products = [] }) => {
           </div>
           
           {/* Current Range Display */}
-          <div className="text-center text-sm text-gray-600">
-            ৳{filters.priceRange.min} - ৳{filters.priceRange.max}
+          <div className="text-center text-sm text-gray-600 price-number">
+            BDT {filters.priceRange.min} - BDT {filters.priceRange.max}
           </div>
         </div>
       )}

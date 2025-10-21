@@ -66,8 +66,8 @@ const EnhancedFilters = ({ categoriesData, products }) => {
               </span>
             ))}
             {(filters.priceRange.min > 0 || filters.priceRange.max < 1000) && (
-              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-black text-white">
-                ৳{filters.priceRange.min}-৳{filters.priceRange.max}
+              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-black text-white price-number">
+                BDT {filters.priceRange.min}-BDT {filters.priceRange.max}
               </span>
             )}
             {filters.inStock && (

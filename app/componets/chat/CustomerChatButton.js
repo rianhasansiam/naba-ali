@@ -110,9 +110,14 @@ export default function CustomerChatButton() {
         return;
       }
 
-      // Connect to WebSocket
-      socketRef.current = io(window.location.origin, {
-        transports: ['websocket', 'polling']
+      // Connect to External WebSocket Server
+      const SOCKET_SERVER = process.env.NEXT_PUBLIC_SOCKET_URL || window.location.origin;
+      
+      socketRef.current = io(SOCKET_SERVER, {
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionAttempts: 5
       });
 
       socketRef.current.on('connect', () => {
@@ -127,7 +132,22 @@ export default function CustomerChatButton() {
 
       // Listen for new messages
       socketRef.current.on('new-message', (message) => {
-        setMessages(prev => [...prev, message]);
+        // Prevent duplicate messages
+        setMessages(prev => {
+          const exists = prev.some(msg => 
+            msg._id === message._id || 
+            (msg.message === message.message && 
+             msg.senderId === message.senderId &&
+             Math.abs(new Date(msg.timestamp) - new Date(message.timestamp)) < 1000)
+          );
+          
+          if (exists) {
+            return prev;
+          }
+          
+          return [...prev, message];
+        });
+        
         // Mark message as delivered if from admin
         if (message.senderId !== userId) {
           socketRef.current.emit('message-delivered', {
@@ -157,7 +177,9 @@ export default function CustomerChatButton() {
 
       // Enhanced admin status with last seen
       socketRef.current.on('admin-status', (data) => {
-        setIsAdminOnline(data.online);
+        console.log('Admin status update:', data);
+        // Server sends 'available' field, map it to 'online'
+        setIsAdminOnline(data.available || false);
         if (data.lastSeen) {
           setLastSeen(new Date(data.lastSeen));
         }
@@ -165,7 +187,8 @@ export default function CustomerChatButton() {
 
       // Admin presence updates
       socketRef.current.on('admin-presence', (data) => {
-        setIsAdminOnline(data.online);
+        console.log('Admin presence update:', data);
+        setIsAdminOnline(data.online || false);
         setLastSeen(data.lastSeen ? new Date(data.lastSeen) : null);
       });
 
@@ -182,16 +205,33 @@ export default function CustomerChatButton() {
     if (!newMessage.trim() || !conversationId || isSending) return;
 
     setIsSending(true);
-    try {
-      const userId = session?.user?.id || guestId;
-      const userName = session?.user?.name || guestName;
+    const userId = session?.user?.id || guestId;
+    const userName = session?.user?.name || guestName;
+    const messageText = newMessage.trim();
+    const tempMessageId = `temp-${Date.now()}`;
+    
+    // Optimistically add message to UI immediately
+    const optimisticMessage = {
+      _id: tempMessageId,
+      conversationId,
+      senderId: userId,
+      senderName: userName,
+      senderRole: 'user',
+      message: messageText,
+      timestamp: new Date(),
+      isRead: false
+    };
+    
+    setMessages(prev => [...prev, optimisticMessage]);
+    setNewMessage('');
 
+    try {
       const response = await fetch('/api/chat/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           conversationId,
-          message: newMessage,
+          message: messageText,
           userId,
           userName
         })
@@ -200,17 +240,31 @@ export default function CustomerChatButton() {
       const data = await response.json();
       
       if (data.success) {
+        // Replace temporary message with real one from server
+        setMessages(prev => 
+          prev.map(msg => 
+            msg._id === tempMessageId ? data.message : msg
+          )
+        );
+
         // Emit via socket for real-time delivery
         socketRef.current?.emit('send-message', {
           conversationId,
-          message: newMessage,
+          message: messageText,
           senderId: userId,
-          senderName: userName
+          senderName: userName,
+          senderRole: 'user'
         });
-
-        setNewMessage('');
+      } else {
+        // Remove optimistic message on failure
+        setMessages(prev => prev.filter(msg => msg._id !== tempMessageId));
+        setNewMessage(messageText); // Restore message
+        console.error('Failed to send message:', data.error);
       }
     } catch (error) {
+      // Remove optimistic message on error
+      setMessages(prev => prev.filter(msg => msg._id !== tempMessageId));
+      setNewMessage(messageText); // Restore message
       console.error('Failed to send message:', error);
     } finally {
       setIsSending(false);

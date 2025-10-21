@@ -13,13 +13,9 @@ import jsPDF from 'jspdf';
 const OrderSummaryPageClient = ({ orderData }) => {
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   
-  // Payment method icons mapping
+  // Payment method icons mapping - Only COD available
   const paymentIcons = {
-    card: CreditCard,
-    paypal: Lock,
-    cod: Truck,
-    apple: CheckCircle,
-    google: CheckCircle
+    cod: Truck
   };
 
   const getStatusIcon = (status) => {
@@ -52,118 +48,221 @@ const OrderSummaryPageClient = ({ orderData }) => {
   // Generate and download PDF receipt
   const downloadReceipt = () => {
     const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.width;
+    const pageHeight = doc.internal.pageSize.height;
 
-    // Set up colors and fonts
-    const primaryColor = [41, 128, 185]; // Blue
-    const secondaryColor = [52, 73, 94]; // Dark gray
-    const accentColor = [46, 204, 113]; // Green
+    // === Enhanced Color Scheme ===
+    const colors = {
+      primary: [0, 0, 0],           // Black
+      accent: [59, 130, 246],       // Blue
+      success: [34, 197, 94],       // Green
+      text: [31, 41, 55],           // Gray 800
+      lightGray: [243, 244, 246],   // Gray 100
+      mediumGray: [156, 163, 175],  // Gray 400
+      border: [229, 231, 235]       // Gray 200
+    };
 
-    // Header
-    doc.setFillColor(...primaryColor);
-    doc.rect(0, 0, 210, 25, 'F');
-
+    // === Header Section with Professional Design ===
+    doc.setFillColor(...colors.primary);
+    doc.rect(0, 0, pageWidth, 45, 'F');
+    
+    // Company name/logo
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(18);
-    doc.text('SkyZonee', 20, 18);
+    doc.setFontSize(28);
+    doc.setFont('helvetica', 'bold');
+    doc.text('SKYZONEE', 20, 22);
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Premium Fashion & Lifestyle', 20, 30);
+    doc.text('Since 2025', 20, 36);
+    
+    // Order Receipt badge
+    doc.setFillColor(...colors.accent);
+    doc.roundedRect(pageWidth - 70, 15, 50, 15, 3, 3, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('RECEIPT', pageWidth - 60, 24);
 
-    doc.setFontSize(12);
-    doc.text('Order Receipt', 150, 18);
-
-    // Order details
-    doc.setTextColor(...secondaryColor);
-    doc.setFontSize(12);
-    doc.text('Order Details', 20, 40);
-
+    // === Order ID & Status Banner ===
+    let y = 55;
+    doc.setFillColor(...colors.lightGray);
+    doc.rect(15, y, pageWidth - 30, 18, 'F');
+    
+    doc.setTextColor(...colors.text);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Order #${orderData.orderId}`, 20, y + 8);
+    
+    doc.setFont('helvetica', 'normal');
     doc.setFontSize(9);
-    doc.text(`Order ID: ${orderData.orderId}`, 20, 50);
-    doc.text(`Date: ${orderData.date}`, 20, 58);
-    doc.text(`Status: ${orderData.status.charAt(0).toUpperCase() + orderData.status.slice(1)}`, 20, 66);
+    doc.setTextColor(...colors.mediumGray);
+    doc.text(`Placed on ${orderData.date}`, 20, y + 14);
+    
+    // Status badge
+    const statusColors = {
+      pending: [251, 191, 36],
+      processing: [59, 130, 246],
+      shipped: [139, 92, 246],
+      delivered: [34, 197, 94],
+      cancelled: [239, 68, 68],
+      confirmed: [34, 197, 94]
+    };
+    const statusColor = statusColors[orderData.status] || colors.mediumGray;
+    doc.setFillColor(...statusColor);
+    doc.roundedRect(pageWidth - 50, y + 5, 35, 8, 2, 2, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.text(orderData.status.toUpperCase(), pageWidth - 46, y + 10);
 
-    // Customer information
+    // === Customer & Payment Info in Two Columns ===
+    y = 80;
+    
+    // Left column - Customer Info
+    doc.setTextColor(...colors.text);
     doc.setFontSize(12);
-    doc.text('Customer Information', 20, 80);
-
+    doc.setFont('helvetica', 'bold');
+    doc.text('BILL TO', 20, y);
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(orderData.customer?.name || 'N/A', 20, y + 8);
+    
     doc.setFontSize(9);
-    doc.text(`Name: ${orderData.customer?.name || 'N/A'}`, 20, 90);
-    doc.text(`Email: ${orderData.customer?.email || 'N/A'}`, 20, 98);
-    doc.text(`Phone: ${orderData.customer?.phone || 'N/A'}`, 20, 106);
-    doc.text(`Address: ${orderData.customer?.address || 'N/A'}`, 20, 114);
-    doc.text(`${orderData.customer?.city || 'N/A'}, ${orderData.customer?.zipCode || 'N/A'}`, 20, 122);
-
-    // Payment information
+    doc.setTextColor(...colors.mediumGray);
+    doc.text(orderData.customer?.email || 'N/A', 20, y + 14);
+    doc.text(orderData.customer?.phone || 'N/A', 20, y + 20);
+    doc.text(orderData.customer?.address || 'N/A', 20, y + 26);
+    doc.text(`${orderData.customer?.city || 'N/A'}, ${orderData.customer?.zipCode || 'N/A'}`, 20, y + 32);
+    
+    // Right column - Payment Info
+    doc.setTextColor(...colors.text);
     doc.setFontSize(12);
-    doc.text('Payment Information', 20, 136);
-
+    doc.setFont('helvetica', 'bold');
+    doc.text('PAYMENT', pageWidth - 75, y);
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(orderData.payment?.name || 'N/A', pageWidth - 75, y + 8);
+    
     doc.setFontSize(9);
-    doc.text(`Method: ${orderData.payment?.name || 'N/A'}`, 20, 146);
-    doc.text(`Total: ৳${orderData.totals?.total || '0.00'}`, 20, 154);
+    doc.setTextColor(...colors.mediumGray);
+    doc.text('Payment Status:', pageWidth - 75, y + 14);
+    doc.setTextColor(...colors.success);
+    doc.text('Confirmed', pageWidth - 75, y + 20);
 
-    // Order items
-    let yPosition = 168;
+    // === Items Table with Enhanced Design ===
+    y = 125;
+    doc.setTextColor(...colors.text);
     doc.setFontSize(12);
-    doc.text('Order Items', 20, yPosition);
-    yPosition += 10;
+    doc.setFont('helvetica', 'bold');
+    doc.text('ORDER ITEMS', 20, y);
+    y += 8;
 
-    // Table headers
+    // Table header
+    doc.setFillColor(...colors.primary);
+    doc.rect(15, y, pageWidth - 30, 10, 'F');
+    doc.setTextColor(255, 255, 255);
     doc.setFontSize(9);
-    doc.setFillColor(240, 240, 240);
-    doc.rect(20, yPosition - 3, 170, 8, 'F');
-    doc.text('Item', 25, yPosition + 2);
-    doc.text('Qty', 120, yPosition + 2);
-    doc.text('Price', 140, yPosition + 2);
-    doc.text('Total', 165, yPosition + 2);
-    yPosition += 12;
+    doc.setFont('helvetica', 'bold');
+    doc.text('PRODUCT', 20, y + 6);
+    doc.text('QTY', 110, y + 6);
+    doc.text('PRICE', 130, y + 6);
+    doc.text('TOTAL', pageWidth - 20, y + 6, { align: 'right' });
+    y += 12;
 
-    // Items - limit to 4-5 items to fit on one page
-    const itemsToShow = (orderData.items || []).slice(0, 5);
+    // Table rows
+    const itemsToShow = (orderData.items || []).slice(0, 6);
     itemsToShow.forEach((item, index) => {
-      const itemTotal = (item.price * item.quantity).toFixed(2);
-      const truncatedName = (item.name || 'Product').length > 30 ?
-        (item.name || 'Product').substring(0, 27) + '...' :
+      // Alternate row colors
+      if (index % 2 === 0) {
+        doc.setFillColor(...colors.lightGray);
+        doc.rect(15, y - 4, pageWidth - 30, 8, 'F');
+      }
+      
+      const itemPrice = parseFloat(item.price || 0);
+      const itemQty = parseInt(item.quantity || 1);
+      const itemTotal = (itemPrice * itemQty).toFixed(2);
+      const truncatedName = (item.name || 'Product').length > 32 ?
+        (item.name || 'Product').substring(0, 29) + '...' :
         (item.name || 'Product');
 
-      doc.text(truncatedName, 25, yPosition);
-      doc.text(item.quantity?.toString() || '1', 120, yPosition);
-      doc.text(`৳${item.price?.toFixed(2) || '0.00'}`, 140, yPosition);
-      doc.text(`৳${itemTotal}`, 165, yPosition);
-      yPosition += 8;
+      doc.setTextColor(...colors.text);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.text(truncatedName, 20, y + 2);
+      doc.text(itemQty.toString(), 110, y + 2);
+      doc.text('BDT ' + itemPrice.toFixed(2), 130, y + 2);
+      doc.setFont('helvetica', 'bold');
+      doc.text('BDT ' + itemTotal, pageWidth - 20, y + 2, { align: 'right' });
+      y += 8;
     });
 
-    // Show "and X more items..." if there are more items
-    if ((orderData.items || []).length > 5) {
-      const remainingItems = (orderData.items || []).length - 5;
-      doc.text(`and ${remainingItems} more item${remainingItems > 1 ? 's' : ''}...`, 25, yPosition);
-      yPosition += 8;
+    if ((orderData.items || []).length > 6) {
+      doc.setTextColor(...colors.mediumGray);
+      doc.setFontSize(8);
+      doc.text(`+ ${(orderData.items || []).length - 6} more items`, 20, y + 2);
+      y += 8;
     }
 
-    // Order summary
-    yPosition += 5;
-    doc.setFontSize(12);
-    doc.text('Order Summary', 20, yPosition);
-    yPosition += 10;
-
+    // === Order Summary Box ===
+    y += 10;
+    doc.setDrawColor(...colors.border);
+    doc.setLineWidth(0.5);
+    doc.roundedRect(pageWidth - 85, y, 70, 40, 3, 3, 'S');
+    
+    // Subtotal
+    doc.setTextColor(...colors.mediumGray);
     doc.setFontSize(9);
-    doc.text(`Subtotal: ৳${orderData.totals?.subtotal || '0.00'}`, 20, yPosition);
-    yPosition += 8;
-    doc.text(`Shipping: ৳${orderData.totals?.shipping || '0.00'}`, 20, yPosition);
-    yPosition += 8;
-    doc.text(`Tax: ৳${orderData.totals?.tax || '0.00'}`, 20, yPosition);
-    yPosition += 12;
-
+    doc.setFont('helvetica', 'normal');
+    doc.text('Subtotal:', pageWidth - 80, y + 8);
+    doc.setTextColor(...colors.text);
+    doc.text('BDT ' + parseFloat(orderData.totals?.subtotal || 0).toFixed(2), pageWidth - 20, y + 8, { align: 'right' });
+    
+    // Shipping
+    doc.setTextColor(...colors.mediumGray);
+    doc.text('Shipping:', pageWidth - 80, y + 16);
+    doc.setTextColor(...colors.text);
+    doc.text('BDT ' + parseFloat(orderData.totals?.shipping || 0).toFixed(2), pageWidth - 20, y + 16, { align: 'right' });
+    
+    // Tax
+    doc.setTextColor(...colors.mediumGray);
+    doc.text('Tax:', pageWidth - 80, y + 24);
+    doc.setTextColor(...colors.text);
+    doc.text('BDT ' + parseFloat(orderData.totals?.tax || 0).toFixed(2), pageWidth - 20, y + 24, { align: 'right' });
+    
+    // Divider
+    doc.setDrawColor(...colors.border);
+    doc.line(pageWidth - 80, y + 28, pageWidth - 20, y + 28);
+    
     // Total
-    doc.setFontSize(12);
-    doc.setTextColor(...accentColor);
-    doc.text(`Total: ৳${orderData.totals?.total || '0.00'}`, 20, yPosition);
+    doc.setFillColor(...colors.success);
+    doc.rect(pageWidth - 85, y + 30, 70, 10, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('TOTAL:', pageWidth - 80, y + 37);
+    doc.text('BDT ' + parseFloat(orderData.totals?.total || 0).toFixed(2), pageWidth - 20, y + 37, { align: 'right' });
 
-    // Footer
-    const pageHeight = doc.internal.pageSize.height;
-    doc.setTextColor(...secondaryColor);
+    // === Professional Footer ===
+    doc.setDrawColor(...colors.border);
+    doc.line(15, pageHeight - 35, pageWidth - 15, pageHeight - 35);
+    
+    doc.setTextColor(...colors.text);
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Thank you for choosing SkyZonee!', pageWidth / 2, pageHeight - 27, { align: 'center' });
+    
     doc.setFontSize(8);
-    doc.text('Thank you for shopping with SkyZonee!', 20, pageHeight - 20);
-    doc.text('For any questions, please contact our support team.', 20, pageHeight - 12);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(...colors.mediumGray);
+    doc.text('Questions? Contact us: support@skyzonee.com | +880 1234-567890', pageWidth / 2, pageHeight - 20, { align: 'center' });
+    doc.text('www.skyzonee.com | Bangladesh\'s Premium Fashion Store', pageWidth / 2, pageHeight - 14, { align: 'center' });
 
     // Save the PDF
-    doc.save(`SkyZonee_Order_${orderData.orderId}.pdf`);
+    doc.save(`SkyZonee_Receipt_${orderData.orderId}.pdf`);
   };
 
   const StatusIcon = getStatusIcon(orderData.status);
@@ -260,7 +359,7 @@ const OrderSummaryPageClient = ({ orderData }) => {
                 })()}
                 <span className="font-medium">{orderData.payment?.name}</span>
               </div>
-              <span className="font-bold text-lg">৳{orderData.totals?.total}</span>
+              <span className="font-bold text-lg price-number">BDT {orderData.totals?.total}</span>
             </div>
             
             {/* Transaction Details if available */}
@@ -336,8 +435,12 @@ const OrderSummaryPageClient = ({ orderData }) => {
                 </div>
                 
                 <div className="text-right">
-                  <p className="font-semibold text-gray-900">৳{(item.price * item.quantity).toFixed(2)}</p>
-                  <p className="text-sm text-gray-600">৳{item.price}/item</p>
+                  <p className="font-semibold text-gray-900 price-number">
+                    BDT {parseFloat(item.price * item.quantity).toFixed(2)}
+                  </p>
+                  <p className="text-sm text-gray-600 price-number">
+                    BDT {parseFloat(item.price).toFixed(2)}/item
+                  </p>
                 </div>
               </div>
             ))}
@@ -355,19 +458,27 @@ const OrderSummaryPageClient = ({ orderData }) => {
           <div className="space-y-3">
             <div className="flex justify-between">
               <span className="text-gray-600">Subtotal:</span>
-              <span className="font-medium">৳{orderData.totals?.subtotal}</span>
+              <span className="font-medium price-number">
+                BDT {parseFloat(orderData.totals?.subtotal || 0).toFixed(2)}
+              </span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Shipping:</span>
-              <span className="font-medium">৳{orderData.totals?.shipping}</span>
+              <span className="font-medium price-number">
+                BDT {parseFloat(orderData.totals?.shipping || 0).toFixed(2)}
+              </span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">Tax:</span>
-              <span className="font-medium">৳{orderData.totals?.tax}</span>
+              <span className="font-medium price-number">
+                BDT {parseFloat(orderData.totals?.tax || 0).toFixed(2)}
+              </span>
             </div>
             <div className="border-t pt-3 flex justify-between text-lg font-bold">
               <span>Total:</span>
-              <span className="text-indigo-600">৳{orderData.totals?.total}</span>
+              <span className="text-indigo-600 price-number">
+                BDT {parseFloat(orderData.totals?.total || 0).toFixed(2)}
+              </span>
             </div>
           </div>
         </motion.div>
@@ -462,7 +573,9 @@ const OrderSummaryPageClient = ({ orderData }) => {
                     </div>
                     <div>
                       <span className="font-medium text-gray-600">Total Amount:</span>
-                      <p className="text-gray-900 font-semibold">৳{orderData.totals?.total}</p>
+                      <p className="text-gray-900 font-semibold price-number">
+                        BDT {parseFloat(orderData.totals?.total || 0).toFixed(2)}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -512,7 +625,9 @@ const OrderSummaryPageClient = ({ orderData }) => {
                       })()}
                       <span className="font-medium">{orderData.payment?.name}</span>
                     </div>
-                    <span className="font-bold text-lg text-green-600">৳{orderData.totals?.total}</span>
+                    <span className="font-bold text-lg text-green-600 price-number">
+                      BDT {parseFloat(orderData.totals?.total || 0).toFixed(2)}
+                    </span>
                   </div>
                 </div>
 
@@ -544,8 +659,12 @@ const OrderSummaryPageClient = ({ orderData }) => {
                           <p className="text-sm text-gray-500">Quantity: {item.quantity}</p>
                         </div>
                         <div className="text-right">
-                          <p className="font-semibold text-gray-900">৳{(item.price * item.quantity).toFixed(2)}</p>
-                          <p className="text-sm text-gray-600">৳{item.price}/item</p>
+                          <p className="font-semibold text-gray-900 price-number">
+                            BDT {parseFloat(item.price * item.quantity).toFixed(2)}
+                          </p>
+                          <p className="text-sm text-gray-600 price-number">
+                            BDT {parseFloat(item.price).toFixed(2)}/item
+                          </p>
                         </div>
                       </div>
                     ))}
@@ -558,19 +677,27 @@ const OrderSummaryPageClient = ({ orderData }) => {
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Subtotal:</span>
-                      <span className="font-medium">৳{orderData.totals?.subtotal}</span>
+                      <span className="font-medium price-number">
+                        BDT {parseFloat(orderData.totals?.subtotal || 0).toFixed(2)}
+                      </span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Shipping:</span>
-                      <span className="font-medium">৳{orderData.totals?.shipping}</span>
+                      <span className="font-medium price-number">
+                        BDT {parseFloat(orderData.totals?.shipping || 0).toFixed(2)}
+                      </span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Tax:</span>
-                      <span className="font-medium">৳{orderData.totals?.tax}</span>
+                      <span className="font-medium price-number">
+                        BDT {parseFloat(orderData.totals?.tax || 0).toFixed(2)}
+                      </span>
                     </div>
                     <div className="border-t pt-2 flex justify-between text-lg font-bold">
-                      <span className="text-gray-900">Total:</span>
-                      <span className="text-green-600">৳{orderData.totals?.total}</span>
+                      <span className="text-gray-900">TOTAL:</span>
+                      <span className="text-green-600 price-number">
+                        BDT {parseFloat(orderData.totals?.total || 0).toFixed(2)}
+                      </span>
                     </div>
                   </div>
                 </div>

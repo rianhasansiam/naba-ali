@@ -55,24 +55,55 @@ export async function POST(request) {
     if (originCheck) return originCheck;
 
     const body = await request.json();
+    
     const { conversationId, message, userId, userName } = body;
 
-    if (!conversationId || !message || !userId || !userName) {
+    // Basic validation
+    if (!conversationId || !message) {
+      console.error('Missing conversationId or message');
       return NextResponse.json({ 
         success: false, 
-        error: 'Conversation ID, message, user ID, and user name are required' 
+        error: 'Conversation ID and message are required' 
       }, { status: 400 });
     }
 
     const admin = await isAdmin();
     const user = await isAuthenticated();
+    console.log('Is admin:', admin, 'User:', user?.email);
     
-    // Allow if admin, authenticated user, or guest with matching conversationId
+    // Determine sender info
+    let senderId, senderName, senderRole;
+    
+    if (admin) {
+      // Admin sending message
+      senderId = userId || user?.id || 'admin';
+      senderName = userName || user?.name || 'Support Team';
+      senderRole = 'admin';
+    } else if (user) {
+      // Authenticated user sending message
+      senderId = user.id;
+      senderName = user.name || user.email;
+      senderRole = 'user';
+    } else {
+      // Guest user
+      if (!userId || !userName) {
+        return NextResponse.json({ 
+          success: false, 
+          error: 'User ID and name are required for guests' 
+        }, { status: 400 });
+      }
+      senderId = userId;
+      senderName = userName;
+      senderRole = 'user';
+    }
+    
+    // Authorization check
     const isAllowed = admin || 
-                     (user && user.id === userId) || 
+                     (user && user.id === senderId) || 
                      conversationId.startsWith('guest_');
 
     if (!isAllowed) {
+      console.error('Unauthorized access attempt');
       return NextResponse.json({ 
         success: false, 
         error: 'Unauthorized access' 
@@ -83,14 +114,15 @@ export async function POST(request) {
     
     const newMessage = {
       conversationId,
-      senderId: userId,
-      senderName: userName,
-      senderRole: admin ? 'admin' : 'user',
+      senderId,
+      senderName,
+      senderRole,
       message: message.trim(),
       timestamp: new Date(),
       isRead: false
     };
 
+    console.log('Saving message:', newMessage);
     const result = await messages.insertOne(newMessage);
 
     // Update conversation last message
@@ -107,15 +139,19 @@ export async function POST(request) {
       { upsert: true }
     );
 
+    console.log('Message saved successfully');
+
     return NextResponse.json({
       success: true,
       message: { ...newMessage, _id: result.insertedId }
     });
 
   } catch (error) {
+    console.error('POST /api/chat/messages error:', error);
     return NextResponse.json({ 
       success: false,
-      error: "Failed to send message" 
+      error: "Failed to send message",
+      details: error.message 
     }, { status: 500 });
   }
 }

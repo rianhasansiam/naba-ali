@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "node server.js",
-    "build": "next build --turbopack",
-    "start": "NODE_ENV=production node server.js",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
@@ -29,7 +29,6 @@
     "react-dom": "19.1.0",
     "react-icons": "^5.5.0",
     "react-redux": "^9.2.0",
-    "socket.io": "^4.8.1",
     "socket.io-client": "^4.8.1",
     "sweetalert2": "^11.23.0"
   },

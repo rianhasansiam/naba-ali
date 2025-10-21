@@ -90,6 +90,7 @@ export default function ProductDetailPage({ params }) {
   const [toast, setToast] = useState({ show: false, type: 'success', message: '' });
   const [isPaused, setIsPaused] = useState(false);
   const scrollContainerRef = useRef(null);
+  const hasSetDefaults = useRef(false);
   
   // Fetch all products using real API
   const { data: products, isLoading, error } = useGetData({
@@ -139,20 +140,34 @@ export default function ProductDetailPage({ params }) {
   };
 
   // Check if product is in cart or wishlist
+  const productIdRef = product?._id;
   useEffect(() => {
-    if (product && selectedSize && selectedColor) {
-      const cart = getCartFromStorage();
-      const wishlist = getWishlistFromStorage();
-      
-      // Check if this specific product variant (id + size + color) is in cart
-      setIsInCart(cart.some(item => 
-        item.id === product._id && 
-        item.size === selectedSize && 
-        item.color === selectedColor
-      ));
-      setIsInWishlist(wishlist.some(item => item.id === product._id));
+    if (!productIdRef || !product) return;
+    
+    const cart = getCartFromStorage();
+    const wishlist = getWishlistFromStorage();
+    
+    const hasColors = product.colors && product.colors.length > 0;
+    const hasSizes = product.sizes && product.sizes.length > 0;
+    
+    // For products without colors/sizes, check only by product ID
+    // For products with colors/sizes, wait until they're selected before checking
+    if (hasColors && !selectedColor) {
+      setIsInCart(false);
+    } else if (hasSizes && !selectedSize) {
+      setIsInCart(false);
+    } else {
+      // Check if this specific product variant (id + optional size + optional color) is in cart
+      setIsInCart(cart.some(item => {
+        if (item.id !== productIdRef) return false;
+        if (hasColors && item.color !== selectedColor) return false;
+        if (hasSizes && item.size !== selectedSize) return false;
+        return true;
+      }));
     }
-  }, [product, selectedSize, selectedColor]);
+    
+    setIsInWishlist(wishlist.some(item => item.id === productIdRef));
+  }, [productIdRef, selectedSize, selectedColor, product]);
 
   // Show toast notification
   const showToast = (type, message) => {
@@ -166,18 +181,36 @@ export default function ProductDetailPage({ params }) {
   const handleAddToCart = () => {
     if (!product) return;
     
-    if (!selectedSize || !selectedColor) {
-      showToast('error', 'Please select size and color before adding to cart!');
+    // Only validate color and size if product has these fields
+    const hasColors = product.colors && product.colors.length > 0;
+    const hasSizes = product.sizes && product.sizes.length > 0;
+    
+    if (hasColors && !selectedColor) {
+      showToast('error', 'Please select a color before adding to cart!');
+      return;
+    }
+    
+    if (hasSizes && !selectedSize) {
+      showToast('error', 'Please select a size before adding to cart!');
       return;
     }
     
     try {
       const cart = getCartFromStorage();
-      const existingItem = cart.find(item => 
-        item.id === product._id && 
-        item.size === selectedSize && 
-        item.color === selectedColor
-      );
+      
+      // For products without colors/sizes, match only by product ID
+      // For products with colors/sizes, match by ID + color + size
+      const existingItem = cart.find(item => {
+        if (item.id !== product._id) return false;
+        
+        const hasColors = product.colors && product.colors.length > 0;
+        const hasSizes = product.sizes && product.sizes.length > 0;
+        
+        if (hasColors && item.color !== selectedColor) return false;
+        if (hasSizes && item.size !== selectedSize) return false;
+        
+        return true;
+      });
       
       if (existingItem) {
         // Remove from cart
@@ -267,13 +300,26 @@ export default function ProductDetailPage({ params }) {
     setIsPaused(false);
   };
 
-  // Set default selections when product loads
-  if (product && !selectedColor && product.colors?.length > 0) {
-    setSelectedColor(product.colors[0]);
-  }
-  if (product && !selectedSize && product.sizes?.length > 0) {
-    setSelectedSize(product.sizes[0]);
-  }
+  // Set default selections when product loads - only once per product
+  useEffect(() => {
+    if (!product || hasSetDefaults.current === productIdRef) return;
+    
+    // Set default color if not already set
+    if (!selectedColor && product.colors?.length > 0) {
+      const validColors = product.colors.filter(c => c && typeof c === 'string');
+      if (validColors.length > 0) {
+        setSelectedColor(validColors[0]);
+      }
+    }
+    
+    // Set default size if not already set
+    if (!selectedSize && product.sizes?.length > 0) {
+      setSelectedSize(product.sizes[0]);
+    }
+    
+    // Mark that we've set defaults for this product
+    hasSetDefaults.current = productIdRef;
+  }, [productIdRef, product, selectedColor, selectedSize]);
 
   // Handle loading state
   if (isLoading) {
@@ -381,10 +427,10 @@ export default function ProductDetailPage({ params }) {
             
             {/* Price */}
             <div className="flex items-center gap-4 mb-4">
-              <span className="text-3xl font-bold text-gray-900">৳{product.price}</span>
+              <span className="text-3xl font-bold text-gray-900 price-number">BDT {product.price}</span>
               {product.originalPrice && product.originalPrice > product.price && (
                 <>
-                  <span className="text-xl text-gray-500 line-through">৳{product.originalPrice}</span>
+                  <span className="text-xl text-gray-500 line-through price-number">BDT {product.originalPrice}</span>
                   <span className="bg-red-100 text-red-800 px-2 py-1 text-xs font-medium rounded-full">
                     {Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% OFF
                   </span>
@@ -452,7 +498,8 @@ export default function ProductDetailPage({ params }) {
                 Available Colors{selectedColor ? ` - ${selectedColor}` : ''}
               </label>
               <div className="flex flex-wrap gap-3">
-                {product.colors.map((color, index) => {
+                {product.colors.filter(color => color && typeof color === 'string').map((color, index) => {
+                  
                   // Map color names to actual color values
                   const colorMap = {
                     'Red': '#EF4444',

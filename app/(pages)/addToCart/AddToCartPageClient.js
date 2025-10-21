@@ -117,7 +117,7 @@ const AddToCartPageClient = ({ productsData, couponsData }) => {
     // Check minimum amount (use minAmount or minimumAmount field)
     const minAmount = coupon.minAmount || coupon.minimumAmount || 0;
     if (subtotal < minAmount) {
-      setCouponError(`Minimum order amount ৳${minAmount} required for this coupon`);
+      setCouponError(`Minimum order amount BDT ${minAmount} required for this coupon`);
       return;
     }
     
@@ -284,8 +284,8 @@ const AddToCartPageClient = ({ productsData, couponsData }) => {
                         <div className="text-sm text-gray-500 mb-2">
                           Size: {item.size || 'N/A'} | Color: {item.color || 'N/A'}
                         </div>
-                        <div className="text-lg font-bold text-gray-900">
-                          ৳{(item.price || 0).toFixed(2)}
+                        <div className="text-lg font-bold text-gray-900 price-number">
+                          BDT {(item.price || 0).toFixed(2)}
                         </div>
 
                         {/* Stock Status */}
@@ -334,8 +334,8 @@ const AddToCartPageClient = ({ productsData, couponsData }) => {
 
                       {/* Item Total */}
                       <div className="text-right hidden sm:block">
-                        <div className="font-bold text-gray-900">
-                          ৳{((item.price || 0) * (item.quantity || 0)).toFixed(2)}
+                        <div className="font-bold text-gray-900 price-number">
+                          BDT {((item.price || 0) * (item.quantity || 0)).toFixed(2)}
                         </div>
                       </div>
                     </motion.div>
@@ -400,27 +400,27 @@ const AddToCartPageClient = ({ productsData, couponsData }) => {
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Subtotal</span>
-                  <span className="font-medium">৳{totals.subtotal}</span>
+                  <span className="font-medium price-number">BDT {totals.subtotal}</span>
                 </div>
                 
                 <div className="flex justify-between">
                   <span className="text-gray-600">Shipping</span>
-                  <span className="font-medium">
-                    {parseFloat(totals.shipping) === 0 ? 'Free' : `৳${totals.shipping}`}
+                  <span className="font-medium price-number">
+                    {parseFloat(totals.shipping) === 0 ? 'Free' : `BDT ${totals.shipping}`}
                   </span>
                 </div>
                 
                 {taxEnabled && parseFloat(totals.tax) > 0 && (
                   <div className="flex justify-between">
                     <span className="text-gray-600">{totals.taxName || 'Tax'}</span>
-                    <span className="font-medium">৳{totals.tax}</span>
+                    <span className="font-medium price-number">BDT {totals.tax}</span>
                   </div>
                 )}
                 
                 {appliedCoupon && parseFloat(totals.discount) > 0 && (
                   <div className="flex justify-between">
                     <span className="text-green-600">Discount ({appliedCoupon.discount}%)</span>
-                    <span className="font-medium text-green-600">-৳{totals.discount}</span>
+                    <span className="font-medium text-green-600 price-number">-BDT {totals.discount}</span>
                   </div>
                 )}
                 
@@ -429,7 +429,7 @@ const AddToCartPageClient = ({ productsData, couponsData }) => {
                 <div className="border-t border-gray-200 pt-4">
                   <div className="flex justify-between">
                     <span className="text-lg font-bold">Total</span>
-                    <span className="text-lg font-bold">৳{totals.total}</span>
+                    <span className="text-lg font-bold price-number">BDT {totals.total}</span>
                   </div>
                 </div>
               </div>
