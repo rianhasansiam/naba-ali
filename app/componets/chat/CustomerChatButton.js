@@ -132,6 +132,11 @@ export default function CustomerChatButton() {
 
       // Listen for new messages
       socketRef.current.on('new-message', (message) => {
+        // Only add messages from other users (admin), not our own
+        if (message.senderId === userId) {
+          return; 
+        }
+        
         // Prevent duplicate messages
         setMessages(prev => {
           const exists = prev.some(msg => 
@@ -149,12 +154,10 @@ export default function CustomerChatButton() {
         });
         
         // Mark message as delivered if from admin
-        if (message.senderId !== userId) {
-          socketRef.current.emit('message-delivered', {
-            messageId: message._id,
-            conversationId: message.conversationId
-          });
-        }
+        socketRef.current.emit('message-delivered', {
+          messageId: message._id,
+          conversationId: message.conversationId
+        });
       });
 
       // Enhanced typing indicators
