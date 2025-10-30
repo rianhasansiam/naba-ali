@@ -170,28 +170,28 @@ const NavbarClient = ({ navItems, defaultShopCategories }) => {
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
+        <div className="flex items-center justify-between h-20 ">
           {/* Logo */}
           <Link href="/">
             <motion.div 
               whileHover={{ scale: 1.05 }}
-              className="flex items-center space-x-3 cursor-pointer"
+              className="flex items-center space-x-3 cursor-pointer  ml-16 rounded-lg  px-2 lg:ml-0  " 
             >
               <Image
-                src="/logo1.png"
+                src="/logo.png"
                 alt="SkyZonee"
-                width={50}
-                height={50}
+                width={110}
+                height={100}
                 className="rounded-lg"
                 priority
                 style={{ height: "auto" }}
               />
-              <div className=" ">
+              {/* <div className=" ">
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-800 to-black bg-clip-text text-transparent">
                   SkyZonee
                 </h1>
                 <p className="text-xs text-gray-500 -mt-1">Premium Fashion</p>
-              </div>
+              </div> */}
             </motion.div>
           </Link>
 

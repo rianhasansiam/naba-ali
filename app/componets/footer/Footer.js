@@ -19,16 +19,16 @@ export default function Footer() {
             <div className="flex flex-col lg:col-span-3 lg:max-w-[248px]">
               <Link href="/" className=" mb-6 flex items-center ">
               <Image
-                  src="/logo1.png"
+                  src="/logo.png"
                   alt="Logo"
                   width={100}
                   height={100}
-                  className='w-16 h-14'
+                  className='w-32 px-5 bg-white rounded-lg p-2'
                   style={{ height: "auto" }}
                 />
-                <h1 className="text-[28px] lg:text-[32px] font-bold text-white">
+                {/* <h1 className="text-[28px] lg:text-[32px] font-bold text-white">
                   SkyZonee
-                </h1>
+                </h1> */}
               </Link>
               <p className="text-white/60 text-sm mb-9">
                 We have clothes that suits your style and which you&apos;re proud to
