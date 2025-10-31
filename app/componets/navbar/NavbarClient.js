@@ -175,7 +175,7 @@ const NavbarClient = ({ navItems, defaultShopCategories }) => {
           <Link href="/">
             <motion.div 
               whileHover={{ scale: 1.05 }}
-              className="flex items-center space-x-3 cursor-pointer  ml-16 rounded-lg  px-2 lg:ml-0  " 
+              className="flex items-center space-x-3 cursor-pointer   rounded-lg  px-2   " 
             >
               <Image
                 src="/logo.png"
