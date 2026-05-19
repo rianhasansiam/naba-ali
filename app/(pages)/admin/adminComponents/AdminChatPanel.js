@@ -148,7 +148,7 @@ export default function AdminChatPanel() {
         }
       };
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [session]);
 
   const fetchConversations = async () => {
