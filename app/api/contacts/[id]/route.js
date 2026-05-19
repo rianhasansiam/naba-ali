@@ -1,9 +1,17 @@
 import { NextResponse } from 'next/server';
 import { getCollection } from '../../../../lib/mongodb';
 import { ObjectId } from 'mongodb';
+import { requireAdmin } from '../../../../lib/apiGuards';
+import { checkOrigin } from '../../../../lib/security';
 
 // DELETE - Delete specific contact by ID
 export async function DELETE(request, { params }) {
+  const originCheck = checkOrigin(request);
+  if (originCheck) return originCheck;
+
+  const { error } = await requireAdmin();
+  if (error) return error;
+
   try {
     const { id } = params;
     
@@ -44,6 +52,12 @@ export async function DELETE(request, { params }) {
 
 // PATCH - Update contact status (mark as read/unread)
 export async function PATCH(request, { params }) {
+  const originCheck = checkOrigin(request);
+  if (originCheck) return originCheck;
+
+  const { error } = await requireAdmin();
+  if (error) return error;
+
   try {
     const { id } = params;
     
