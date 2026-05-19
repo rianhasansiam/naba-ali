@@ -8,7 +8,7 @@ import ErrorSuppression from "./componets/shared/ErrorSuppression";
 import AuthProvider from "../lib/AuthProvider";
 import ReactQueryProvider from "@/lib/ReactQueryProvider";
 import { LoadingProvider } from "../lib/LoadingProvider";
-import CustomerChatButton from "./componets/chat/CustomerChatButton";
+// import CustomerChatButton from "./componets/chat/CustomerChatButton";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -69,7 +69,7 @@ export default function RootLayout({ children }) {
                     {children}
                   </main>
                   <Footer />
-                  <CustomerChatButton />
+                  {/* <CustomerChatButton /> */}
                 </div>
               </LoadingProvider>
             </ReactQueryProvider>

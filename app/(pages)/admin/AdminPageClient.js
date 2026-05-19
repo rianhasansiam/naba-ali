@@ -19,7 +19,7 @@ import {
   Search,
   Shield,
   Mail,
-  MessageCircle
+  // MessageCircle
 } from 'lucide-react';
 
 // Import admin components directly (no wrapper layers)
@@ -32,7 +32,7 @@ import AllCuponsClient from './adminComponents/allCupons/AllCuponsClient';
 import AllCategoryClient from './adminComponents/allCategory/AllCategoryClient';
 import ShippingTaxSettings from './adminComponents/shippingTax/ShippingTaxSettings';
 import AllMessages from './adminComponents/allMessages/AllMessages';
-import AdminChatPanel from './adminComponents/AdminChatPanel';
+// import AdminChatPanel from './adminComponents/AdminChatPanel';
 
 
 const AdminPageClient = ({ adminData, navigationItems }) => {
@@ -66,7 +66,7 @@ const { data: reviews = [], isLoading: reviewsLoading } = useGetData({ name: 're
     'coupons': Ticket,
     'shipping-tax': Settings,
     'messages': Mail,
-    'chat': MessageCircle,
+    // 'chat': MessageCircle,
   };
 
   // Component mapping for client-side use (direct client components)
@@ -80,7 +80,7 @@ const { data: reviews = [], isLoading: reviewsLoading } = useGetData({ name: 're
     'coupons': AllCuponsClient,
     'shipping-tax': ShippingTaxSettings,
     'messages': AllMessages,
-    'chat': AdminChatPanel,
+    // 'chat': AdminChatPanel,
   };
 
   const currentComponent = componentMap[activeTab] || Dashboard;

@@ -2,7 +2,7 @@
 const { createServer } = require('http');
 const { parse } = require('url');
 const next = require('next');
-const { Server } = require('socket.io');
+// const { Server } = require('socket.io');
 
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = 'localhost';
@@ -24,9 +24,9 @@ app.prepare().then(() => {
     }
   });
 
-  // Initialize Socket.io using shared initializer
-  const initializeSocketServer = require('./lib/socketServer');
-  const io = initializeSocketServer(httpServer);
+  // Live chat websocket server is disabled.
+  // const initializeSocketServer = require('./lib/socketServer');
+  // const io = initializeSocketServer(httpServer);
 
   httpServer
     .once('error', (err) => {
@@ -35,6 +35,6 @@ app.prepare().then(() => {
     })
     .listen(port, () => {
       console.log(`> Ready on http://${hostname}:${port}`);
-      console.log(`> Socket.io server initialized`);
+      // console.log(`> Socket.io server initialized`);
     });
 });
