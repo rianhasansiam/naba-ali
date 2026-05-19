@@ -1,159 +1,135 @@
+/**
+ * app/api/categories/route.js
+ * ─────────────────────────────────────────────────────────────────────────────
+ * GET  — Serves from the server-side cache (unstable_cache).
+ * POST / PUT / DELETE — Writes to MongoDB → revalidates cache → emits socket.
+ */
+
 import { NextResponse } from 'next/server';
+import { ObjectId } from 'mongodb';
 import { getCollection } from '../../../lib/mongodb';
-import { checkOrigin, isAdmin, forbiddenResponse } from '../../../lib/security';
+import { requireAdmin } from '../../../lib/apiGuards';
+import { checkOrigin } from '../../../lib/security';
+import { getCategories } from '../../../lib/data/categories.data';
+import { revalidateCategoryData } from '../../../lib/cache/revalidate';
 
-// GET - Get all categories (Public - Anyone can view)
+// Helper: emit socket event safely
+async function emitCategoryChanged(action, id) {
+  try {
+    const { getIO } = await import('../../../lib/socketIO');
+    getIO()?.emit('categories:changed', { action, id });
+  } catch { /* socket optional */ }
+}
+
+// ── GET — Public ───────────────────────────────────────────────────────────────
 export async function GET(request) {
+  const originCheck = checkOrigin(request);
+  if (originCheck) return originCheck;
+
   try {
-    // Check origin for security
-    const originCheck = checkOrigin(request);
-    if (originCheck) return originCheck;
-
-    // Get both categories and products collections
-    const categories = await getCollection('allCategories');
-    const products = await getCollection('allProducts');
-    
-    // Parallel fetch for better performance
-    const [allCategories, allProducts] = await Promise.all([
-      categories.find({}).toArray(),
-      products.find({}, { projection: { category: 1 } }).toArray()
-    ]);
-    
-    // Create a category count map for O(n) complexity instead of O(n²)
-    const categoryCountMap = new Map();
-    
-    allProducts.forEach(product => {
-      const productCategory = product?.category?.toLowerCase()?.trim();
-      if (productCategory) {
-        categoryCountMap.set(productCategory, (categoryCountMap.get(productCategory) || 0) + 1);
-      }
-    });
-    
-    // Calculate product count for each category efficiently
-    const categoriesWithCount = allCategories.map(category => {
-      const categoryName = category.name?.toLowerCase()?.trim();
-      const productCount = categoryCountMap.get(categoryName) || 0;
-      
-      return {
-        ...category,
-        productCount: productCount,
-        hasProducts: productCount > 0
-      };
-    });
-    
-    return NextResponse.json(categoriesWithCount);
-
-  } catch (error) {
-    console.error("Error fetching categories:", error); 
-    return NextResponse.json({ 
-      success: false,
-      error: "Failed to fetch categories" 
-    }, { status: 500 });
+    const categories = await getCategories();
+    return NextResponse.json(categories);
+  } catch (err) {
+    console.error('GET /api/categories error:', err);
+    return NextResponse.json({ success: false, error: 'Failed to fetch categories' }, { status: 500 });
   }
-} // End of GET function
+}
 
-// POST - Create new category (Admin only)
+// ── POST — Admin only ──────────────────────────────────────────────────────────
 export async function POST(request) {
-  try {
-    // Check origin for security
-    const originCheck = checkOrigin(request);
-    if (originCheck) return originCheck;
+  const originCheck = checkOrigin(request);
+  if (originCheck) return originCheck;
 
-    // Check if user is admin
-    const admin = await isAdmin();
-    if (!admin) {
-      return forbiddenResponse('Only admins can create categories');
+  const { error } = await requireAdmin();
+  if (error) return error;
+
+  try {
+    const body = await request.json();
+
+    if (!body.name) {
+      return NextResponse.json({ success: false, error: 'Category name is required' }, { status: 400 });
     }
 
-    // Get the categories collection
-    const categories = await getCollection('allCategories');
-    
-    // Get the request body
-    const body = await request.json();
-    
-    // Insert the new category
-    const categoryData = await categories.insertOne(body);
+    const { isAdmin: _a, role: _r, ...safeBody } = body;
+    const col = await getCollection('allCategories');
+    const result = await col.insertOne({ ...safeBody, createdAt: new Date() });
 
-    return NextResponse.json({
-      success: true,
-      Data: categoryData,
-      message: "Category created successfully"
-    });
+    revalidateCategoryData();
+    await emitCategoryChanged('create', result.insertedId);
 
-  } catch (error) {
-    console.error("Error creating category:", error); 
-    return NextResponse.json({ 
-      success: false,
-      error: "Failed to create category" 
-    }, { status: 500 });
+    return NextResponse.json({ success: true, data: { _id: result.insertedId }, message: 'Category created successfully' });
+  } catch (err) {
+    console.error('POST /api/categories error:', err);
+    return NextResponse.json({ success: false, error: 'Failed to create category' }, { status: 500 });
   }
-} // End of POST function
+}
 
-// PUT - Update category by _id (Admin only)
-export async function PUT(request, { params }) {
+// ── PUT — Admin only ───────────────────────────────────────────────────────────
+export async function PUT(request) {
+  const originCheck = checkOrigin(request);
+  if (originCheck) return originCheck;
+
+  const { error } = await requireAdmin();
+  if (error) return error;
+
   try {
-    // Check origin for security
-    const originCheck = checkOrigin(request);
-    if (originCheck) return originCheck;
-
-    // Check if user is admin
-    const admin = await isAdmin();
-    if (!admin) {
-      return forbiddenResponse('Only admins can update categories');
-    }
-
-    const categories = await getCollection('allCategories');
     const body = await request.json();
-    
-    // Get _id from URL params or from body for backward compatibility
-    const url = new URL(request.url);
-    const idFromUrl = url.pathname.split('/').pop();
-    const _id = idFromUrl !== 'categories' ? idFromUrl : body._id;
-    
+    const { _id, ...updateData } = body;
+
     if (!_id) {
-      return NextResponse.json({ success: false, error: 'Category _id is required for update' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'Category _id is required' }, { status: 400 });
     }
-    
-    const { ObjectId } = (await import('mongodb'));
-    const result = await categories.updateOne({ _id: new ObjectId(_id) }, { $set: body });
-    
-    return NextResponse.json({ success: true, Data: result, message: 'Category updated successfully' });
-  } catch (error) {
-    console.error('Error updating category:', error);
+
+    const { isAdmin: _a, role: _r, ...safeUpdate } = updateData;
+    const col = await getCollection('allCategories');
+    const result = await col.updateOne(
+      { _id: new ObjectId(_id) },
+      { $set: { ...safeUpdate, updatedAt: new Date() } }
+    );
+
+    if (result.matchedCount === 0) {
+      return NextResponse.json({ success: false, error: 'Category not found' }, { status: 404 });
+    }
+
+    revalidateCategoryData();
+    await emitCategoryChanged('update', _id);
+
+    return NextResponse.json({ success: true, message: 'Category updated successfully' });
+  } catch (err) {
+    console.error('PUT /api/categories error:', err);
     return NextResponse.json({ success: false, error: 'Failed to update category' }, { status: 500 });
   }
-} // End of PUT function
+}
 
-// DELETE - Delete category by _id (Admin only)
-export async function DELETE(request, { params }) {
+// ── DELETE — Admin only ────────────────────────────────────────────────────────
+export async function DELETE(request) {
+  const originCheck = checkOrigin(request);
+  if (originCheck) return originCheck;
+
+  const { error } = await requireAdmin();
+  if (error) return error;
+
   try {
-    // Check origin for security
-    const originCheck = checkOrigin(request);
-    if (originCheck) return originCheck;
+    const body = await request.json();
+    const { _id } = body;
 
-    // Check if user is admin
-    const admin = await isAdmin();
-    if (!admin) {
-      return forbiddenResponse('Only admins can delete categories');
-    }
-
-    const categories = await getCollection('allCategories');
-    
-    // Get _id from URL params
-    const url = new URL(request.url);
-    const idFromUrl = url.pathname.split('/').pop();
-    const _id = idFromUrl !== 'categories' ? idFromUrl : null;
-    
     if (!_id) {
-      return NextResponse.json({ success: false, error: 'Category _id is required for delete' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'Category _id is required' }, { status: 400 });
     }
-    
-    const { ObjectId } = (await import('mongodb'));
-    const result = await categories.deleteOne({ _id: new ObjectId(_id) });
-    
-    return NextResponse.json({ success: true, Data: result, message: 'Category deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting category:', error);
+
+    const col = await getCollection('allCategories');
+    const result = await col.deleteOne({ _id: new ObjectId(_id) });
+
+    if (result.deletedCount === 0) {
+      return NextResponse.json({ success: false, error: 'Category not found' }, { status: 404 });
+    }
+
+    revalidateCategoryData();
+    await emitCategoryChanged('delete', _id);
+
+    return NextResponse.json({ success: true, message: 'Category deleted successfully' });
+  } catch (err) {
+    console.error('DELETE /api/categories error:', err);
     return NextResponse.json({ success: false, error: 'Failed to delete category' }, { status: 500 });
   }
-} // End of DELETE function
+}

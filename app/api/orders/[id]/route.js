@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getCollection } from '../../../../lib/mongodb';
 import { ObjectId } from 'mongodb';
+import { requireAuth, requireAdmin } from '../../../../lib/apiGuards';
 
-// PUT - Update order status
+// PUT — Update order status (Admin only)
 export async function PUT(request, { params }) {
+  const { error } = await requireAdmin();
+  if (error) return error;
   try {
     const { id } = params;
     const orders = await getCollection('allOrders');
@@ -65,8 +68,10 @@ export async function PUT(request, { params }) {
   }
 }
 
-// GET - Get specific order details
+// GET — Get specific order (Owner or Admin)
 export async function GET(request, { params }) {
+  const { user, error } = await requireAuth();
+  if (error) return error;
   try {
     const { id } = params;
     const orders = await getCollection('allOrders');
@@ -103,8 +108,10 @@ export async function GET(request, { params }) {
   }
 }
 
-// DELETE - Delete specific order
+// DELETE — Delete order (Admin only)
 export async function DELETE(request, { params }) {
+  const { error } = await requireAdmin();
+  if (error) return error;
   try {
     const { id } = params;
     const orders = await getCollection('allOrders');

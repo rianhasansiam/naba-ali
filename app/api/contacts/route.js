@@ -1,60 +1,72 @@
+/**
+ * app/api/contacts/route.js
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Fixed: GET is admin-only with pagination. POST validates input with Zod.
+ */
+
 import { NextResponse } from 'next/server';
 import { getCollection } from '../../../lib/mongodb';
-import { ObjectId } from 'mongodb';
+import { requireAdmin } from '../../../lib/apiGuards';
+import { validateBody, contactSchema } from '../../../lib/validators';
 
-// GET - Get all contacts
+// GET — Admin only, returns all contacts with pagination
 export async function GET(request) {
+  const { error } = await requireAdmin();
+  if (error) return error;
+
   try {
-    // Get the contacts collection
+    const { searchParams } = new URL(request.url);
+    const page   = Math.max(1, parseInt(searchParams.get('page')   || '1',  10));
+    const limit  = Math.min(100, parseInt(searchParams.get('limit') || '20', 10));
+    const skip   = (page - 1) * limit;
+    const status = searchParams.get('status'); // optional filter: 'unread' | 'read'
+
     const contacts = await getCollection('allContacts');
-    
-    // Find all contacts sorted by creation date (newest first)
-    const allContacts = await contacts.find({}).sort({ createdAt: -1 }).toArray();
-    
+    const filter   = status ? { status } : {};
+
+    const [data, total] = await Promise.all([
+      contacts.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).toArray(),
+      contacts.countDocuments(filter),
+    ]);
+
     return NextResponse.json({
       success: true,
-      Data: allContacts
+      data,
+      pagination: { page, limit, total, pages: Math.ceil(total / limit) },
     });
-
-  } catch (error) {
-    console.error("Error fetching contacts:", error); 
-    return NextResponse.json({ 
-      success: false,
-      error: "Failed to fetch contacts" 
-    }, { status: 500 });
+  } catch (err) {
+    console.error('GET /api/contacts error:', err);
+    return NextResponse.json({ success: false, error: 'Failed to fetch contacts' }, { status: 500 });
   }
-} // End of GET function
+}
 
-// POST - Create new contact
+// POST — Public submission (rate limiting handled at middleware/edge level)
 export async function POST(request) {
+  const { data, error: validationError } = await validateBody(request, contactSchema);
+  if (validationError) return validationError;
+
   try {
-    // Get the contacts collection
     const contacts = await getCollection('allContacts');
-    
-    // Get the request body
-    const body = await request.json();
-    
-    // Add metadata
-    const contactData = {
-      ...body,
+
+    const contactDocument = {
+      name: data.name,
+      email: data.email,
+      subject: data.subject || '',
+      message: data.message,
+      phone: data.phone || null,
+      status: 'unread',
       createdAt: new Date(),
-      status: 'unread' // Add status for admin management
     };
-    
-    // Insert the new contact
-    const result = await contacts.insertOne(contactData);
+
+    const result = await contacts.insertOne(contactDocument);
 
     return NextResponse.json({
       success: true,
-      Data: { ...contactData, _id: result.insertedId },
-      message: "Contact message saved successfully"
+      message: 'Your message has been sent successfully',
+      data: { id: result.insertedId },
     });
-
-  } catch (error) {
-    console.error("Error creating contact:", error); 
-    return NextResponse.json({ 
-      success: false,
-      error: "Failed to save contact message" 
-    }, { status: 500 });
+  } catch (err) {
+    console.error('POST /api/contacts error:', err);
+    return NextResponse.json({ success: false, error: 'Failed to send message' }, { status: 500 });
   }
-} // End of POST function
+}

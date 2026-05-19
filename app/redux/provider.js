@@ -1,7 +1,7 @@
 'use client'
 import { useRef, useEffect } from 'react'
 import { Provider } from 'react-redux'
-import { makeStore } from './store'
+import { makeStore } from '../../store/store'       // ← new unified store
 import { loadCartFromStorage, loadWishlistFromStorage } from './slice'
 
 export default function StoreProvider({ children }) {
@@ -11,7 +11,7 @@ export default function StoreProvider({ children }) {
     storeRef.current = makeStore()
   }
 
-  // Load cart and wishlist from localStorage on mount
+  // Rehydrate localStorage-backed cart & wishlist on first render
   useEffect(() => {
     if (storeRef.current) {
       storeRef.current.dispatch(loadCartFromStorage())

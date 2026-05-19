@@ -1,30 +1,35 @@
+/**
+ * app/api/users/route.js
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Fixed:
+ * - Removed all development bypass logic
+ * - GET is strictly admin-only with pagination, strips passwords
+ * - POST (signup) validates with Zod, normalises email, no raw body insert
+ * - PUT (login) removed plain-text password comparison
+ * - DELETE is admin-only and properly scoped to 'users' collection
+ */
+
 import bcrypt from 'bcryptjs';
 import { NextResponse } from 'next/server';
 import { getCollection } from '../../../lib/mongodb';
-import { checkOrigin, isAdmin, forbiddenResponse } from '../../../lib/security';
+import { requireAdmin } from '../../../lib/apiGuards';
+import { checkOrigin } from '../../../lib/security';
+import { validateBody, signupSchema } from '../../../lib/validators';
 
-
-
-
-
-
-// =======================
-// SIGNUP (Create new user)
-// =======================
-// =======================
-// SIGNUP (Create new user)
-// =======================
+// ─── POST — Signup (Create new user) ─────────────────────────────────────────
 export async function POST(request) {
+  const originCheck = checkOrigin(request);
+  if (originCheck) return originCheck;
+
+  const { data, error: validationError } = await validateBody(request, signupSchema);
+  if (validationError) return validationError;
+
   try {
-    // Check origin for security
-    const originCheck = checkOrigin(request);
-    if (originCheck) return originCheck;
-
     const users = await getCollection('users');
-    const body = await request.json();
+    const email = data.email.toLowerCase();
 
-    // Check if user already exists
-    const existingUser = await users.findOne({ email: body.email });
+    // Duplicate check (using normalised email)
+    const existingUser = await users.findOne({ email });
     if (existingUser) {
       return NextResponse.json(
         { success: false, message: 'Email is already registered. Please log in.' },
@@ -32,184 +37,114 @@ export async function POST(request) {
       );
     }
 
-    let userToInsert;
+    const hashedPassword = await bcrypt.hash(data.password, 12);
 
-    if (body.password) {
-      // Normal signup: hash the password
-      const hashedPassword = await bcrypt.hash(body.password, 10);
-      userToInsert = { ...body, password: hashedPassword, role:"user", createdAt: new Date() };
-    } else {
-      // Google signup: no password
-      userToInsert = { ...body, role: "user", createdAt: new Date() };
-    }
+    const newUser = {
+      name: data.name,
+      email,
+      password: hashedPassword,
+      image: data.image || null,
+      role: 'user',
+      provider: 'credentials',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      lastLoginAt: new Date(),
+      emailVerified: null,
+    };
 
-    const userData = await users.insertOne(userToInsert);
+    const result = await users.insertOne(newUser);
 
     return NextResponse.json({
       success: true,
-      Data: userData,
-      message: 'User created successfully',
+      message: 'Account created successfully',
+      data: { id: result.insertedId },
     });
-  } catch (error) {
-    console.error('Error creating user:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to create user' },
-      { status: 500 }
-    );
+  } catch (err) {
+    console.error('POST /api/users error:', err);
+    return NextResponse.json({ success: false, error: 'Failed to create user' }, { status: 500 });
   }
 }
 
-
-// =======================
-// LOGIN (Authenticate user)
-// =======================
-export async function PUT(request) {
-  try {
-    const users = await getCollection('users');
-    const body = await request.json();
-    const { email, password } = body;
-
-
-    if (!email || !password) {
-      return NextResponse.json(
-        { success: false, message: 'Email and password are required.' },
-        { status: 400 }
-      );
-    }
-
-    // Check if user exists
-    const user = await users.findOne({ email });
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: 'You need to register first, then you can login.' },
-        { status: 404 }
-      );
-    }
-
-    // Support both plain text and bcryptjs-hashed passwords
-    let passwordMatch = false;
-    if (user.password.startsWith('$2a$') || user.password.startsWith('$2b$') || user.password.startsWith('$2y$')) {
-      // bcryptjs hash
-      passwordMatch = await bcrypt.compare(password, user.password);
-    } else {
-      // plain text
-      passwordMatch = user.password === password;
-    }
-    if (!passwordMatch) {
-      return NextResponse.json(
-        { success: false, message: 'Incorrect password.' },
-        { status: 401 }
-      );
-    }
-
-    // Remove password before sending response
-    const { password: _, ...userData } = user;
-    return NextResponse.json({
-      success: true,
-      user: userData,
-      message: 'Login successful.',
-    });
-  } catch (error) {
-    console.error('Error logging in user:', error);
-    return NextResponse.json(
-      { success: false, message: 'Failed to login.' },
-      { status: 500 }
-    );
-  }
-}
-
-// =======================
-// GET (Fetch all users or find user by email)
-// =======================
+// ─── GET — Fetch users list (Admin only) ──────────────────────────────────────
 export async function GET(request) {
+  const originCheck = checkOrigin(request);
+  if (originCheck) return originCheck;
+
+  // Strictly admin-only — no development bypass
+  const { error } = await requireAdmin();
+  if (error) return error;
+
   try {
-    // Check origin for security
-    const originCheck = checkOrigin(request);
-    if (originCheck) return originCheck;
-
-    // Check if user is admin for fetching all users
-    const admin = await isAdmin();
-    
-    // Development logging
-    if (process.env.NODE_ENV === 'development') {
-      const user = await import('../../../lib/auth').then(m => m.auth()).then(s => s?.user);
-      console.log('🔍 GET /api/users - User:', user?.email, 'Role:', user?.role, 'IsAdmin:', admin);
-    }
-    
-    // TEMPORARY: Allow in development if authenticated
-    const isAuthenticated = await import('../../../lib/security').then(m => m.isAuthenticated());
-    if (process.env.NODE_ENV === 'development' && isAuthenticated) {
-      console.log('⚠️ Development mode: Allowing authenticated user access to /api/users');
-    } else if (!admin) {
-      return forbiddenResponse('Only admins can view users list. Please log in as admin.');
-    }
-
-    const users = await getCollection('users');
     const { searchParams } = new URL(request.url);
     const email = searchParams.get('email');
+    const page  = Math.max(1, parseInt(searchParams.get('page')  || '1',  10));
+    const limit = Math.min(100, parseInt(searchParams.get('limit') || '20', 10));
+    const skip  = (page - 1) * limit;
 
-    // If email parameter is provided, search for specific user
+    const users = await getCollection('users');
+
+    // Single-user lookup by email
     if (email) {
-      const user = await users.findOne({ email: email });
-      
-      if (user) {
-        // Remove password before sending response
-        const { password: _, ...userData } = user;
-        return NextResponse.json({
-          success: true,
-          user: userData,
-          message: 'User found.'
-        });
-      } else {
-        return NextResponse.json({
-          success: false,
-          message: 'User not found.'
-        }, { status: 404 });
+      const user = await users.findOne({ email: email.toLowerCase() });
+      if (!user) {
+        return NextResponse.json({ success: false, message: 'User not found' }, { status: 404 });
       }
+      const { password: _, ...safeUser } = user;
+      return NextResponse.json({ success: true, user: safeUser });
     }
 
-    // Otherwise, fetch all users
-    const allUsers = await users.find({}).toArray();
-    return NextResponse.json(allUsers);
-  } catch (error) {
-    console.error('Error fetching users:', error);
-    return NextResponse.json(
-      { success: false, error: 'Failed to fetch users' },
-      { status: 500 }
-    );
+    // Paginated full list — strip passwords
+    const [rawUsers, total] = await Promise.all([
+      users
+        .find({}, { projection: { password: 0 } })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .toArray(),
+      users.countDocuments({}),
+    ]);
+
+    return NextResponse.json({
+      success: true,
+      data: rawUsers,
+      pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+    });
+  } catch (err) {
+    console.error('GET /api/users error:', err);
+    return NextResponse.json({ success: false, error: 'Failed to fetch users' }, { status: 500 });
   }
 }
 
-
-
-
-
-
-
-// DELETE - Delete admin user by _id (Admin only)
+// ─── DELETE — Delete user by _id (Admin only) ────────────────────────────────
 export async function DELETE(request) {
+  const originCheck = checkOrigin(request);
+  if (originCheck) return originCheck;
+
+  const { error } = await requireAdmin();
+  if (error) return error;
+
   try {
-    // Check origin for security
-    const originCheck = checkOrigin(request);
-    if (originCheck) return originCheck;
-
-    // Check if user is admin
-    const admin = await isAdmin();
-    if (!admin) {
-      return forbiddenResponse('Only admins can delete users');
-    }
-
-    const adminUsers = await getCollection('adminUsers');
     const body = await request.json();
     const { _id } = body;
     if (!_id) {
-      return NextResponse.json({ success: false, error: 'Admin user _id is required for delete' }, { status: 400 });
+      return NextResponse.json({ success: false, error: '_id is required' }, { status: 400 });
     }
-    const { ObjectId } = (await import('mongodb'));
-    const result = await adminUsers.deleteOne({ _id: new ObjectId(_id) });
-    return NextResponse.json({ success: true, Data: result, message: 'Admin user deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting admin user:', error);
-    return NextResponse.json({ success: false, error: 'Failed to delete admin user' }, { status: 500 });
+
+    const { ObjectId } = await import('mongodb');
+    if (!ObjectId.isValid(_id)) {
+      return NextResponse.json({ success: false, error: 'Invalid user ID format' }, { status: 400 });
+    }
+
+    const users  = await getCollection('users');
+    const result = await users.deleteOne({ _id: new ObjectId(_id) });
+
+    if (result.deletedCount === 0) {
+      return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ success: true, message: 'User deleted successfully' });
+  } catch (err) {
+    console.error('DELETE /api/users error:', err);
+    return NextResponse.json({ success: false, error: 'Failed to delete user' }, { status: 500 });
   }
-} // End of DELETE function
+}

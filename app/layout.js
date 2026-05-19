@@ -32,7 +32,7 @@ export const metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL('https://nabaali.com'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://skyzonee.com'),
   alternates: {
     canonical: '/',
   },
@@ -47,9 +47,9 @@ export const metadata = {
       'max-snippet': -1,
     },
   },
-  verification: {
-    google: 'your-google-verification-code',
-  },
+  // verification: {
+  //   google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
+  // },
 };
 
 export default function RootLayout({ children }) {

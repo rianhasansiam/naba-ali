@@ -1,27 +1,31 @@
-import { auth } from '../../../../lib/auth';
-import { NextResponse } from 'next/server';
+/**
+ * app/api/debug/session/route.js
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Fixed: Admin-only in all environments, completely blocked in production.
+ */
 
-// Diagnostic endpoint to check current session
+import { NextResponse } from 'next/server';
+import { requireAdmin } from '../../../../lib/apiGuards';
+
 export async function GET() {
-  try {
-    const session = await auth();
-    
-    return NextResponse.json({
-      success: true,
-      authenticated: !!session?.user,
-      user: session?.user ? {
-        id: session.user.id,
-        name: session.user.name,
-        email: session.user.email,
-        role: session.user.role,
-        isAdmin: session.user.role === 'admin'
-      } : null,
-      session: session ? 'Active' : 'None'
-    });
-  } catch (error) {
-    return NextResponse.json({
-      success: false,
-      error: error.message
-    }, { status: 500 });
+  // Block entirely in production
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 });
   }
+
+  // Admin-only in development/staging
+  const { user, error } = await requireAdmin();
+  if (error) return error;
+
+  return NextResponse.json({
+    success: true,
+    authenticated: true,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+    },
+    env: process.env.NODE_ENV,
+  });
 }

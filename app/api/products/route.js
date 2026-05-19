@@ -1,86 +1,68 @@
+/**
+ * app/api/products/route.js
+ * ─────────────────────────────────────────────────────────────────────────────
+ * GET  — Serves from the server-side cache (unstable_cache).
+ *         Shared with Server Components → zero duplicate DB queries.
+ * POST — Validates → writes to MongoDB → revalidates cache → emits socket event.
+ */
+
 import { NextResponse } from 'next/server';
 import { getCollection } from '../../../lib/mongodb';
-import { checkOrigin, isAdmin, forbiddenResponse } from '../../../lib/security';
+import { requireAdmin } from '../../../lib/apiGuards';
+import { checkOrigin } from '../../../lib/security';
+import { getProducts } from '../../../lib/data/products.data';
+import { revalidateProductData } from '../../../lib/cache/revalidate';
 
-// GET - Get all products (Public - Anyone can view)
+// ── GET — Public ───────────────────────────────────────────────────────────────
 export async function GET(request) {
+  const originCheck = checkOrigin(request);
+  if (originCheck) return originCheck;
+
   try {
-    // Check origin for security
-    const originCheck = checkOrigin(request);
-    if (originCheck) return originCheck;
-
-    // Get the products collection
-    const products = await getCollection('allProducts');
-    
-    // Find all products with projection for better performance
-    const allProducts = await products.find({}, {
-      projection: {
-        // Include all fields but this makes query more efficient
-        _id: 1,
-        name: 1,
-        category: 1,
-        style: 1,
-        price: 1,
-        originalPrice: 1,
-        salePrice: 1,
-        stock: 1,
-        isInStock: 1,
-        primaryImage: 1,
-        images: 1,
-        image: 1,
-        description: 1,
-        shortDescription: 1,
-        colors: 1,
-        sizes: 1,
-        color: 1,
-        rating: 1,
-        reviews: 1,
-        createdAt: 1
-      }
-    }).toArray();
-
-    return NextResponse.json(allProducts);
-
-  } catch (error) {
-    return NextResponse.json({ 
-      success: false,
-      error: "Failed to fetch products" 
-    }, { status: 500 });
+    // Reuse the same cached function used by Server Components.
+    // If cache is warm, no DB call is made at all.
+    const products = await getProducts();
+    return NextResponse.json(products);
+  } catch (err) {
+    console.error('GET /api/products error:', err);
+    return NextResponse.json({ success: false, error: 'Failed to fetch products' }, { status: 500 });
   }
-} // End of GET function
+}
 
-// POST - Create new product (Admin only)
+// ── POST — Admin only ──────────────────────────────────────────────────────────
 export async function POST(request) {
-  try {
-    // Check origin for security
-    const originCheck = checkOrigin(request);
-    if (originCheck) return originCheck;
+  const originCheck = checkOrigin(request);
+  if (originCheck) return originCheck;
 
-    // Check if user is admin
-    const admin = await isAdmin();
-    if (!admin) {
-      return forbiddenResponse('Only admins can create products');
+  const { error } = await requireAdmin();
+  if (error) return error;
+
+  try {
+    const body = await request.json();
+
+    // Basic validation — extend with Zod if needed
+    if (!body.name || !body.price) {
+      return NextResponse.json({ success: false, error: 'name and price are required' }, { status: 400 });
     }
 
-    // Get the products collection
-    const products = await getCollection('allProducts');
-    
-    // Get the request body
-    const body = await request.json();
-    
-    // Insert the new product
-    const productData = await products.insertOne({...body, createdAt: new Date()});
+    // Never trust isAdmin, role, or calculated fields from the client
+    const { isAdmin: _a, role: _r, ...safeBody } = body;
 
-    return NextResponse.json({
-      success: true,
-      Data: productData,
-      message: "Product created successfully"
-    });
+    const col = await getCollection('allProducts');
+    const result = await col.insertOne({ ...safeBody, createdAt: new Date(), updatedAt: new Date() });
 
-  } catch (error) {
-    return NextResponse.json({ 
-      success: false,
-      error: "Failed to create product" 
-    }, { status: 500 });
+    // ── Cache invalidation ────────────────────────────────────────────────────
+    revalidateProductData();
+
+    // ── Socket.io event ───────────────────────────────────────────────────────
+    try {
+      const { getIO } = await import('../../../lib/socketIO');
+      getIO()?.emit('products:changed', { action: 'create', id: result.insertedId });
+    } catch { /* socket optional */ }
+
+    return NextResponse.json({ success: true, data: { _id: result.insertedId }, message: 'Product created successfully' });
+  } catch (err) {
+    console.error('POST /api/products error:', err);
+    return NextResponse.json({ success: false, error: 'Failed to create product' }, { status: 500 });
   }
-} // End of POST function
+}
