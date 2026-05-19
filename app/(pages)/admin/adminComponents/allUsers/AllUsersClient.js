@@ -43,10 +43,10 @@ const AllUsersClient = ({ users: userData = [], orders: ordersDataProp = [], isL
     }
   }, [userData]);
 
-  // Search filter
+  // Search filter — guard against null/undefined name or email
   const filteredUsers = allUsers.filter((user) =>
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
+    (user?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (user?.email || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getUserStatusIcon = (status) => {
@@ -264,7 +264,7 @@ const AllUsersClient = ({ users: userData = [], orders: ordersDataProp = [], isL
                     disabled={deletingUserId === (user._id || user.id)}
                     className="bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
                   >
-                    {deletingUserId === user._id ? (
+                    {deletingUserId === (user._id || user.id) ? (
                       <Loader2 className="animate-spin" size={14} />
                     ) : (
                       <Trash2 size={14} />

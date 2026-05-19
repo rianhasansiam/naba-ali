@@ -21,6 +21,8 @@ export default function AdminChatPanel() {
   const [isSending, setIsSending] = useState(false);
   const messagesEndRef = useRef(null);
   const socketRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
+  const selectedConversationRef = useRef(null);
 
   // Auto scroll to bottom
   const scrollToBottom = () => {
@@ -55,9 +57,10 @@ export default function AdminChatPanel() {
         setIsConnecting(true);
       });
 
-      // Listen for new messages
+      // Listen for new messages — use ref to avoid stale closure
       socketRef.current.on('new-message', (message) => {
-        if (selectedConversation && message.conversationId === selectedConversation.userId) {
+        const currentConv = selectedConversationRef.current;
+        if (currentConv && message.conversationId === currentConv.userId) {
           // Prevent duplicate messages (check if message already exists)
           setMessages(prev => {
             const exists = prev.some(msg => 
@@ -90,8 +93,8 @@ export default function AdminChatPanel() {
       socketRef.current.on('new-user-message', (data) => {
         // Refresh conversations list and show notification
         fetchConversations();
-        // Show desktop notification if permission granted
-        if (Notification.permission === 'granted') {
+        // Show desktop notification if supported and permission granted
+        if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
           new Notification(`New message from ${data.senderName}`, {
             body: data.message.substring(0, 50) + '...',
             icon: '/logo.png'
@@ -99,16 +102,18 @@ export default function AdminChatPanel() {
         }
       });
 
-      // Enhanced typing indicators
+      // Enhanced typing indicators — use ref to avoid stale closure
       socketRef.current.on('user-typing', (data) => {
-        if (selectedConversation && data.conversationId === selectedConversation.userId) {
+        const currentConv = selectedConversationRef.current;
+        if (currentConv && data.conversationId === currentConv.userId) {
           setUserTyping(true);
           setTimeout(() => setUserTyping(false), 3000);
         }
       });
       
       socketRef.current.on('user-stop-typing', (data) => {
-        if (selectedConversation && data.conversationId === selectedConversation.userId) {
+        const currentConv = selectedConversationRef.current;
+        if (currentConv && data.conversationId === currentConv.userId) {
           setUserTyping(false);
         }
       });
@@ -164,6 +169,7 @@ export default function AdminChatPanel() {
 
   const selectConversation = async (conversation) => {
     setSelectedConversation(conversation);
+    selectedConversationRef.current = conversation; // keep ref in sync
     setIsLoadingMessages(true);
     
     try {
@@ -287,18 +293,16 @@ export default function AdminChatPanel() {
       });
       
       // Clear previous timeout
-      if (typingTimeout) {
-        clearTimeout(typingTimeout);
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
       }
       
       // Set new timeout to stop typing indicator
-      const timeout = setTimeout(() => {
+      typingTimeoutRef.current = setTimeout(() => {
         socketRef.current?.emit('admin-stop-typing', { 
           conversationId: selectedConversation.userId 
         });
       }, 1000);
-      
-      setTypingTimeout(timeout);
     }
   };
 
@@ -312,15 +316,15 @@ export default function AdminChatPanel() {
           conversationId: selectedConversation.userId 
         });
       }
-      if (typingTimeout) {
-        clearTimeout(typingTimeout);
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
       }
     }
   };
 
-  // Request notification permission
+  // Request notification permission (browser-only)
   useEffect(() => {
-    if (Notification.permission === 'default') {
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission();
     }
   }, []);

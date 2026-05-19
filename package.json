@@ -3,9 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node server.js",
+    "dev:next": "next dev",
+    "dev:ws": "cd ../skyzonee_websocket && npm run dev",
+    "dev:all": "concurrently --names \"NEXT,WS\" --prefix-colors \"cyan,yellow\" \"npm run dev\" \"npm run dev:ws\"",
     "build": "next build",
-    "start": "next start",
+    "start": "node server.js",
+    "start:prod": "next start",
     "lint": "eslint"
   },
   "dependencies": {
@@ -29,6 +33,7 @@
     "react-dom": "19.1.0",
     "react-icons": "^5.5.0",
     "react-redux": "^9.2.0",
+    "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.1",
     "sweetalert2": "^11.23.0",
     "zod": "^4.4.3"
@@ -39,6 +44,7 @@
     "@tanstack/react-query-devtools": "^5.90.2",
     "@types/node": "24.5.0",
     "@types/react": "19.1.13",
+    "concurrently": "^9.2.1",
     "eslint": "^9",
     "eslint-config-next": "15.5.3",
     "tailwindcss": "^4"

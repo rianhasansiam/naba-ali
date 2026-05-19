@@ -37,7 +37,9 @@ export default function AllMessages() {
       const data = await response.json();
       
       if (data.success) {
-        setMessages(data.Data);
+        // Normalize to array — guard against null/undefined/object API responses
+        const raw = data.Data ?? data.data ?? data.messages ?? data;
+        setMessages(Array.isArray(raw) ? raw : []);
       } else {
         console.error('Failed to fetch messages:', data.error);
         setError('Failed to fetch messages: ' + data.error);
@@ -144,19 +146,20 @@ export default function AllMessages() {
     }
   };
 
-  // Filter messages
-  const filteredMessages = messages.filter(message => {
-    const matchesSearch = 
+  // Filter messages — guard against messages not being an array
+  const safeMessages = Array.isArray(messages) ? messages : [];
+  const filteredMessages = safeMessages.filter(message => {
+    const matchesSearch =
       message.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       message.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       message.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       message.message?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesFilter = 
-      filterStatus === 'all' || 
+
+    const matchesFilter =
+      filterStatus === 'all' ||
       message.status === filterStatus ||
       (filterStatus === 'unread' && !message.status); // Handle old messages without status
-    
+
     return matchesSearch && matchesFilter;
   });
 
@@ -169,9 +172,9 @@ export default function AllMessages() {
 
   // Get message stats
   const stats = {
-    total: messages.length,
-    unread: messages.filter(msg => msg.status !== 'read').length,
-    read: messages.filter(msg => msg.status === 'read').length,
+    total: safeMessages.length,
+    unread: safeMessages.filter(msg => msg.status !== 'read').length,
+    read: safeMessages.filter(msg => msg.status === 'read').length,
   };
 
   // Close toast

@@ -45,9 +45,16 @@ export function middleware(request) {
 
     // Handle preflight requests
     if (request.method === 'OPTIONS') {
+      const corsHeaders = {
+        'Access-Control-Allow-Origin': allowedOrigins.includes(origin) ? origin : '',
+        'Access-Control-Allow-Credentials': 'true',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+        'Access-Control-Max-Age': '86400',
+      };
       return new NextResponse(null, {
-        status: 200,
-        headers: response.headers,
+        status: 204,
+        headers: corsHeaders,
       });
     }
 

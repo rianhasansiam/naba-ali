@@ -69,11 +69,27 @@ const nextConfig = {
           {
             key: 'Content-Security-Policy',
             value:
-              "default-src 'self'; img-src 'self' https: data:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; font-src 'self' https: data:; connect-src 'self' ws://localhost:3001 wss://localhost:3001 ws: wss: https://api.imgbb.com https:;",
+              "default-src 'self'; img-src 'self' https: data:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; font-src 'self' https: data:; connect-src 'self' ws://localhost:3001 wss://localhost:3001 ws://localhost:3000 wss://localhost:3000 ws: wss: https://api.imgbb.com https: http://localhost:3001;",
           },
         ],
       },
     ]
+  },
+
+  // ── Dev-only proxy: forward /ws-api/* to the local WebSocket server ──────────
+  // Allows Next.js API routes to call http://localhost:3001 without CORS issues
+  // during local development. Has no effect in production (NEXT_PUBLIC_SOCKET_URL
+  // points to Render, and direct fetch is used).
+  async rewrites() {
+    const isLocalDev = process.env.NODE_ENV === 'development';
+    if (!isLocalDev) return [];
+
+    return [
+      {
+        source: '/ws-api/:path*',
+        destination: 'http://localhost:3001/:path*',
+      },
+    ];
   },
 
   // Suppress router scroll warnings for loading overlays

@@ -11,11 +11,10 @@ export default function CustomerChatButton() {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [conversationId, setConversationId] = useState(null);
-  const [isTyping, setIsTyping] = useState(false);
   const [isAdminOnline, setIsAdminOnline] = useState(false);
   const [guestId, setGuestId] = useState(null);
   const [guestName, setGuestName] = useState('');
-  const [typingTimeout, setTypingTimeout] = useState(null);
+  const typingTimeoutRef = useRef(null);
   const [messageStatus, setMessageStatus] = useState({});
   const [lastSeen, setLastSeen] = useState(null);
   const [adminTyping, setAdminTyping] = useState(false);
@@ -286,16 +285,14 @@ export default function CustomerChatButton() {
       });
       
       // Clear previous timeout
-      if (typingTimeout) {
-        clearTimeout(typingTimeout);
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
       }
       
       // Set new timeout to stop typing indicator
-      const timeout = setTimeout(() => {
+      typingTimeoutRef.current = setTimeout(() => {
         socketRef.current?.emit('stop-typing', { conversationId });
       }, 1000);
-      
-      setTypingTimeout(timeout);
     }
   };
 
@@ -307,8 +304,8 @@ export default function CustomerChatButton() {
       if (socketRef.current && conversationId) {
         socketRef.current.emit('stop-typing', { conversationId });
       }
-      if (typingTimeout) {
-        clearTimeout(typingTimeout);
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
       }
     }
   };
@@ -444,17 +441,7 @@ export default function CustomerChatButton() {
               })
             )}
             
-            {isTyping && (
-              <div className="flex justify-start">
-                <div className="bg-white text-gray-800 rounded-2xl rounded-bl-none px-4 py-2 shadow-sm">
-                  <div className="flex gap-1">
-                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></span>
-                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
-                    <span className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></span>
-                  </div>
-                </div>
-              </div>
-            )}
+
             
             <div ref={messagesEndRef} />
           </div>

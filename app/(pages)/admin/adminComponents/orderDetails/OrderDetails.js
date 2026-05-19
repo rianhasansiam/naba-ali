@@ -23,8 +23,18 @@ const OrderDetails = ({ orders = [], users = [], products = [], isLoading = fals
       };
     }
 
+    // Normalize orders to always be an array — handles null, undefined, or
+    // paginated API responses shaped like { data: [...] } or { orders: [...] }
+    const safeOrders = Array.isArray(orders)
+      ? orders
+      : Array.isArray(orders?.data)
+      ? orders.data
+      : Array.isArray(orders?.orders)
+      ? orders.orders
+      : [];
+
     // Enrich orders with user and product data
-    const enrichedOrders = orders.map(order => {
+    const enrichedOrders = safeOrders.map(order => {
       // Extract customer info from multiple possible locations
       const customerInfo = order.customerInfo || order.customer || {};
       
@@ -73,13 +83,13 @@ const OrderDetails = ({ orders = [], users = [], products = [], isLoading = fals
     });
 
     // Calculate stats
-    const totalOrders = orders.length;
-    const pendingOrders = orders.filter(o => o.status === 'pending').length;
-    const confirmedOrders = orders.filter(o => o.status === 'confirmed').length;
-    const processingOrders = orders.filter(o => o.status === 'processing').length;
-    const shippedOrders = orders.filter(o => o.status === 'shipped').length;
-    const deliveredOrders = orders.filter(o => o.status === 'delivered').length;
-    const totalRevenue = orders.reduce((sum, order) => {
+    const totalOrders = safeOrders.length;
+    const pendingOrders = safeOrders.filter(o => o.status === 'pending').length;
+    const confirmedOrders = safeOrders.filter(o => o.status === 'confirmed').length;
+    const processingOrders = safeOrders.filter(o => o.status === 'processing').length;
+    const shippedOrders = safeOrders.filter(o => o.status === 'shipped').length;
+    const deliveredOrders = safeOrders.filter(o => o.status === 'delivered').length;
+    const totalRevenue = safeOrders.reduce((sum, order) => {
       const orderSummary = order.orderSummary || order.summary || {};
       const financials = orderSummary || order;
       return sum + (financials.total || order.total || 0);
