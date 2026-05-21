@@ -35,23 +35,35 @@ import AllMessages from './adminComponents/allMessages/AllMessages';
 // import AdminChatPanel from './adminComponents/AdminChatPanel';
 
 
+const extractListFromApiResponse = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.data)) return payload.data;
+  if (Array.isArray(payload?.users)) return payload.users;
+  if (Array.isArray(payload?.orders)) return payload.orders;
+  if (Array.isArray(payload?.reviews)) return payload.reviews;
+  return [];
+};
+
 const AdminPageClient = ({ adminData, navigationItems }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
 // 🚀 OPTIMIZED: Use standardized query keys for data deduplication
 const { data: products = [], isLoading: productsLoading } = useGetData({ name: 'products', api: '/api/products', cacheType: 'STATIC' });
-const { data: users = [], isLoading: usersLoading } = useGetData({ name: 'users', api: '/api/users', cacheType: 'DYNAMIC' });
-const { data: orders = [], isLoading: ordersLoading } = useGetData({ name: 'orders', api: '/api/orders', cacheType: 'DYNAMIC' });
-const { data: reviews = [], isLoading: reviewsLoading } = useGetData({ name: 'reviews', api: '/api/reviews', cacheType: 'DYNAMIC' });  // Shared loading state
+const { data: users = [], isLoading: usersLoading } = useGetData({ name: 'users', api: '/api/users', cacheType: 'DYNAMIC', normalize: false });
+const { data: orders = [], isLoading: ordersLoading } = useGetData({ name: 'orders', api: '/api/orders', cacheType: 'DYNAMIC', normalize: false });
+const { data: reviews = [], isLoading: reviewsLoading } = useGetData({ name: 'reviews', api: '/api/reviews', cacheType: 'DYNAMIC', normalize: false });  // Shared loading state
   const isLoading = productsLoading || usersLoading || ordersLoading || reviewsLoading;
+  const usersList = extractListFromApiResponse(users);
+  const ordersList = extractListFromApiResponse(orders);
+  const reviewsList = extractListFromApiResponse(reviews);
   
   // Shared data object to pass to components
   const sharedData = {
     products,
-    users, 
-    orders,
-    reviews,
+    users: usersList, 
+    orders: ordersList,
+    reviews: reviewsList,
     isLoading
   };
 
