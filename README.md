@@ -486,6 +486,4 @@ For support, email rianhasan1971@gmail.com or create an issue in this repository
 
 Made with ❤️ by Rian Hasan Siam
 
-⭐ Star this repository if you find it helpful!
-
 </div>
