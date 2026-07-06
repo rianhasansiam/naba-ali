@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 const initialState = {
   search: '',
   category: '',
-  priceRange: { min: 0, max: 1000 },
+  priceRange: { min: 0, max: null },
   colors: [],
   sizes: [],
   style: '',
@@ -117,9 +117,11 @@ const parseUrlParams = (searchParams) => {
   if (searchParams.get('inStock')) params.inStock = searchParams.get('inStock') === 'true';
   
   if (searchParams.get('minPrice') || searchParams.get('maxPrice')) {
+    const maxPrice = parseInt(searchParams.get('maxPrice'), 10);
+
     params.priceRange = {
-      min: parseInt(searchParams.get('minPrice')) || 0,
-      max: parseInt(searchParams.get('maxPrice')) || 1000
+      min: parseInt(searchParams.get('minPrice'), 10) || 0,
+      max: Number.isFinite(maxPrice) ? maxPrice : null
     };
   }
   
@@ -144,7 +146,7 @@ const buildUrlParams = (filters) => {
   if (filters.inStock) params.set('inStock', 'true');
   
   if (filters.priceRange.min > 0) params.set('minPrice', filters.priceRange.min.toString());
-  if (filters.priceRange.max < 1000) params.set('maxPrice', filters.priceRange.max.toString());
+  if (filters.priceRange.max !== null) params.set('maxPrice', filters.priceRange.max.toString());
   
   if (filters.colors.length > 0) params.set('colors', filters.colors.join(','));
   if (filters.sizes.length > 0) params.set('sizes', filters.sizes.join(','));
@@ -186,7 +188,8 @@ export const useFilteredProducts = (products) => {
       }
       
       // Price range filter
-      if (product.price < filters.priceRange.min || product.price > filters.priceRange.max) {
+      const maxPrice = filters.priceRange.max ?? Number.POSITIVE_INFINITY;
+      if (product.price < filters.priceRange.min || product.price > maxPrice) {
         return false;
       }
       

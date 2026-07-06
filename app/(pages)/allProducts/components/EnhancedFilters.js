@@ -21,7 +21,7 @@ const EnhancedFilters = ({ categoriesData, products }) => {
     filters.colors.length > 0 || 
     filters.sizes.length > 0 || 
     filters.priceRange.min > 0 || 
-    filters.priceRange.max < 1000 || 
+    filters.priceRange.max !== null || 
     filters.inStock;
 
   return (
@@ -65,9 +65,9 @@ const EnhancedFilters = ({ categoriesData, products }) => {
                 Size {size}
               </span>
             ))}
-            {(filters.priceRange.min > 0 || filters.priceRange.max < 1000) && (
+            {(filters.priceRange.min > 0 || filters.priceRange.max !== null) && (
               <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-black text-white price-number">
-                BDT {filters.priceRange.min}-BDT {filters.priceRange.max}
+                BDT {filters.priceRange.min}-BDT {filters.priceRange.max ?? 'Any'}
               </span>
             )}
             {filters.inStock && (

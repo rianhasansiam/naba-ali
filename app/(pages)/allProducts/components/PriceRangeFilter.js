@@ -22,19 +22,27 @@ const PriceRangeFilter = ({ products = [] }) => {
     };
   }, [products]);
 
+  const currentMax = filters.priceRange.max ?? maxPrice;
+  const sliderMinValue = Math.max(filters.priceRange.min, minPrice);
+  const sliderMaxValue = Math.min(Math.max(currentMax, minPrice), maxPrice);
+
   const handleMinChange = useCallback((e) => {
     const value = parseInt(e.target.value) || 0;
+    const upperLimit = filters.priceRange.max ?? maxPrice;
+
     setPriceRange({
-      min: Math.min(value, filters.priceRange.max - 1),
+      min: Math.min(value, upperLimit - 1),
       max: filters.priceRange.max
     });
-  }, [filters.priceRange.max, setPriceRange]);
+  }, [filters.priceRange.max, maxPrice, setPriceRange]);
 
   const handleMaxChange = useCallback((e) => {
     const value = parseInt(e.target.value) || maxPrice;
+    const nextMax = value >= maxPrice ? null : Math.max(value, filters.priceRange.min + 1);
+
     setPriceRange({
       min: filters.priceRange.min,
-      max: Math.max(value, filters.priceRange.min + 1)
+      max: nextMax
     });
   }, [filters.priceRange.min, maxPrice, setPriceRange]);
 
@@ -57,7 +65,7 @@ const PriceRangeFilter = ({ products = [] }) => {
                 type="range"
                 min={minPrice}
                 max={maxPrice}
-                value={filters.priceRange.min}
+                value={sliderMinValue}
                 onChange={handleMinChange}
                 className="absolute w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-thumb"
                 style={{ zIndex: 1 }}
@@ -66,7 +74,7 @@ const PriceRangeFilter = ({ products = [] }) => {
                 type="range"
                 min={minPrice}
                 max={maxPrice}
-                value={filters.priceRange.max}
+                value={sliderMaxValue}
                 onChange={handleMaxChange}
                 className="absolute w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider-thumb"
                 style={{ zIndex: 2 }}
@@ -90,7 +98,7 @@ const PriceRangeFilter = ({ products = [] }) => {
               <label className="block text-sm text-gray-600 mb-1 mt-5 ml-2">Max</label>
               <input
                 type="number"
-                value={filters.priceRange.max}
+                value={currentMax}
                 onChange={handleMaxChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-black focus:border-black text-sm"
                 placeholder={maxPrice.toString()}
@@ -100,7 +108,7 @@ const PriceRangeFilter = ({ products = [] }) => {
           
           {/* Current Range Display */}
           <div className="text-center text-sm text-gray-600 price-number">
-            BDT {filters.priceRange.min} - BDT {filters.priceRange.max}
+            BDT {filters.priceRange.min} - BDT {currentMax}
           </div>
         </div>
       )}
