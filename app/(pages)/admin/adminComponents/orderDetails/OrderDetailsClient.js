@@ -94,7 +94,7 @@ const OrderDetails = ({ ordersData }) => {
 
       
       // Refresh the orders data
-      queryClient.invalidateQueries(['orders']);
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
       
       showToast('success', `Order status updated to ${newStatus} successfully!`);
     } catch (error) {

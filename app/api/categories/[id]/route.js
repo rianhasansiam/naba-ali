@@ -1,21 +1,43 @@
 import { NextResponse } from 'next/server';
+import { ObjectId } from 'mongodb';
 import { getCollection } from '../../../../lib/mongodb';
+import { requireAdmin, checkOrigin } from '../../../../lib/apiGuards';
+import { revalidateCategoryData } from '../../../../lib/cache/revalidate';
+import { publishRealtimeEvent } from '../../../../lib/socketIO';
 
-// PUT - Update category by ID
+function validateObjectId(id, resourceName) {
+  if (!id) {
+    return NextResponse.json({
+      success: false,
+      error: `${resourceName} ID is required`
+    }, { status: 400 });
+  }
+
+  if (!ObjectId.isValid(id)) {
+    return NextResponse.json({
+      success: false,
+      error: `Invalid ${resourceName.toLowerCase()} ID`
+    }, { status: 400 });
+  }
+
+  return null;
+}
+
+// PUT - Update category by ID (Admin only)
 export async function PUT(request, { params }) {
+  const originCheck = checkOrigin(request);
+  if (originCheck) return originCheck;
+
+  const { error } = await requireAdmin();
+  if (error) return error;
+
   try {
     const { id } = params;
+    const idError = validateObjectId(id, 'Category');
+    if (idError) return idError;
+
     const categories = await getCollection('allCategories');
     const body = await request.json();
-    
-    if (!id) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Category ID is required for update' 
-      }, { status: 400 });
-    }
-
-    const { ObjectId } = (await import('mongodb'));
     const result = await categories.updateOne(
       { _id: new ObjectId(id) }, 
       { $set: { ...body, updatedAt: new Date() } }
@@ -27,6 +49,9 @@ export async function PUT(request, { params }) {
         error: 'Category not found' 
       }, { status: 404 });
     }
+
+    revalidateCategoryData();
+    await publishRealtimeEvent('categories:changed', { action: 'update', id });
 
     return NextResponse.json({ 
       success: true, 
@@ -43,20 +68,20 @@ export async function PUT(request, { params }) {
   }
 }
 
-// DELETE - Delete category by ID
+// DELETE - Delete category by ID (Admin only)
 export async function DELETE(request, { params }) {
+  const originCheck = checkOrigin(request);
+  if (originCheck) return originCheck;
+
+  const { error } = await requireAdmin();
+  if (error) return error;
+
   try {
     const { id } = params;
-    const categories = await getCollection('allCategories');
-    
-    if (!id) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Category ID is required for delete' 
-      }, { status: 400 });
-    }
+    const idError = validateObjectId(id, 'Category');
+    if (idError) return idError;
 
-    const { ObjectId } = (await import('mongodb'));
+    const categories = await getCollection('allCategories');
     const result = await categories.deleteOne({ _id: new ObjectId(id) });
 
     if (result.deletedCount === 0) {
@@ -65,6 +90,9 @@ export async function DELETE(request, { params }) {
         error: 'Category not found' 
       }, { status: 404 });
     }
+
+    revalidateCategoryData();
+    await publishRealtimeEvent('categories:changed', { action: 'delete', id });
 
     return NextResponse.json({ 
       success: true, 
@@ -85,16 +113,10 @@ export async function DELETE(request, { params }) {
 export async function GET(request, { params }) {
   try {
     const { id } = params;
-    const categories = await getCollection('allCategories');
-    
-    if (!id) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Category ID is required' 
-      }, { status: 400 });
-    }
+    const idError = validateObjectId(id, 'Category');
+    if (idError) return idError;
 
-    const { ObjectId } = (await import('mongodb'));
+    const categories = await getCollection('allCategories');
     const category = await categories.findOne({ _id: new ObjectId(id) });
 
     if (!category) {

@@ -1,21 +1,41 @@
 import { NextResponse } from 'next/server';
+import { ObjectId } from 'mongodb';
 import { getCollection } from '../../../../lib/mongodb';
+import { requireAdmin, checkOrigin } from '../../../../lib/apiGuards';
 
-// PUT - Update coupon by ID
+function validateObjectId(id, resourceName) {
+  if (!id) {
+    return NextResponse.json({
+      success: false,
+      error: `${resourceName} ID is required`
+    }, { status: 400 });
+  }
+
+  if (!ObjectId.isValid(id)) {
+    return NextResponse.json({
+      success: false,
+      error: `Invalid ${resourceName.toLowerCase()} ID`
+    }, { status: 400 });
+  }
+
+  return null;
+}
+
+// PUT - Update coupon by ID (Admin only)
 export async function PUT(request, { params }) {
+  const originCheck = checkOrigin(request);
+  if (originCheck) return originCheck;
+
+  const { error } = await requireAdmin();
+  if (error) return error;
+
   try {
     const { id } = params;
+    const idError = validateObjectId(id, 'Coupon');
+    if (idError) return idError;
+
     const coupons = await getCollection('allCoupons');
     const body = await request.json();
-
-    if (!id) {
-      return NextResponse.json({
-        success: false,
-        error: 'Coupon ID is required for update'
-      }, { status: 400 });
-    }
-
-    const { ObjectId } = (await import('mongodb'));
     const result = await coupons.updateOne(
       { _id: new ObjectId(id) },
       { $set: { ...body, updatedAt: new Date() } }
@@ -43,20 +63,20 @@ export async function PUT(request, { params }) {
   }
 }
 
-// DELETE - Delete coupon by ID
+// DELETE - Delete coupon by ID (Admin only)
 export async function DELETE(request, { params }) {
+  const originCheck = checkOrigin(request);
+  if (originCheck) return originCheck;
+
+  const { error } = await requireAdmin();
+  if (error) return error;
+
   try {
     const { id } = params;
+    const idError = validateObjectId(id, 'Coupon');
+    if (idError) return idError;
+
     const coupons = await getCollection('allCoupons');
-
-    if (!id) {
-      return NextResponse.json({
-        success: false,
-        error: 'Coupon ID is required for deletion'
-      }, { status: 400 });
-    }
-
-    const { ObjectId } = (await import('mongodb'));
     const result = await coupons.deleteOne({
       _id: new ObjectId(id)
     });

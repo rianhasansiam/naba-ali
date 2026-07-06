@@ -31,7 +31,7 @@ const AddCouponModal = ({ isOpen, onClose }) => {
   const [submitAttempted, setSubmitAttempted] = useState(false);
 
   const { addData, isLoading } = useAddData({
-    name: 'allCoupons',
+    name: 'coupons',
     api: '/api/coupons'
   });
 

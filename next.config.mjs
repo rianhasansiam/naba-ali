@@ -1,3 +1,133 @@
+const isDevelopment = process.env.NODE_ENV !== 'production';
+
+const IMAGE_ORIGINS = [
+  'https://images.unsplash.com',
+  'https://lh3.googleusercontent.com',
+  'https://upload.wikimedia.org',
+  'https://i.ibb.co',
+  'https://ibb.co',
+  'https://ui-avatars.com',
+  'https://via.placeholder.com',
+];
+
+const DEV_CONNECT_ORIGINS = [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://localhost:3001',
+  'http://127.0.0.1:3001',
+  'ws://localhost:3000',
+  'ws://127.0.0.1:3000',
+  'ws://localhost:3001',
+  'ws://127.0.0.1:3001',
+];
+
+const normalizeOrigin = (value) => {
+  if (!value) return null;
+
+  const rawValue = String(value).trim();
+  if (!rawValue) return null;
+
+  try {
+    const hasNetworkScheme = /^(https?|wss?):\/\//i.test(rawValue);
+    const url = new URL(hasNetworkScheme ? rawValue : `https://${rawValue}`);
+    return url.origin;
+  } catch {
+    return null;
+  }
+};
+
+const isLoopbackOrigin = (origin) => {
+  try {
+    const { hostname } = new URL(origin);
+    return ['localhost', '127.0.0.1', '0.0.0.0', '::1', '[::1]'].includes(hostname);
+  } catch {
+    return false;
+  }
+};
+
+const unique = (values) => [...new Set(values.filter(Boolean))];
+
+const getAllowedOrigins = (values, { allowLoopback = isDevelopment } = {}) => (
+  unique(values.map(normalizeOrigin))
+    .filter((origin) => allowLoopback || !isLoopbackOrigin(origin))
+);
+
+const getSocketSources = (values) => {
+  const origins = getAllowedOrigins(values);
+
+  return unique(origins.flatMap((origin) => {
+    const url = new URL(origin);
+    const isSecure = url.protocol === 'https:' || url.protocol === 'wss:';
+    const httpProtocol = isSecure ? 'https:' : 'http:';
+    const wsProtocol = isSecure ? 'wss:' : 'ws:';
+
+    return [
+      `${httpProtocol}//${url.host}`,
+      `${wsProtocol}//${url.host}`,
+    ];
+  }));
+};
+
+const APP_ORIGINS = getAllowedOrigins([
+  'https://skyzonee.com',
+  'https://www.skyzonee.com',
+  process.env.NEXT_PUBLIC_SITE_URL,
+  process.env.NEXTAUTH_URL,
+  process.env.APP_URL,
+  process.env.VERCEL_URL,
+]);
+
+const API_ORIGINS = getAllowedOrigins([
+  process.env.NEXT_PUBLIC_API_URL,
+]);
+
+const SOCKET_SOURCES = getSocketSources([
+  'https://skyzonee-websocket-server.onrender.com',
+  process.env.NEXT_PUBLIC_SOCKET_URL,
+  process.env.SOCKET_SERVER_URL,
+  process.env.WEBSOCKET_SERVER_URL,
+]);
+
+const CONFIGURED_IMAGE_ORIGINS = getAllowedOrigins([
+  process.env.NEXT_PUBLIC_IMAGE_CDN_URL,
+  process.env.NEXT_PUBLIC_CDN_URL,
+  process.env.IMAGE_CDN_URL,
+  process.env.CDN_URL,
+]);
+
+const buildContentSecurityPolicy = () => {
+  const directives = [
+    ['default-src', "'self'"],
+    ['base-uri', "'self'"],
+    ['object-src', "'none'"],
+    ['frame-ancestors', "'none'"],
+    ['frame-src', "'none'"],
+    ['form-action', "'self'"],
+    ['script-src', "'self'", "'unsafe-inline'", ...(isDevelopment ? ["'unsafe-eval'"] : [])],
+    ['style-src', "'self'", "'unsafe-inline'"],
+    ['img-src', "'self'", 'data:', 'blob:', ...IMAGE_ORIGINS, ...CONFIGURED_IMAGE_ORIGINS],
+    ['font-src', "'self'", 'data:'],
+    [
+      'connect-src',
+      "'self'",
+      ...APP_ORIGINS,
+      ...API_ORIGINS,
+      ...SOCKET_SOURCES,
+      'https://api.emailjs.com',
+      ...(isDevelopment ? DEV_CONNECT_ORIGINS : []),
+    ],
+    ['media-src', "'self'", 'data:', 'blob:'],
+    ['worker-src', "'self'", 'blob:'],
+    ['manifest-src', "'self'"],
+  ];
+
+  return directives
+    .map(([directive, ...sources]) => `${directive} ${unique(sources).join(' ')}`)
+    .join('; ');
+};
+
+const contentSecurityPolicy = buildContentSecurityPolicy();
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
@@ -40,9 +170,9 @@ const nextConfig = {
     ],
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 60,
-    dangerouslyAllowSVG: true,
+    dangerouslyAllowSVG: false,
     contentDispositionType: 'attachment',
-    contentSecurityPolicy: "default-src 'self' data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; media-src 'self' data: blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none';",
+    contentSecurityPolicy: "default-src 'none'; img-src 'self' data: blob:; media-src 'self' data: blob:; script-src 'none'; style-src 'none'; sandbox;",
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     unoptimized: false,
@@ -68,8 +198,7 @@ const nextConfig = {
           },
           {
             key: 'Content-Security-Policy',
-            value:
-              "default-src 'self'; img-src 'self' https: data:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; font-src 'self' https: data:; connect-src 'self' ws://localhost:3001 wss://localhost:3001 ws://localhost:3000 wss://localhost:3000 ws: wss: https://api.imgbb.com https: http://localhost:3001;",
+            value: contentSecurityPolicy,
           },
         ],
       },

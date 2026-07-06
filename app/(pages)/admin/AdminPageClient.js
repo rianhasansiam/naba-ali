@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGetData } from '../../../lib/hooks/useGetData';
 import { 
@@ -12,28 +13,67 @@ import {
   Ticket, 
   FolderOpen,
   Settings,
-  LogOut,
   Menu,
   X,
-  Bell,
-  Search,
-  Shield,
   Mail,
   // MessageCircle
 } from 'lucide-react';
 
-// Import admin components directly (no wrapper layers)
-import Dashboard from './adminComponents/dashboard/Dashboard';
-import AllProductsClient from './adminComponents/allProducts/AllProductsClient';
-import AllUsersClient from './adminComponents/allUsers/AllUsersClient';
-import OrderDetails from './adminComponents/orderDetails/OrderDetails';
-import AllReviews from './adminComponents/allReviews/AllReviews';
-import AllCuponsClient from './adminComponents/allCupons/AllCuponsClient';
-import AllCategoryClient from './adminComponents/allCategory/AllCategoryClient';
-import ShippingTaxSettings from './adminComponents/shippingTax/ShippingTaxSettings';
-import AllMessages from './adminComponents/allMessages/AllMessages';
-// import AdminChatPanel from './adminComponents/AdminChatPanel';
+const AdminTabLoading = () => (
+  <div className="flex min-h-[360px] items-center justify-center">
+    <div className="h-12 w-12 animate-spin rounded-full border-b-2 border-gray-900" />
+  </div>
+);
 
+const Dashboard = dynamic(() => import('./adminComponents/dashboard/Dashboard'), {
+  ssr: false,
+  loading: AdminTabLoading,
+});
+const AllProductsClient = dynamic(() => import('./adminComponents/allProducts/AllProductsClient'), {
+  ssr: false,
+  loading: AdminTabLoading,
+});
+const AllUsersClient = dynamic(() => import('./adminComponents/allUsers/AllUsersClient'), {
+  ssr: false,
+  loading: AdminTabLoading,
+});
+const OrderDetails = dynamic(() => import('./adminComponents/orderDetails/OrderDetails'), {
+  ssr: false,
+  loading: AdminTabLoading,
+});
+const AllReviews = dynamic(() => import('./adminComponents/allReviews/AllReviews'), {
+  ssr: false,
+  loading: AdminTabLoading,
+});
+const AllCuponsClient = dynamic(() => import('./adminComponents/allCupons/AllCuponsClient'), {
+  ssr: false,
+  loading: AdminTabLoading,
+});
+const AllCategoryClient = dynamic(() => import('./adminComponents/allCategory/AllCategoryClient'), {
+  ssr: false,
+  loading: AdminTabLoading,
+});
+const ShippingTaxSettings = dynamic(() => import('./adminComponents/shippingTax/ShippingTaxSettings'), {
+  ssr: false,
+  loading: AdminTabLoading,
+});
+const AllMessages = dynamic(() => import('./adminComponents/allMessages/AllMessages'), {
+  ssr: false,
+  loading: AdminTabLoading,
+});
+
+const componentMap = {
+  'dashboard': Dashboard,
+  'products': AllProductsClient,
+  'users': AllUsersClient,
+  'orders': OrderDetails,
+  'reviews': AllReviews,
+  'categories': AllCategoryClient,
+  'coupons': AllCuponsClient,
+  'shipping-tax': ShippingTaxSettings,
+  'messages': AllMessages,
+  // 'chat': dynamic(() => import('./adminComponents/AdminChatPanel'), { ssr: false, loading: AdminTabLoading }),
+};
 
 const extractListFromApiResponse = (payload) => {
   if (Array.isArray(payload)) return payload;
@@ -79,20 +119,6 @@ const { data: reviews = [], isLoading: reviewsLoading } = useGetData({ name: 're
     'shipping-tax': Settings,
     'messages': Mail,
     // 'chat': MessageCircle,
-  };
-
-  // Component mapping for client-side use (direct client components)
-  const componentMap = {
-    'dashboard': Dashboard,
-    'products': AllProductsClient,
-    'users': AllUsersClient,
-    'orders': OrderDetails,
-    'reviews': AllReviews,
-    'categories': AllCategoryClient,
-    'coupons': AllCuponsClient,
-    'shipping-tax': ShippingTaxSettings,
-    'messages': AllMessages,
-    // 'chat': AdminChatPanel,
   };
 
   const currentComponent = componentMap[activeTab] || Dashboard;

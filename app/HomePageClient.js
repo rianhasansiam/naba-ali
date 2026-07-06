@@ -21,6 +21,13 @@ import Review           from './componets/review/Review';
 
 // ── Fetcher helpers (used by React Query for background refresh) ───────────────
 const fetchJSON = (url) => fetch(url).then(r => r.json());
+const HOME_QUERY_KEYS = [['products'], ['categories'], ['reviews'], ['orders'], ['stats']];
+const INVALIDATION_EVENT_MAP = {
+  'products:changed': [['products'], ['stats']],
+  'categories:changed': [['categories'], ['stats']],
+  'reviews:changed': [['reviews'], ['stats']],
+  'orders:changed': [['orders'], ['stats']],
+};
 
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function HomePageClient({ initialData }) {
@@ -65,31 +72,32 @@ export default function HomePageClient({ initialData }) {
 
     const connectSocket = async () => {
       try {
+        const socketServer = process.env.NEXT_PUBLIC_SOCKET_URL;
+
+        if (!socketServer) {
+          console.warn('Realtime socket disabled: NEXT_PUBLIC_SOCKET_URL is not configured.');
+          return;
+        }
+
         const { io } = await import('socket.io-client');
-        socket = io({ path: '/socket.io', transports: ['websocket', 'polling'] });
-
-        socket.on('products:changed', () => {
-          queryClient.invalidateQueries({ queryKey: ['products'] });
-          queryClient.invalidateQueries({ queryKey: ['stats'] });
+        socket = io(socketServer, {
+          transports: ['websocket', 'polling'],
+          withCredentials: true,
         });
 
-        socket.on('categories:changed', () => {
-          queryClient.invalidateQueries({ queryKey: ['categories'] });
-          queryClient.invalidateQueries({ queryKey: ['stats'] });
+        Object.entries(INVALIDATION_EVENT_MAP).forEach(([event, queryKeys]) => {
+          socket.on(event, () => {
+            queryKeys.forEach((queryKey) => {
+              queryClient.invalidateQueries({ queryKey });
+            });
+          });
         });
 
-        socket.on('reviews:changed', () => {
-          queryClient.invalidateQueries({ queryKey: ['reviews'] });
-          queryClient.invalidateQueries({ queryKey: ['stats'] });
-        });
-
-        socket.on('orders:changed', () => {
-          queryClient.invalidateQueries({ queryKey: ['orders'] });
-          queryClient.invalidateQueries({ queryKey: ['stats'] });
+        socket.on('connect_error', (err) => {
+          console.warn('Realtime socket connect error:', err.message);
         });
       } catch (err) {
-        // Socket unavailable in certain environments (e.g. serverless preview)
-        console.warn('Socket.io unavailable:', err.message);
+        console.warn('Realtime socket unavailable:', err.message);
       }
     };
 
@@ -97,6 +105,36 @@ export default function HomePageClient({ initialData }) {
 
     return () => {
       if (socket) socket.disconnect();
+    };
+  }, [queryClient]);
+
+  useEffect(() => {
+    let lastRefresh = 0;
+
+    const refreshHomeQueries = () => {
+      const now = Date.now();
+      if (now - lastRefresh < 30000) return;
+      lastRefresh = now;
+
+      HOME_QUERY_KEYS.forEach((queryKey) => {
+        queryClient.invalidateQueries({ queryKey });
+      });
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshHomeQueries();
+      }
+    };
+
+    window.addEventListener('focus', refreshHomeQueries);
+    window.addEventListener('pageshow', refreshHomeQueries);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('focus', refreshHomeQueries);
+      window.removeEventListener('pageshow', refreshHomeQueries);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [queryClient]);
 

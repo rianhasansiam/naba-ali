@@ -15,11 +15,15 @@ import {
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import LoadingSpinner from '../../componets/loading/LoadingSpinner';
 
 const CheckoutPageClient = () => {
   // Hooks
   const router = useRouter();
+  const { data: session } = useSession();
+  const authenticatedEmail = session?.user?.email || '';
+  const isEmailLocked = Boolean(authenticatedEmail);
   
   // Shipping and tax settings
   const { calculateTotals: calculateDynamicTotals, taxName, taxEnabled, isLoading: settingsLoading } = useShippingTaxSettings();
@@ -105,10 +109,73 @@ const CheckoutPageClient = () => {
     zipCode: ''
   });
 
+  useEffect(() => {
+    if (!authenticatedEmail) return;
+
+    setCustomerInfo(prev => (
+      prev.email === authenticatedEmail
+        ? prev
+        : { ...prev, email: authenticatedEmail }
+    ));
+  }, [authenticatedEmail]);
+
   // Payment methods configuration - Only Cash on Delivery
   const paymentMethods = [
     { id: 'cod', name: 'Cash on Delivery', icon: Truck, description: 'Pay when you receive your order' }
   ];
+
+  const paymentMethodApiValues = {
+    cod: 'cash_on_delivery'
+  };
+
+  const getCartItemProductId = (item) => {
+    const productId = item?.id ?? item?._id ?? item?.productId ?? '';
+    return typeof productId === 'string' ? productId : String(productId);
+  };
+
+  const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+
+  const hasValidOrderItems = () => {
+    return enrichedCartItems.length > 0 && enrichedCartItems.every(item => {
+      const productId = getCartItemProductId(item);
+      const quantity = Number(item?.quantity);
+
+      return (
+        typeof productId === 'string' &&
+        productId.trim().length > 0 &&
+        Number.isInteger(quantity) &&
+        quantity > 0
+      );
+    });
+  };
+
+  const buildOrderPayload = () => ({
+    items: enrichedCartItems.map(item => ({
+      productId: getCartItemProductId(item).trim(),
+      quantity: Number(item.quantity || 0),
+      size: item.size || null,
+      color: item.color || null
+    })),
+    shippingAddress: {
+      fullName: customerInfo.name.trim(),
+      email: customerInfo.email.trim(),
+      address: customerInfo.address.trim(),
+      city: customerInfo.city.trim(),
+      postalCode: customerInfo.zipCode.trim(),
+      country: 'Bangladesh',
+      phone: customerInfo.phone.trim()
+    },
+    paymentMethod: paymentMethodApiValues[selectedPayment] || selectedPayment
+  });
+
+  const formatOrderSummary = (summary) => ({
+    subtotal: Number(summary?.subtotal || 0).toFixed(2),
+    shipping: Number(summary?.shipping || 0).toFixed(2),
+    tax: Number(summary?.tax || 0).toFixed(2),
+    discount: Number(summary?.discount || 0).toFixed(2),
+    total: Number(summary?.total || 0).toFixed(2),
+    taxName: summary?.taxName || taxName || 'Tax'
+  });
 
   // Load cart from localStorage when products are loaded
   useEffect(() => {
@@ -173,14 +240,14 @@ const CheckoutPageClient = () => {
   // Validate form
   const isFormValid = () => {
     return (
-      customerInfo.name &&
-      customerInfo.email &&
-      customerInfo.phone &&
-      customerInfo.address &&
-      customerInfo.city &&
-      customerInfo.zipCode &&
+      customerInfo.name.trim() &&
+      isValidEmail(customerInfo.email) &&
+      customerInfo.phone.trim() &&
+      customerInfo.address.trim() &&
+      customerInfo.city.trim() &&
+      customerInfo.zipCode.trim() &&
       selectedPayment &&
-      enrichedCartItems.length > 0
+      hasValidOrderItems()
     );
   };
 
@@ -265,53 +332,17 @@ const CheckoutPageClient = () => {
     if (orderProcessed || isProcessing) return; // Prevent multiple submissions
     
     setIsProcessing(true);
-    setOrderProcessed(true); // Mark order as being processed
 
     try {
       // Simulate payment processing
       await new Promise(resolve => setTimeout(resolve, 2000));
 
-      // Create order details for database
-      const orderData = {
-        orderId: 'ORD-' + Date.now(),
-        orderDate: new Date().toISOString(),
-        customerInfo: {
-          name: customerInfo.name,
-          email: customerInfo.email,
-          phone: customerInfo.phone,
-          address: {
-            street: customerInfo.address,
-            city: customerInfo.city,
-            zipCode: customerInfo.zipCode
-          }
-        },
-        items: enrichedCartItems.map(item => ({
-          productId: item.id,
-          productName: item.name || 'Product Name',
-          price: item.price || 0,
-          quantity: item.quantity || 0,
-          size: item.size,
-          color: item.color,
-          subtotal: (item.price || 0) * (item.quantity || 0)
-        })),
-        paymentMethod: {
-          type: selectedPayment,
-          name: paymentMethods.find(p => p.id === selectedPayment)?.name,
-          ...(transactionData && { transactionInfo: transactionData })
-        },
-        orderSummary: {
-          subtotal: parseFloat(totals.subtotal),
-          shipping: parseFloat(totals.shipping),
-          tax: parseFloat(totals.tax),
-          total: parseFloat(totals.total)
-        },
-        status: 'confirmed',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
+      const orderPayload = buildOrderPayload();
 
       // Save order to database
-      const savedOrder = await addOrder(orderData);
+      const savedOrder = await addOrder(orderPayload);
+      const createdOrder = savedOrder?.data;
+      setOrderProcessed(true);
 
 
       // Check if user exists and create new user if not
@@ -319,20 +350,23 @@ const CheckoutPageClient = () => {
 
       // Create order details for display
       const selectedPaymentMethod = paymentMethods.find(p => p.id === selectedPayment);
+      const confirmedTotals = createdOrder?.orderSummary
+        ? formatOrderSummary(createdOrder.orderSummary)
+        : totals;
       const order = {
-        orderId: orderData.orderId,
+        orderId: createdOrder?.orderId || 'ORD-' + Date.now(),
         date: new Date().toLocaleDateString(),
         customer: customerInfo,
-        items: enrichedCartItems,
+        items: createdOrder?.items || enrichedCartItems,
         payment: {
           id: selectedPaymentMethod?.id,
-          type: selectedPaymentMethod?.id, // Include both for compatibility
+          type: orderPayload.paymentMethod,
           name: selectedPaymentMethod?.name,
           description: selectedPaymentMethod?.description,
           ...(transactionData && { transactionInfo: transactionData })
         },
-        totals: totals,
-        status: 'confirmed'
+        totals: confirmedTotals,
+        status: createdOrder?.status || 'pending'
       };
 
       setIsProcessing(false);
@@ -354,7 +388,8 @@ const CheckoutPageClient = () => {
     } catch (error) {
       console.error('Error processing order:', error);
       setIsProcessing(false);
-      alert('There was an error processing your order. Please try again.');
+      setOrderProcessed(false);
+      alert(error?.message || 'There was an error processing your order. Please try again.');
     }
   };
 
@@ -640,8 +675,16 @@ const CheckoutPageClient = () => {
                   type="email"
                   placeholder="Email Address *"
                   value={customerInfo.email}
-                  onChange={(e) => handleInfoChange('email', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  onChange={(e) => {
+                    if (!isEmailLocked) {
+                      handleInfoChange('email', e.target.value);
+                    }
+                  }}
+                  readOnly={isEmailLocked}
+                  aria-readonly={isEmailLocked}
+                  className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent ${
+                    isEmailLocked ? 'bg-gray-100 text-gray-600 cursor-not-allowed' : ''
+                  }`}
                 />
                 <input
                   type="tel"

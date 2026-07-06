@@ -1,31 +1,5 @@
 import AdminPageClient from './AdminPageClient';
 import AdminAuthWrapper from './components/AdminAuthWrapper';
-import { 
-  LayoutDashboard, 
-  Package, 
-  Users, 
-  ShoppingCart, 
-  Star, 
-  Ticket, 
-  FolderOpen,
-  History,
-  Shield,
-  Settings,
-  Mail,
-  // MessageCircle
-} from 'lucide-react';
-
-// Import admin components directly (no wrapper layers)
-import Dashboard from './adminComponents/dashboard/Dashboard';
-import AllProductsClient from './adminComponents/allProducts/AllProductsClient';
-import AllUsersClient from './adminComponents/allUsers/AllUsersClient';
-import OrderDetails from './adminComponents/orderDetails/OrderDetails';
-import AllReviews from './adminComponents/allReviews/AllReviews';
-import AllCuponsClient from './adminComponents/allCupons/AllCuponsClient';
-import AllCategoryClient from './adminComponents/allCategory/AllCategoryClient';
-import ShippingTaxSettings from './adminComponents/shippingTax/ShippingTaxSettings';
-import AllMessages from './adminComponents/allMessages/AllMessages';
-// import AdminChatPanel from './adminComponents/AdminChatPanel';
 
 
 // Metadata for SEO - Admin Panel
@@ -77,69 +51,51 @@ export default function AdminPage() {
     }
   };
 
-  // Navigation items with components (server-side configuration)
+  // Navigation metadata only; tab components are lazy-loaded in AdminPageClient.
   const navigationItems = [
     {
       id: 'dashboard',
       name: 'Dashboard',
-      icon: LayoutDashboard,
-      component: Dashboard,
       description: 'Overview & Analytics'
     },
     {
       id: 'products',
       name: 'All Products',
-      icon: Package,
-      component: AllProductsClient,
       description: 'Manage Products'
     },
     {
       id: 'users',
       name: 'All Users',
-      icon: Users,
-      component: AllUsersClient,
       description: 'Customer Management'
     },
     {
       id: 'orders',
       name: 'Order Details',
-      icon: ShoppingCart,
-      component: OrderDetails,
       description: 'Order Management'
     },
     {
       id: 'reviews',
       name: 'Reviews',
-      icon: Star,
-      component: AllReviews,
       description: 'Customer Reviews'
     },
     {
       id: 'categories',
       name: 'Categories',
-      icon: FolderOpen,
-      component: AllCategoryClient,
       description: 'Product Categories'
     },
     {
       id: 'coupons',
       name: 'Coupons',
-      icon: Ticket,
-      component: AllCuponsClient,
       description: 'Discount Coupons'
     },
     {
       id: 'shipping-tax',
       name: 'Shipping & Tax',
-      icon: Settings,
-      component: ShippingTaxSettings,
       description: 'Configure Shipping & Tax Settings'
     },
     {
       id: 'messages',
       name: 'Messages',
-      icon: Mail,
-      component: AllMessages,
       description: 'Customer Messages'
     },
     // {

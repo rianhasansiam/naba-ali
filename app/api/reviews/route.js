@@ -17,12 +17,61 @@ import { validateBody, reviewSchema } from '../../../lib/validators';
 import { checkOrigin } from '../../../lib/security';
 import { getApprovedReviews } from '../../../lib/data/reviews.data';
 import { revalidateReviewData } from '../../../lib/cache/revalidate';
+import { publishRealtimeEvent } from '../../../lib/socketIO';
 
 async function emitReviewsChanged(action) {
-  try {
-    const { getIO } = await import('../../../lib/socketIO');
-    getIO()?.emit('reviews:changed', { action });
-  } catch { /* socket optional */ }
+  await publishRealtimeEvent('reviews:changed', { action });
+}
+
+function normalizeString(value) {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function normalizeEmail(value) {
+  return normalizeString(value).toLowerCase();
+}
+
+function addOwnershipConditions(conditions, fields, values) {
+  for (const field of fields) {
+    for (const value of values) {
+      conditions.push({ [field]: value });
+    }
+  }
+}
+
+function buildReviewOwnershipConditions(user) {
+  const conditions = [];
+  const userId = normalizeString(user?.id);
+  const userEmail = normalizeEmail(user?.email);
+
+  if (userId) {
+    const idValues = [userId];
+    if (ObjectId.isValid(userId)) {
+      idValues.push(new ObjectId(userId));
+    }
+
+    addOwnershipConditions(conditions, ['userId', 'customerId', 'customer.id'], idValues);
+  }
+
+  if (userEmail) {
+    const emailValues = [...new Set([normalizeString(user?.email), userEmail].filter(Boolean))];
+    addOwnershipConditions(
+      conditions,
+      ['userEmail', 'customerEmail', 'email', 'customer.email'],
+      emailValues
+    );
+  }
+
+  return conditions;
+}
+
+function normalizeReviewForOwner(review) {
+  return {
+    ...review,
+    status: review.status || (review.isApproved ? 'approved' : 'pending'),
+    customerName: review.customerName || review.userName,
+    customerEmail: review.customerEmail || review.userEmail,
+  };
 }
 
 // ── GET — Public, paginated ────────────────────────────────────────────────────
@@ -33,6 +82,19 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const productId = searchParams.get('productId');
+    const mine = searchParams.get('mine') === '1' || searchParams.get('mine') === 'true';
+
+    if (mine) {
+      const { user, error } = await requireAuth();
+      if (error) return error;
+
+      const ownershipConditions = buildReviewOwnershipConditions(user);
+      const filter = ownershipConditions.length > 0 ? { $or: ownershipConditions } : { _id: null };
+      const col = await getCollection('allReviews');
+      const data = await col.find(filter).sort({ createdAt: -1 }).toArray();
+
+      return NextResponse.json({ success: true, data: data.map(normalizeReviewForOwner) });
+    }
 
     // If filtering by productId, query DB directly (not worth caching per-product)
     if (productId) {
@@ -71,21 +133,34 @@ export async function POST(request) {
   try {
     const col = await getCollection('allReviews');
 
-    // Prevent duplicate reviews for same product by same user
-    const existing = await col.findOne({ productId: data.productId, userId: user.id });
+    // Prevent duplicate reviews for same product by same user, including older email-based records.
+    const ownershipConditions = buildReviewOwnershipConditions(user);
+    const existing = await col.findOne({
+      productId: data.productId,
+      ...(ownershipConditions.length > 0 ? { $or: ownershipConditions } : { userId: user.id }),
+    });
     if (existing) {
       return NextResponse.json({ success: false, error: 'You have already reviewed this product' }, { status: 409 });
     }
 
     const doc = {
       productId:  data.productId,
+      productName: data.productName || null,
       rating:     data.rating,
+      title:      data.title || null,
       comment:    data.comment,
+      photo:      data.photo || null,
       // Identity always from session — NEVER from request body
       userId:     user.id,
       userName:   user.name || user.email,
       userEmail:  user.email,
+      customerName: user.name || user.email,
+      customerEmail: user.email,
       isApproved: false,   // pending admin approval
+      status:     'pending',
+      verified:   true,
+      helpful:    0,
+      date:       new Date().toISOString().slice(0, 10),
       createdAt:  new Date(),
       updatedAt:  new Date(),
     };

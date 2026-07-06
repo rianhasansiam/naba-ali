@@ -12,6 +12,7 @@ import { requireAdmin } from '../../../lib/apiGuards';
 import { checkOrigin } from '../../../lib/security';
 import { getProducts } from '../../../lib/data/products.data';
 import { revalidateProductData } from '../../../lib/cache/revalidate';
+import { publishRealtimeEvent } from '../../../lib/socketIO';
 
 // ── GET — Public ───────────────────────────────────────────────────────────────
 export async function GET(request) {
@@ -55,10 +56,7 @@ export async function POST(request) {
     revalidateProductData();
 
     // ── Socket.io event ───────────────────────────────────────────────────────
-    try {
-      const { getIO } = await import('../../../lib/socketIO');
-      getIO()?.emit('products:changed', { action: 'create', id: result.insertedId });
-    } catch { /* socket optional */ }
+    await publishRealtimeEvent('products:changed', { action: 'create', id: result.insertedId });
 
     return NextResponse.json({ success: true, data: { _id: result.insertedId }, message: 'Product created successfully' });
   } catch (err) {

@@ -12,13 +12,11 @@ import { requireAdmin } from '../../../lib/apiGuards';
 import { checkOrigin } from '../../../lib/security';
 import { getCategories } from '../../../lib/data/categories.data';
 import { revalidateCategoryData } from '../../../lib/cache/revalidate';
+import { publishRealtimeEvent } from '../../../lib/socketIO';
 
 // Helper: emit socket event safely
 async function emitCategoryChanged(action, id) {
-  try {
-    const { getIO } = await import('../../../lib/socketIO');
-    getIO()?.emit('categories:changed', { action, id });
-  } catch { /* socket optional */ }
+  await publishRealtimeEvent('categories:changed', { action, id });
 }
 
 // ── GET — Public ───────────────────────────────────────────────────────────────

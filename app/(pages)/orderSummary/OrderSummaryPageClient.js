@@ -8,10 +8,10 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import jsPDF from 'jspdf';
 
 const OrderSummaryPageClient = ({ orderData }) => {
   const [showReceiptModal, setShowReceiptModal] = useState(false);
+  const [isDownloadingReceipt, setIsDownloadingReceipt] = useState(false);
   
   // Payment method icons mapping - Only COD available
   const paymentIcons = {
@@ -46,8 +46,14 @@ const OrderSummaryPageClient = ({ orderData }) => {
   };
 
   // Generate and download PDF receipt
-  const downloadReceipt = () => {
-    const doc = new jsPDF();
+  const downloadReceipt = async () => {
+    if (isDownloadingReceipt) return;
+
+    setIsDownloadingReceipt(true);
+
+    try {
+      const { default: jsPDF } = await import('jspdf');
+      const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.width;
     const pageHeight = doc.internal.pageSize.height;
 
@@ -262,7 +268,10 @@ const OrderSummaryPageClient = ({ orderData }) => {
     doc.text('www.skyzonee.com | Bangladesh\'s Premium Fashion Store', pageWidth / 2, pageHeight - 14, { align: 'center' });
 
     // Save the PDF
-    doc.save(`SkyZonee_Receipt_${orderData.orderId}.pdf`);
+      doc.save(`SkyZonee_Receipt_${orderData.orderId}.pdf`);
+    } finally {
+      setIsDownloadingReceipt(false);
+    }
   };
 
   const StatusIcon = getStatusIcon(orderData.status);
@@ -711,14 +720,15 @@ const OrderSummaryPageClient = ({ orderData }) => {
                     Close
                   </button>
                   <button
-                    onClick={() => {
-                      downloadReceipt();
+                    onClick={async () => {
+                      await downloadReceipt();
                       setShowReceiptModal(false);
                     }}
-                    className="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center justify-center space-x-2"
+                    disabled={isDownloadingReceipt}
+                    className="flex-1 bg-green-600 text-white py-3 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center justify-center space-x-2 disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     <Download className="w-4 h-4" />
-                    <span>Download PDF</span>
+                    <span>{isDownloadingReceipt ? 'Preparing PDF...' : 'Download PDF'}</span>
                   </button>
                 </div>
               </div>

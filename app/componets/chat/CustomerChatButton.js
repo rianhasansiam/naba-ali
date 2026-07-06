@@ -14,6 +14,7 @@ export default function CustomerChatButton() {
   const [isAdminOnline, setIsAdminOnline] = useState(false);
   const [guestId, setGuestId] = useState(null);
   const [guestName, setGuestName] = useState('');
+  const [guestToken, setGuestToken] = useState(null);
   const typingTimeoutRef = useRef(null);
   const [messageStatus, setMessageStatus] = useState({});
   const [lastSeen, setLastSeen] = useState(null);
@@ -37,6 +38,11 @@ export default function CustomerChatButton() {
       
       const storedGuestName = localStorage.getItem('guestChatName') || 'Guest User';
       setGuestName(storedGuestName);
+
+      const storedGuestToken = localStorage.getItem('guestChatToken');
+      if (storedGuestToken) {
+        setGuestToken(storedGuestToken);
+      }
     }
   }, [session]);
 
@@ -56,6 +62,7 @@ export default function CustomerChatButton() {
       const userName = session?.user?.name || guestName;
       const userEmail = session?.user?.email || 'guest@temporary.com';
       const isGuest = !session?.user;
+      const storedGuestToken = isGuest ? localStorage.getItem('guestChatToken') : null;
 
       // Create or get conversation
       const convRes = await fetch('/api/chat/conversations', {
@@ -65,16 +72,26 @@ export default function CustomerChatButton() {
           userId,
           userName,
           userEmail,
-          isGuest
+          isGuest,
+          ...(storedGuestToken ? { guestToken: storedGuestToken } : {})
         })
       });
       const convData = await convRes.json();
       
       if (convData.success) {
+        const activeGuestToken = isGuest ? (convData.guestToken || storedGuestToken) : null;
+        if (activeGuestToken) {
+          localStorage.setItem('guestChatToken', activeGuestToken);
+          setGuestToken(activeGuestToken);
+        }
+
         setConversationId(convData.conversation.userId);
+        const guestHeaders = activeGuestToken ? { 'x-skyzonee-guest-token': activeGuestToken } : {};
         
         // Fetch existing messages
-        const msgRes = await fetch(`/api/chat/messages?conversationId=${convData.conversation.userId}`);
+        const msgRes = await fetch(`/api/chat/messages?conversationId=${convData.conversation.userId}`, {
+          headers: guestHeaders
+        });
         const msgData = await msgRes.json();
         
         if (msgData.success) {
@@ -84,9 +101,19 @@ export default function CustomerChatButton() {
         // Mark messages as read
         await fetch('/api/chat/messages', {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ conversationId: convData.conversation.userId })
+          headers: { 'Content-Type': 'application/json', ...guestHeaders },
+          body: JSON.stringify({
+            conversationId: convData.conversation.userId,
+            ...(activeGuestToken ? { guestToken: activeGuestToken } : {})
+          })
         });
+
+        return {
+          conversation: convData.conversation,
+          guestToken: activeGuestToken
+        };
+      } else {
+        console.error('Failed to load conversation:', convData.error);
       }
     } catch (error) {
       console.error('Failed to load conversation:', error);
@@ -98,35 +125,49 @@ export default function CustomerChatButton() {
   // Initialize socket connection when chat opens
   useEffect(() => {
     if (isOpen) {
+      let isActive = true;
       setIsConnecting(true);
-      // Initialize conversation
-      fetchOrCreateConversation();
 
-      // Get user ID (authenticated or guest)
-      const userId = session?.user?.id || guestId;
-      if (!userId) {
-        setIsConnecting(false);
-        return;
-      }
+      const setupSocket = async () => {
+        const chatSession = await fetchOrCreateConversation();
+        if (!isActive) return;
 
-      // Connect to External WebSocket Server
-      const SOCKET_SERVER = process.env.NEXT_PUBLIC_SOCKET_URL || window.location.origin;
-      
-      socketRef.current = io(SOCKET_SERVER, {
-        transports: ['websocket', 'polling'],
-        reconnection: true,
-        reconnectionDelay: 1000,
-        reconnectionAttempts: 5
-      });
+        const userId = session?.user?.id || chatSession?.conversation?.userId || guestId;
+        const activeGuestToken = !session?.user
+          ? chatSession?.guestToken || guestToken || localStorage.getItem('guestChatToken')
+          : null;
 
-      socketRef.current.on('connect', () => {
-        console.log('Connected to chat server');
-        setIsConnecting(false);
-        socketRef.current.emit('join', userId, 'user');
-      });
+        if (!userId || (!session?.user && !activeGuestToken)) {
+          setIsConnecting(false);
+          return;
+        }
+
+        // Connect to External WebSocket Server
+        const SOCKET_SERVER = process.env.NEXT_PUBLIC_SOCKET_URL || window.location.origin;
+        
+        socketRef.current = io(SOCKET_SERVER, {
+          transports: ['websocket', 'polling'],
+          withCredentials: true,
+          reconnection: true,
+          reconnectionDelay: 1000,
+          reconnectionAttempts: 5
+        });
+
+        socketRef.current.on('connect', () => {
+          console.log('Connected to chat server');
+          setIsConnecting(false);
+          socketRef.current.emit('join', {
+            userId,
+            ...(activeGuestToken ? { guestToken: activeGuestToken } : {})
+          });
+        });
 
       socketRef.current.on('disconnect', () => {
         setIsConnecting(true);
+      });
+
+      socketRef.current.on('socket-error', (error) => {
+        console.error('Chat socket error:', error);
       });
 
       // Listen for new messages
@@ -139,7 +180,8 @@ export default function CustomerChatButton() {
         // Prevent duplicate messages
         setMessages(prev => {
           const exists = prev.some(msg => 
-            msg._id === message._id || 
+            msg._id === message._id ||
+            (msg.clientMessageId && msg.clientMessageId === message.clientMessageId) ||
             (msg.message === message.message && 
              msg.senderId === message.senderId &&
              Math.abs(new Date(msg.timestamp) - new Date(message.timestamp)) < 1000)
@@ -193,8 +235,12 @@ export default function CustomerChatButton() {
         setIsAdminOnline(data.online || false);
         setLastSeen(data.lastSeen ? new Date(data.lastSeen) : null);
       });
+      };
+
+      setupSocket();
 
       return () => {
+        isActive = false;
         if (socketRef.current) {
           socketRef.current.disconnect();
         }
@@ -210,11 +256,14 @@ export default function CustomerChatButton() {
     const userId = session?.user?.id || guestId;
     const userName = session?.user?.name || guestName;
     const messageText = newMessage.trim();
-    const tempMessageId = `temp-${Date.now()}`;
+    const clientMessageId = `msg_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    const tempMessageId = clientMessageId;
+    const activeGuestToken = !session?.user ? guestToken || localStorage.getItem('guestChatToken') : null;
     
     // Optimistically add message to UI immediately
     const optimisticMessage = {
       _id: tempMessageId,
+      clientMessageId,
       conversationId,
       senderId: userId,
       senderName: userName,
@@ -230,12 +279,17 @@ export default function CustomerChatButton() {
     try {
       const response = await fetch('/api/chat/messages', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(activeGuestToken ? { 'x-skyzonee-guest-token': activeGuestToken } : {})
+        },
         body: JSON.stringify({
           conversationId,
           message: messageText,
+          clientMessageId,
           userId,
-          userName
+          userName,
+          ...(activeGuestToken ? { guestToken: activeGuestToken } : {})
         })
       });
 
@@ -245,18 +299,9 @@ export default function CustomerChatButton() {
         // Replace temporary message with real one from server
         setMessages(prev => 
           prev.map(msg => 
-            msg._id === tempMessageId ? data.message : msg
+            msg._id === tempMessageId || msg.clientMessageId === clientMessageId ? data.message : msg
           )
         );
-
-        // Emit via socket for real-time delivery
-        socketRef.current?.emit('send-message', {
-          conversationId,
-          message: messageText,
-          senderId: userId,
-          senderName: userName,
-          senderRole: 'user'
-        });
       } else {
         // Remove optimistic message on failure
         setMessages(prev => prev.filter(msg => msg._id !== tempMessageId));

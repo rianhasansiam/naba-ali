@@ -10,6 +10,41 @@ import {
 import Image from 'next/image';
 import { uploadToImageBB } from '@/lib/imagebb';
 
+const extractApiList = (payload) => {
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload?.data)) return payload.data;
+  return [];
+};
+
+const getApiErrorMessage = (payload, fallback) => payload?.error || payload?.message || fallback;
+
+const getOrderTotal = (order) => {
+  const total = order?.orderSummary?.total ?? order?.summary?.total ?? order?.total ?? order?.totalAmount ?? order?.totalPrice ?? 0;
+  const numericTotal = Number(total);
+  return Number.isFinite(numericTotal) ? numericTotal : 0;
+};
+
+const getOrderDate = (order) => order?.orderDate || order?.createdAt || order?.date || null;
+
+const getOrderStatus = (order) => String(order?.status || order?.orderStatus || 'pending').toLowerCase();
+
+const getReviewStatus = (review) => String(review?.status || (review?.isApproved ? 'approved' : 'pending')).toLowerCase();
+
+const formatStatusLabel = (status) => {
+  const normalizedStatus = status || 'pending';
+  return normalizedStatus.charAt(0).toUpperCase() + normalizedStatus.slice(1);
+};
+
+const getProductId = (item) => item?.productId || item?.id || item?._id || '';
+
+const getProductName = (item) => item?.productName || item?.name || item?.title || 'Product';
+
+const getLineItemPrice = (item) => {
+  const price = item?.price ?? item?.unitPrice ?? item?.salePrice ?? 0;
+  const numericPrice = Number(price);
+  return Number.isFinite(numericPrice) ? numericPrice : 0;
+};
+
 const SimpleProfilePageClient = () => {
   const { data: session, status, update: updateSession } = useSession();
   
@@ -99,36 +134,36 @@ const SimpleProfilePageClient = () => {
     setData(prev => ({ ...prev, loading: true, error: null }));
     
     try {
-      // Fetch user profile
-      const userResponse = await fetch(`/api/users/${session.user.id}`);
-      const userData = await userResponse.json();
-      
-      // Fetch user orders
-      const ordersResponse = await fetch('/api/orders');
-      const ordersData = await ordersResponse.json();
-      
-      // Filter orders for current user
-      const userOrders = Array.isArray(ordersData) ? ordersData.filter(order => {
-        return (
-          order.customerInfo?.email === session.user.email ||
-          order.userEmail === session.user.email ||
-          order.user?.email === session.user.email ||
-          order.email === session.user.email
-        );
-      }) : [];
-      
-      // Fetch user reviews
-      const reviewsResponse = await fetch('/api/reviews');
-      const reviewsData = await reviewsResponse.json();
-      
-      // Filter reviews for current user
-      const userReviews = Array.isArray(reviewsData) ? reviewsData.filter(review => {
-        return review.customerEmail === session.user.email;
-      }) : [];
+      const [userResponse, ordersResponse, reviewsResponse] = await Promise.all([
+        fetch(`/api/users/${session.user.id}`),
+        fetch('/api/orders?mine=1'),
+        fetch('/api/reviews?mine=1')
+      ]);
+
+      const [userData, ordersData, reviewsData] = await Promise.all([
+        userResponse.json(),
+        ordersResponse.json(),
+        reviewsResponse.json()
+      ]);
+
+      if (!userResponse.ok) {
+        throw new Error(getApiErrorMessage(userData, 'Failed to load profile'));
+      }
+
+      if (!ordersResponse.ok) {
+        throw new Error(getApiErrorMessage(ordersData, 'Failed to load orders'));
+      }
+
+      if (!reviewsResponse.ok) {
+        throw new Error(getApiErrorMessage(reviewsData, 'Failed to load reviews'));
+      }
+
+      const userOrders = extractApiList(ordersData);
+      const userReviews = extractApiList(reviewsData);
       
       // Set all data
       setData({
-        user: userData.user || userData,
+        user: userData.user || userData.data || userData,
         orders: userOrders,
         reviews: userReviews,
         loading: false,
@@ -136,7 +171,7 @@ const SimpleProfilePageClient = () => {
       });
       
       // Initialize form data
-      const user = userData.user || userData;
+      const user = userData.user || userData.data || userData;
       const nameParts = (user.name || '').split(' ');
       setFormData({
         firstName: nameParts[0] || '',
@@ -150,7 +185,7 @@ const SimpleProfilePageClient = () => {
       console.error('Error fetching user data:', error);
       setData(prev => ({ ...prev, loading: false, error: error.message }));
     }
-  }, [session?.user?.id, session?.user?.email]);
+  }, [session?.user?.id]);
 
   // Load data on mount and when session changes
   useEffect(() => {
@@ -275,18 +310,12 @@ const SimpleProfilePageClient = () => {
     try {
       const now = new Date();
       const reviewData = {
-        productId: selectedProductForReview.productId,
-        productName: selectedProductForReview.productName,
-        customerName: data.user?.name || `${formData.firstName} ${formData.lastName}`.trim(),
-        customerEmail: session.user.email,
+        productId: getProductId(selectedProductForReview),
+        productName: getProductName(selectedProductForReview),
         rating: reviewFormData.rating,
         comment: reviewFormData.comment.trim(),
-        title: reviewFormData.title.trim() || `Review for ${selectedProductForReview.productName}`,
+        title: reviewFormData.title.trim() || `Review for ${getProductName(selectedProductForReview)}`,
         photo: reviewFormData.photo,
-        verified: true, // Since it's based on actual order
-        status: 'pending', // Will be reviewed by admin
-        date: now.toISOString().slice(0, 10), // YYYY-MM-DD
-        helpful: 0,
         createdAt: now.toISOString(),
         updatedAt: now.toISOString()
       };
@@ -317,20 +346,25 @@ const SimpleProfilePageClient = () => {
 
   // Check if user has already reviewed a product
   const hasReviewedProduct = (productId) => {
-    return data.reviews.some(review => review.productId === productId);
+    const normalizedProductId = String(productId || '');
+    return data.reviews.some(review => String(review.productId || '') === normalizedProductId);
   };
 
   // Get products from delivered orders that can be reviewed
   const getReviewableProducts = () => {
     const reviewableProducts = [];
     data.orders.forEach(order => {
-      if (order.status === 'delivered' && order.items) {
+      const orderStatus = getOrderStatus(order);
+      if ((orderStatus === 'delivered' || order.isDelivered) && Array.isArray(order.items)) {
         order.items.forEach(item => {
-          if (!hasReviewedProduct(item.productId)) {
+          const productId = getProductId(item);
+          if (productId && !hasReviewedProduct(productId)) {
             reviewableProducts.push({
               ...item,
+              productId,
+              productName: getProductName(item),
               orderId: order._id,
-              orderDate: order.orderDate
+              orderDate: getOrderDate(order)
             });
           }
         });
@@ -342,18 +376,18 @@ const SimpleProfilePageClient = () => {
   // Filter orders based on selected filter
   const filteredOrders = data.orders.filter(order => {
     if (orderFilter === 'all') return true;
-    return order.status === orderFilter;
+    return getOrderStatus(order) === orderFilter;
   });
 
   // Calculate user statistics
   const userStats = {
     totalOrders: data.orders.length,
     totalReviews: data.reviews.length,
-    totalSpent: data.orders.reduce((sum, order) => sum + (order.total || order.orderSummary?.total || 0), 0),
+    totalSpent: data.orders.reduce((sum, order) => sum + getOrderTotal(order), 0),
     avgOrderValue: data.orders.length > 0 ? 
-      data.orders.reduce((sum, order) => sum + (order.total || order.orderSummary?.total || 0), 0) / data.orders.length : 0,
+      data.orders.reduce((sum, order) => sum + getOrderTotal(order), 0) / data.orders.length : 0,
     avgRating: data.reviews.length > 0 ? 
-      data.reviews.reduce((sum, review) => sum + (review.rating || 0), 0) / data.reviews.length : 0,
+      data.reviews.reduce((sum, review) => sum + (Number(review.rating) || 0), 0) / data.reviews.length : 0,
     memberSince: data.user?.createdAt ? 
       new Date(data.user.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short' }) : 
       'Recently'
@@ -776,7 +810,10 @@ const SimpleProfilePageClient = () => {
                             pending: AlertCircle,
                             cancelled: X
                           };
-                          const StatusIcon = statusIcons[order.status] || AlertCircle;
+                          const orderStatus = getOrderStatus(order);
+                          const orderDate = getOrderDate(order);
+                          const orderTotal = getOrderTotal(order);
+                          const StatusIcon = statusIcons[orderStatus] || AlertCircle;
                           
                           return (
                             <div key={order._id || index} className="border border-gray-200 rounded-lg p-4">
@@ -786,7 +823,7 @@ const SimpleProfilePageClient = () => {
                                   <span className="font-medium">Order #{order.orderId || order._id?.slice(-8)}</span>
                                 </div>
                                 <div className="text-sm text-gray-500">
-                                  {order.orderDate ? new Date(order.orderDate).toLocaleDateString() : 'Date unknown'}
+                                  {orderDate ? new Date(orderDate).toLocaleDateString() : 'Date unknown'}
                                 </div>
                               </div>
                               
@@ -794,36 +831,37 @@ const SimpleProfilePageClient = () => {
                               <div className="flex justify-between items-center mb-3">
                                 <div>
                                   <p className="text-sm text-gray-600 price-number">
-                                    {order.items?.length || 0} item(s) • BDT {(order.total || order.orderSummary?.total || 0).toFixed(2)}
+                                    {order.items?.length || 0} item(s) • BDT {orderTotal.toFixed(2)}
                                   </p>
                                   <p className="text-sm">
                                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                      order.status === 'delivered' ? 'bg-green-100 text-green-800' :
-                                      order.status === 'confirmed' ? 'bg-green-100 text-green-800' :
-                                      order.status === 'shipped' ? 'bg-blue-100 text-blue-800' :
-                                      order.status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
-                                      order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                                      orderStatus === 'delivered' ? 'bg-green-100 text-green-800' :
+                                      orderStatus === 'confirmed' ? 'bg-green-100 text-green-800' :
+                                      orderStatus === 'shipped' ? 'bg-blue-100 text-blue-800' :
+                                      orderStatus === 'processing' ? 'bg-yellow-100 text-yellow-800' :
+                                      orderStatus === 'cancelled' ? 'bg-red-100 text-red-800' :
                                       'bg-gray-100 text-gray-800'
                                     }`}>
-                                      {order.status?.charAt(0).toUpperCase() + order.status?.slice(1) || 'Pending'}
+                                      {formatStatusLabel(orderStatus)}
                                     </span>
                                   </p>
                                 </div>
                               </div>
 
                               {/* Order Items - Show for delivered orders */}
-                              {order.status === 'delivered' && order.items && order.items.length > 0 && (
+                              {(orderStatus === 'delivered' || order.isDelivered) && Array.isArray(order.items) && order.items.length > 0 && (
                                 <div className="space-y-2 pt-3 border-t border-gray-100">
                                   <p className="text-sm font-medium text-gray-700 mb-2">Items in this order:</p>
                                   {order.items.map((item, itemIndex) => {
-                                    const hasReview = hasReviewedProduct(item.productId);
+                                    const itemProductId = getProductId(item);
+                                    const hasReview = hasReviewedProduct(itemProductId);
                                     return (
                                       <div key={itemIndex} className="flex items-center justify-between bg-gray-50 rounded-lg p-3">
                                         <div className="flex-1">
-                                          <p className="font-medium text-gray-900 text-sm">{item.productName}</p>
+                                          <p className="font-medium text-gray-900 text-sm">{getProductName(item)}</p>
                                           <p className="text-xs text-gray-600 price-number">
                                             Size: {item.size || 'N/A'} • Color: {item.color || 'Default'} • 
-                                            Qty: {item.quantity || 1} • BDT {(item.price || 0).toFixed(2)}
+                                            Qty: {item.quantity || 1} • BDT {getLineItemPrice(item).toFixed(2)}
                                           </p>
                                         </div>
                                         <div className="ml-3">
@@ -887,7 +925,7 @@ const SimpleProfilePageClient = () => {
                                       }}
                                       className="w-full text-left p-3 hover:bg-gray-50 rounded-lg border border-gray-100 transition-colors"
                                     >
-                                      <p className="font-medium text-gray-900 text-sm">{product.productName}</p>
+                                      <p className="font-medium text-gray-900 text-sm">{getProductName(product)}</p>
                                       <p className="text-xs text-gray-600">
                                         Size: {product.size || 'N/A'} • Color: {product.color || 'Default'}
                                       </p>
@@ -923,13 +961,13 @@ const SimpleProfilePageClient = () => {
                             <div className="flex items-start justify-between mb-3">
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-1">
-                                  <h4 className="font-medium text-gray-900 truncate">{review.productName}</h4>
+                                  <h4 className="font-medium text-gray-900 truncate">{getProductName(review)}</h4>
                                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                    review.status === 'approved' ? 'bg-green-100 text-green-800' :
-                                    review.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                    getReviewStatus(review) === 'approved' ? 'bg-green-100 text-green-800' :
+                                    getReviewStatus(review) === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                                     'bg-red-100 text-red-800'
                                   }`}>
-                                    {review.status?.charAt(0).toUpperCase() + review.status?.slice(1) || 'Pending'}
+                                    {formatStatusLabel(getReviewStatus(review))}
                                   </span>
                                 </div>
                                 
@@ -1053,11 +1091,11 @@ const SimpleProfilePageClient = () => {
                 {selectedProductForReview && (
                   <div className="bg-gray-50 rounded-lg p-4 mb-6">
                     <h3 className="font-medium text-gray-900 mb-1">
-                      {selectedProductForReview.productName}
+                      {getProductName(selectedProductForReview)}
                     </h3>
                     <p className="text-sm text-gray-600">
-                      Purchased on {selectedOrderForReview?.orderDate ? 
-                        new Date(selectedOrderForReview.orderDate).toLocaleDateString() : 'Unknown date'}
+                      Purchased on {getOrderDate(selectedOrderForReview) ? 
+                        new Date(getOrderDate(selectedOrderForReview)).toLocaleDateString() : 'Unknown date'}
                     </p>
                     <div className="mt-2 text-sm text-gray-600">
                       Size: {selectedProductForReview.size || 'N/A'} • 

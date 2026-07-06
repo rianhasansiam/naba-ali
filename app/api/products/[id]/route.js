@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getCollection } from '../../../../lib/mongodb';
 import { checkOrigin, isAdmin, forbiddenResponse } from '../../../../lib/security';
+import { revalidateProductData } from '../../../../lib/cache/revalidate';
+import { publishRealtimeEvent } from '../../../../lib/socketIO';
 
 // PUT - Update product by ID (Admin only)
 export async function PUT(request, { params }) {
@@ -38,6 +40,9 @@ export async function PUT(request, { params }) {
         error: 'Product not found' 
       }, { status: 404 });
     }
+
+    revalidateProductData();
+    await publishRealtimeEvent('products:changed', { action: 'update', id });
 
     return NextResponse.json({ 
       success: true, 
@@ -86,6 +91,9 @@ export async function DELETE(request, { params }) {
         error: 'Product not found' 
       }, { status: 404 });
     }
+
+    revalidateProductData();
+    await publishRealtimeEvent('products:changed', { action: 'delete', id });
 
     return NextResponse.json({ 
       success: true, 

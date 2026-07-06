@@ -46,7 +46,7 @@ const EditProductModal = ({ isOpen, onClose, categories, product }) => {
   
   // Initialize the useUpdateData hook
   const { updateData, isLoading, error } = useUpdateData({
-    name: 'allProducts',
+    name: 'products',
     api: '/api/products'
   });
 

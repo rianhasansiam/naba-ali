@@ -25,7 +25,7 @@ const EditCategoryModal = ({ isOpen, onClose, category }) => {
   
   // Initialize the useUpdateData hook
   const { updateData, isLoading, error } = useUpdateData({
-    name: 'allCategories',
+    name: 'categories',
     api: '/api/categories'
   });
 

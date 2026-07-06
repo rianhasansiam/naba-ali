@@ -25,7 +25,7 @@ const AddCategoryModal = ({ isOpen, onClose }) => {
   
   // Initialize the useAddData hook
   const { addData, isLoading, error } = useAddData({
-    name: 'allCategories',
+    name: 'categories',
     api: '/api/categories'
   });
 

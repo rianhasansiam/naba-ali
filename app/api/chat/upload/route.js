@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import formidable from 'formidable';
-import { readFileSync, createReadStream } from 'fs';
+import { readFileSync } from 'fs';
 import { checkOrigin, isAuthenticated, isAdmin } from '../../../../lib/security';
+import { getCollection } from '../../../../lib/mongodb';
 
 // Configure formidable
 export const config = {
@@ -27,9 +28,25 @@ const parseForm = (req) => {
   });
 };
 
+function normalizeField(value) {
+  const fieldValue = Array.isArray(value) ? value[0] : value;
+  return typeof fieldValue === 'string' ? fieldValue.trim() : '';
+}
+
+const getImageBBApiKey = () => (
+  process.env.IMAGEBB_API_KEY ||
+  process.env.NEXT_PUBLIC_IMAGEBB_API_KEY ||
+  process.env.IMGBB_API_KEY
+);
+
 // Upload file to ImageBB
 const uploadToImageBB = async (filePath, filename) => {
   try {
+    const apiKey = getImageBBApiKey();
+    if (!apiKey) {
+      throw new Error('Image upload service is not configured');
+    }
+
     const imageBuffer = readFileSync(filePath);
     const base64Image = imageBuffer.toString('base64');
 
@@ -37,7 +54,7 @@ const uploadToImageBB = async (filePath, filename) => {
     formData.append('image', base64Image);
     formData.append('name', filename);
 
-    const response = await fetch(`https://api.imgbb.com/1/upload?key=${process.env.IMGBB_API_KEY}`, {
+    const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
       method: 'POST',
       body: formData
     });
@@ -83,13 +100,30 @@ export async function POST(request) {
     }
 
     const { fields, files } = await parseForm(request);
-    const { conversationId } = fields;
+    const conversationId = normalizeField(fields.conversationId);
 
     if (!conversationId) {
       return NextResponse.json({
         success: false,
         error: 'Conversation ID is required'
       }, { status: 400 });
+    }
+
+    const conversations = await getCollection('chatConversations');
+    const conversation = await conversations.findOne({ userId: conversationId });
+
+    if (!conversation) {
+      return NextResponse.json({
+        success: false,
+        error: 'Conversation not found'
+      }, { status: 404 });
+    }
+
+    if (!admin && conversationId !== user.id) {
+      return NextResponse.json({
+        success: false,
+        error: 'Unauthorized conversation access'
+      }, { status: 403 });
     }
 
     const uploadedFiles = [];
@@ -129,6 +163,13 @@ export async function POST(request) {
         uploadResult = await uploadToImageBB(file.filepath, file.originalFilename);
         
         if (!uploadResult.success) {
+          if (uploadResult.error === 'Image upload service is not configured') {
+            return NextResponse.json({
+              success: false,
+              error: uploadResult.error
+            }, { status: 503 });
+          }
+
           return NextResponse.json({
             success: false,
             error: `Failed to upload ${file.originalFilename}: ${uploadResult.error}`

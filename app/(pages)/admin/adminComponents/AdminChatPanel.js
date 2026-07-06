@@ -42,6 +42,7 @@ export default function AdminChatPanel() {
       
       socketRef.current = io(SOCKET_SERVER, {
         transports: ['websocket', 'polling'],
+        withCredentials: true,
         reconnection: true,
         reconnectionDelay: 1000,
         reconnectionAttempts: 5
@@ -50,11 +51,18 @@ export default function AdminChatPanel() {
       socketRef.current.on('connect', () => {
         console.log('Admin connected to chat server');
         setIsConnecting(false);
-        socketRef.current.emit('join', session.user.id, 'admin');
+        socketRef.current.emit('join', {
+          userId: session.user.id,
+          subscribeToAdminEvents: true
+        });
       });
 
       socketRef.current.on('disconnect', () => {
         setIsConnecting(true);
+      });
+
+      socketRef.current.on('socket-error', (error) => {
+        console.error('Admin chat socket error:', error);
       });
 
       // Listen for new messages — use ref to avoid stale closure
@@ -64,7 +72,8 @@ export default function AdminChatPanel() {
           // Prevent duplicate messages (check if message already exists)
           setMessages(prev => {
             const exists = prev.some(msg => 
-              msg._id === message._id || 
+              msg._id === message._id ||
+              (msg.clientMessageId && msg.clientMessageId === message.clientMessageId) ||
               (msg.message === message.message && 
                msg.senderId === message.senderId &&
                Math.abs(new Date(msg.timestamp) - new Date(message.timestamp)) < 1000)
@@ -207,11 +216,13 @@ export default function AdminChatPanel() {
 
     setIsSending(true);
     const messageText = newMessage.trim();
-    const tempMessageId = `temp-${Date.now()}`;
+    const clientMessageId = `msg_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    const tempMessageId = clientMessageId;
     
     // Optimistically add message to UI immediately
     const optimisticMessage = {
       _id: tempMessageId,
+      clientMessageId,
       conversationId: selectedConversation.userId,
       senderId: session.user.id,
       senderName: session.user.name || 'Support Team',
@@ -231,6 +242,7 @@ export default function AdminChatPanel() {
         body: JSON.stringify({
           conversationId: selectedConversation.userId,
           message: messageText,
+          clientMessageId,
           userId: session.user.id,
           userName: session.user.name || 'Support Team'
         })
@@ -242,18 +254,9 @@ export default function AdminChatPanel() {
         // Replace temporary message with real one from server
         setMessages(prev => 
           prev.map(msg => 
-            msg._id === tempMessageId ? data.message : msg
+            msg._id === tempMessageId || msg.clientMessageId === clientMessageId ? data.message : msg
           )
         );
-
-        // Emit via socket for real-time delivery to customer
-        socketRef.current?.emit('send-message', {
-          conversationId: selectedConversation.userId,
-          message: messageText,
-          senderId: session.user.id,
-          senderName: session.user.name || 'Support Team',
-          senderRole: 'admin'
-        });
 
         // Update conversation in list
         setConversations(prev =>

@@ -2,7 +2,7 @@
  * app/api/upload/image/route.js
  * ─────────────────────────────────────────────────────────────────────────────
  * Server-side ImageBB proxy.
- * The IMAGEBB_API_KEY (no NEXT_PUBLIC_ prefix) stays server-side only.
+ * Prefer IMAGEBB_API_KEY so the key stays server-side only.
  * Frontend calls POST /api/upload/image with FormData { image: File }.
  */
 
@@ -11,14 +11,20 @@ import { requireAuth } from '../../../../lib/apiGuards';
 
 export const runtime = 'nodejs'; // FormData requires Node runtime
 
+const getImageBBApiKey = () => (
+  process.env.IMAGEBB_API_KEY ||
+  process.env.NEXT_PUBLIC_IMAGEBB_API_KEY ||
+  process.env.IMGBB_API_KEY
+);
+
 export async function POST(request) {
   // Only authenticated users can upload images
   const { user, error } = await requireAuth();
   if (error) return error;
 
-  const apiKey = process.env.IMAGEBB_API_KEY; // server-side only — no NEXT_PUBLIC_
+  const apiKey = getImageBBApiKey();
   if (!apiKey) {
-    console.error('IMAGEBB_API_KEY is not set');
+    console.error('ImageBB API key is not set');
     return NextResponse.json(
       { success: false, error: 'Image upload service is not configured' },
       { status: 503 }

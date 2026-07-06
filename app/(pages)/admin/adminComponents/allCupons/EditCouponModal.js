@@ -31,7 +31,7 @@ const EditCouponModal = ({ isOpen, onClose, coupon }) => {
   const [submitAttempted, setSubmitAttempted] = useState(false);
 
   const { updateData, isLoading } = useUpdateData({
-    name: 'allCoupons',
+    name: 'coupons',
     api: '/api/coupons'
   });
 

@@ -1,20 +1,130 @@
-/**
- * app/api/chat/messages/route.js
- * ─────────────────────────────────────────────────────────────────────────────
- * Fixed:
- * - Zod validation (max 2000 chars)
- * - Removed debug console.log statements
- * - Guest authorization tightened
- */
-
 import { NextResponse } from 'next/server';
+import { createHash } from 'crypto';
 import { getCollection } from '../../../../lib/mongodb';
-import { requireAdmin } from '../../../../lib/apiGuards';
-import { isAuthenticated, isAdmin } from '../../../../lib/security';
-import { checkOrigin } from '../../../../lib/security';
+import { isAuthenticated, isAdmin, checkOrigin } from '../../../../lib/security';
 import { validateBody, chatMessageSchema } from '../../../../lib/validators';
+import { publishChatMessage } from '../../../../lib/socketIO';
 
-// GET — Messages for a conversation
+const GUEST_TOKEN_HEADER = 'x-skyzonee-guest-token';
+let chatMessageIndexPromise = null;
+
+function normalizeString(value) {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function hashGuestToken(token) {
+  return createHash('sha256').update(token).digest('hex');
+}
+
+function getGuestToken(request, body = {}) {
+  return normalizeString(body.guestToken || request.headers.get(GUEST_TOKEN_HEADER));
+}
+
+function getClientMessageId(body = {}) {
+  return normalizeString(body.clientMessageId || body.requestId);
+}
+
+function isGuestConversationId(conversationId) {
+  return normalizeString(conversationId).startsWith('guest_');
+}
+
+function errorResponse(error, status = 400, code = 'CHAT_ERROR') {
+  return NextResponse.json({ success: false, code, error }, { status });
+}
+
+async function ensureIdempotencyIndex(messages) {
+  if (!chatMessageIndexPromise) {
+    chatMessageIndexPromise = messages.createIndex(
+      { conversationId: 1, senderId: 1, clientMessageId: 1 },
+      {
+        unique: true,
+        partialFilterExpression: { clientMessageId: { $type: 'string' } },
+        name: 'chat_message_idempotency',
+      }
+    ).catch((error) => {
+      chatMessageIndexPromise = null;
+      throw error;
+    });
+  }
+
+  return chatMessageIndexPromise;
+}
+
+async function authorizeConversation(request, conversationId, body = {}, options = {}) {
+  const normalizedConversationId = normalizeString(conversationId);
+
+  if (!normalizedConversationId) {
+    return { response: errorResponse('Conversation ID is required', 400, 'CONVERSATION_REQUIRED') };
+  }
+
+  const admin = await isAdmin();
+  const user = await isAuthenticated();
+  const conversations = await getCollection('chatConversations');
+  const conversation = await conversations.findOne({ userId: normalizedConversationId });
+
+  if (admin) {
+    if (options.requireExistingConversation && !conversation) {
+      return { response: errorResponse('Conversation not found', 404, 'CONVERSATION_NOT_FOUND') };
+    }
+
+    return {
+      admin,
+      user,
+      conversation,
+      actor: {
+        id: user?.id || 'admin',
+        name: user?.name || 'Support Team',
+        role: 'admin',
+      },
+    };
+  }
+
+  if (user) {
+    if (normalizedConversationId !== user.id) {
+      return { response: errorResponse('Unauthorized conversation access', 403, 'UNAUTHORIZED_CONVERSATION') };
+    }
+
+    if (options.requireExistingConversation && !conversation) {
+      return { response: errorResponse('Conversation not found', 404, 'CONVERSATION_NOT_FOUND') };
+    }
+
+    return {
+      admin,
+      user,
+      conversation,
+      actor: {
+        id: user.id,
+        name: user.name || user.email || 'Customer',
+        role: 'user',
+      },
+    };
+  }
+
+  if (!isGuestConversationId(normalizedConversationId)) {
+    return { response: errorResponse('Authentication required', 401, 'AUTH_REQUIRED') };
+  }
+
+  if (!conversation || !conversation.isGuest) {
+    return { response: errorResponse('Conversation not found', 404, 'CONVERSATION_NOT_FOUND') };
+  }
+
+  const guestToken = getGuestToken(request, body);
+  if (!guestToken || !conversation.guestTokenHash || hashGuestToken(guestToken) !== conversation.guestTokenHash) {
+    return { response: errorResponse('Valid guest conversation token required', 401, 'GUEST_TOKEN_REQUIRED') };
+  }
+
+  return {
+    admin,
+    user,
+    conversation,
+    actor: {
+      id: conversation.userId,
+      name: conversation.userName || 'Guest User',
+      role: 'user',
+    },
+  };
+}
+
 export async function GET(request) {
   const originCheck = checkOrigin(request);
   if (originCheck) return originCheck;
@@ -22,28 +132,13 @@ export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const conversationId = searchParams.get('conversationId');
 
-  if (!conversationId) {
-    return NextResponse.json({ success: false, error: 'Conversation ID is required' }, { status: 400 });
-  }
-
-  const admin = await isAdmin();
-
-  if (!admin) {
-    const user = await isAuthenticated();
-    // Non-admin users can only read their own conversation, or guest conversations
-    if (user && conversationId !== user.id && !conversationId.startsWith('guest_')) {
-      return NextResponse.json({ success: false, error: 'Unauthorized access' }, { status: 403 });
-    }
-    if (!user && !conversationId.startsWith('guest_')) {
-      return NextResponse.json({ success: false, error: 'Unauthorized access' }, { status: 403 });
-    }
-  }
-
   try {
-    const { searchParams: sp } = new URL(request.url);
-    const page  = Math.max(1, parseInt(sp.get('page')  || '1',   10));
-    const limit = Math.min(100, parseInt(sp.get('limit') || '50', 10));
-    const skip  = (page - 1) * limit;
+    const access = await authorizeConversation(request, conversationId);
+    if (access.response) return access.response;
+
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
+    const limit = Math.min(100, parseInt(searchParams.get('limit') || '50', 10));
+    const skip = (page - 1) * limit;
 
     const messages = await getCollection('chatMessages');
     const [data, total] = await Promise.all([
@@ -53,11 +148,11 @@ export async function GET(request) {
 
     return NextResponse.json({ success: true, messages: data, pagination: { page, limit, total } });
   } catch (err) {
+    console.error('GET /api/chat/messages error:', err);
     return NextResponse.json({ success: false, error: 'Failed to fetch messages' }, { status: 500 });
   }
 }
 
-// POST — Send a message
 export async function POST(request) {
   const originCheck = checkOrigin(request);
   if (originCheck) return originCheck;
@@ -65,77 +160,97 @@ export async function POST(request) {
   const { data, error: validationError } = await validateBody(request, chatMessageSchema);
   if (validationError) return validationError;
 
-  const { conversationId, message, userId: bodyUserId, userName: bodyUserName } = data;
+  const { conversationId, message, attachments = [] } = data;
+  const clientMessageId = getClientMessageId(data);
 
-  const admin = await isAdmin();
-  const user  = await isAuthenticated();
-
-  let senderId, senderName, senderRole;
-
-  if (admin) {
-    senderId   = user?.id || 'admin';
-    senderName = user?.name || 'Support Team';
-    senderRole = 'admin';
-  } else if (user) {
-    senderId   = user.id;
-    senderName = user.name || user.email;
-    senderRole = 'user';
-  } else {
-    // Guest — must provide userId/userName and conversationId must start with 'guest_'
-    if (!bodyUserId || !bodyUserName || !conversationId.startsWith('guest_')) {
-      return NextResponse.json(
-        { success: false, error: 'Guest sessions require userId, userName, and a guest_ conversationId' },
-        { status: 400 }
-      );
-    }
-    senderId   = bodyUserId;
-    senderName = bodyUserName;
-    senderRole = 'user';
-  }
-
-  // Authorization final check
-  const isAllowed = admin || (user && user.id === senderId) || conversationId.startsWith('guest_');
-  if (!isAllowed) {
-    return NextResponse.json({ success: false, error: 'Unauthorized access' }, { status: 403 });
+  if (!clientMessageId) {
+    return errorResponse('clientMessageId or requestId is required', 400, 'IDEMPOTENCY_KEY_REQUIRED');
   }
 
   try {
-    const messages = await getCollection('chatMessages');
+    const access = await authorizeConversation(request, conversationId, data, {
+      requireExistingConversation: true,
+    });
+    if (access.response) return access.response;
 
+    const { actor, admin } = access;
+    const messages = await getCollection('chatMessages');
+    await ensureIdempotencyIndex(messages);
+
+    const existingMessage = await messages.findOne({
+      conversationId,
+      senderId: actor.id,
+      clientMessageId,
+    });
+
+    if (existingMessage) {
+      return NextResponse.json({
+        success: true,
+        idempotent: true,
+        message: existingMessage,
+      });
+    }
+
+    const now = new Date();
+    const trimmedMessage = message.trim();
     const newMessage = {
       conversationId,
-      senderId,
-      senderName,
-      senderRole,
-      message: message.trim(),
-      timestamp: new Date(),
+      clientMessageId,
+      senderId: actor.id,
+      senderName: actor.name,
+      senderRole: actor.role,
+      message: trimmedMessage,
+      attachments,
+      timestamp: now,
       isRead: false,
     };
 
-    const result = await messages.insertOne(newMessage);
+    let result;
+    try {
+      result = await messages.insertOne(newMessage);
+    } catch (insertError) {
+      if (insertError?.code === 11000) {
+        const duplicateMessage = await messages.findOne({
+          conversationId,
+          senderId: actor.id,
+          clientMessageId,
+        });
 
-    // Update conversation last message
+        if (duplicateMessage) {
+          return NextResponse.json({
+            success: true,
+            idempotent: true,
+            message: duplicateMessage,
+          });
+        }
+      }
+
+      throw insertError;
+    }
+
     const conversations = await getCollection('chatConversations');
     await conversations.updateOne(
       { userId: conversationId },
       {
         $set: {
-          lastMessage: message.trim().substring(0, 100),
-          lastMessageTime: new Date(),
+          lastMessage: trimmedMessage.substring(0, 100),
+          lastMessageTime: now,
         },
         $inc: { unreadCount: admin ? 0 : 1 },
       },
-      { upsert: true }
+      { upsert: false }
     );
 
-    return NextResponse.json({ success: true, message: { ...newMessage, _id: result.insertedId } });
+    const savedMessage = { ...newMessage, _id: result.insertedId };
+    await publishChatMessage(savedMessage);
+
+    return NextResponse.json({ success: true, message: savedMessage });
   } catch (err) {
     console.error('POST /api/chat/messages error:', err);
     return NextResponse.json({ success: false, error: 'Failed to send message' }, { status: 500 });
   }
 }
 
-// PUT — Mark messages as read (no auth change needed, but guest check tightened)
 export async function PUT(request) {
   const originCheck = checkOrigin(request);
   if (originCheck) return originCheck;
@@ -144,21 +259,25 @@ export async function PUT(request) {
     const body = await request.json();
     const { conversationId } = body;
 
-    if (!conversationId) {
-      return NextResponse.json({ success: false, error: 'Conversation ID is required' }, { status: 400 });
-    }
+    const access = await authorizeConversation(request, conversationId, body);
+    if (access.response) return access.response;
 
     const messages = await getCollection('chatMessages');
-    await messages.updateMany({ conversationId, isRead: false }, { $set: { isRead: true } });
+    const senderRoleToRead = access.actor.role === 'admin' ? 'user' : 'admin';
 
-    const admin = await isAdmin();
-    if (admin) {
+    await messages.updateMany(
+      { conversationId, isRead: false, senderRole: senderRoleToRead },
+      { $set: { isRead: true } }
+    );
+
+    if (access.actor.role === 'admin') {
       const conversations = await getCollection('chatConversations');
       await conversations.updateOne({ userId: conversationId }, { $set: { unreadCount: 0 } });
     }
 
     return NextResponse.json({ success: true, message: 'Messages marked as read' });
   } catch (err) {
+    console.error('PUT /api/chat/messages error:', err);
     return NextResponse.json({ success: false, error: 'Failed to mark messages as read' }, { status: 500 });
   }
 }

@@ -177,7 +177,7 @@ AUTH_GOOGLE_ID=your-google-client-id
 AUTH_GOOGLE_SECRET=your-google-client-secret
 
 # ImageBB API (For image uploads)
-NEXT_PUBLIC_IMAGEBB_API_KEY=your-imgbb-api-key
+IMAGEBB_API_KEY=your-imgbb-api-key
 
 # EmailJS Configuration (For contact form)
 NEXT_PUBLIC_EMAILJS_SERVICE_ID=your-service-id

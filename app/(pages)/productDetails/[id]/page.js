@@ -104,11 +104,30 @@ export default function ProductDetailPage({ params }) {
     api: '/api/reviews'
   });
 
+  const productList = Array.isArray(products) ? products : [];
+  const reviewsList = Array.isArray(allReviews)
+    ? allReviews
+    : Array.isArray(allReviews?.data)
+    ? allReviews.data
+    : [];
+
   // Find the specific product by ID from real database (handle both _id and id)
-  const product = products?.find(p => p._id === productId || p.id === productId);
+  const product = productList.find(p => p._id === productId || p.id === productId);
   
   // Filter reviews for this specific product
-  const productReviews = allReviews?.filter(review => review.productId === productId) || [];
+  const productReviews = reviewsList.filter(review => review.productId === productId);
+
+  const formatReviewDate = (value) => {
+    if (!value) return 'Recently';
+
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'Recently';
+
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric'
+    });
+  };
 
   // Local Storage utility functions
   const getCartFromStorage = () => {
@@ -955,7 +974,7 @@ export default function ProductDetailPage({ params }) {
                   {/* Duplicate reviews for seamless scrolling */}
                   {[...productReviews, ...productReviews].map((review, index) => (
                     <motion.div 
-                      key={`${review._id}-${index}`} 
+                      key={`${review._id || review.id || 'review'}-${index}`} 
                       className="flex-shrink-0 w-80 md:w-96 bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300"
                       whileHover={{ y: -5 }}
                     >
@@ -969,7 +988,7 @@ export default function ProductDetailPage({ params }) {
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
                             <h4 className="font-semibold text-gray-900">
-                              {review.customerName || 'Anonymous Customer'}
+                              {review.customerName || review.userName || review.customer?.name || 'Anonymous Customer'}
                             </h4>
                             {review.verified && (
                               <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs">
@@ -979,10 +998,7 @@ export default function ProductDetailPage({ params }) {
                             )}
                           </div>
                           <p className="text-sm text-gray-500">
-                            {new Date(review.createdAt).toLocaleDateString('en-US', {
-                              month: 'short',
-                              day: 'numeric'
-                            })}
+                            {formatReviewDate(review.createdAt || review.date)}
                           </p>
                         </div>
                       </div>
@@ -1002,7 +1018,7 @@ export default function ProductDetailPage({ params }) {
                           ))}
                         </div>
                         <span className="text-sm font-medium text-gray-700">
-                          {review.rating}.0
+                          {Number(review.rating || 0).toFixed(1)}
                         </span>
                       </div>
 

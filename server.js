@@ -1,8 +1,7 @@
-// Custom server for Socket.io support
+// Custom Next.js HTTP server
 const { createServer } = require('http');
 const { parse } = require('url');
 const next = require('next');
-// const { Server } = require('socket.io');
 
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = 'localhost';
@@ -24,9 +23,7 @@ app.prepare().then(() => {
     }
   });
 
-  // Live chat websocket server is disabled.
-  // const initializeSocketServer = require('./lib/socketServer');
-  // const io = initializeSocketServer(httpServer);
+  // Realtime sockets run in the separate skyzonee_websocket service.
 
   httpServer
     .once('error', (err) => {
@@ -35,6 +32,5 @@ app.prepare().then(() => {
     })
     .listen(port, () => {
       console.log(`> Ready on http://${hostname}:${port}`);
-      // console.log(`> Socket.io server initialized`);
     });
 });
